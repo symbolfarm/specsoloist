@@ -110,7 +110,7 @@ class SpecularCore:
             "errors": errors
         }
 
-    def compile_spec(self, name: str, model: str = "gemini-1.5-flash") -> str:
+    def compile_spec(self, name: str, model: str = "gemini-1.5-flash-latest") -> str:
         """Compiles a spec to code using the LLM."""
         # 1. Validate first
         validation = self.validate_spec(name)
@@ -164,7 +164,7 @@ Your task is to implement the code described in the following specification.
             
         return f"Compiled to {output_path}"
 
-    def compile_tests(self, name: str, model: str = "gemini-1.5-flash") -> str:
+    def compile_tests(self, name: str, model: str = "gemini-1.5-flash-latest") -> str:
         """Generates a test file for the spec using the LLM."""
         content = self.read_spec(name)
         
@@ -260,7 +260,6 @@ Your task is to write a comprehensive unit test suite for the component describe
                 result = json.loads(response.read().decode('utf-8'))
                 try:
                     content = result['candidates'][0]['content']['parts'][0]['text']
-                    # Clean markdown
                     if content.startswith("```"):
                         lines = content.split('\n')
                         if lines[0].startswith("```"):
@@ -270,6 +269,9 @@ Your task is to write a comprehensive unit test suite for the component describe
                         content = "\n".join(lines)
                     return content
                 except (KeyError, IndexError):
-                    return "# Error parsing LLM response"
+                    raise ValueError(f"Unexpected API response format: {result}")
+        except urllib.error.HTTPError as e:
+            error_body = e.read().decode('utf-8')
+            raise RuntimeError(f"Google Gemini API Error {e.code}: {e.reason}\nDetails: {error_body}")
         except Exception as e:
-            return f"# API Error: {str(e)}"
+            raise RuntimeError(f"Error calling Google Gemini API: {str(e)}")
