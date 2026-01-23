@@ -91,9 +91,20 @@ A library for mathematical operations including factorial calculation and primal
         print("\nSUCCESS: All tests passed!")
     else:
         print("\nFAILURE: Tests failed.")
-    
-    print("\n--- Test Output ---")
-    print(result["output"])
+        print("--- Test Output ---")
+        print(result["output"][:500] + "...") # Print snippet
+        
+        print("\n5. Attempting Auto-Fix (Self-Correction)...")
+        fix_msg = core.attempt_fix(spec_name)
+        print(fix_msg)
+        
+        print("6. Rerunning tests after fix...")
+        result_retry = core.run_tests(spec_name)
+        if result_retry["success"]:
+            print("\nSUCCESS: Auto-fix worked! All tests passed.")
+        else:
+            print("\nFAILURE: Auto-fix failed to resolve the issue.")
+            print(result_retry["output"])
 
 if __name__ == "__main__":
     main()

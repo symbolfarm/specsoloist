@@ -72,6 +72,14 @@ def run_tests(name: str) -> str:
     else:
         return f"Tests FAILED:\n{result['output']}"
 
+@mcp.tool()
+def attempt_fix(name: str) -> str:
+    """Attempt to auto-fix a failing component by analyzing test logs."""
+    try:
+        return core.attempt_fix(name)
+    except Exception as e:
+        return f"Error attempting fix: {str(e)}"
+
 def main():
     # This entry point is used by the 'specular' CLI command
     mcp.run()

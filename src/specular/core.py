@@ -242,6 +242,94 @@ Your task is to write a comprehensive unit test suite for the component describe
         except FileNotFoundError:
              return {"success": False, "output": "pytest command not found."}
 
+    def attempt_fix(self, name: str, model: str = "gemini-2.0-flash") -> str:
+        """
+        Attempts to fix a failing component by analyzing the test output
+        and rewriting either the Code or the Test file.
+        """
+        # 1. Run Tests first to get the error
+        result = self.run_tests(name)
+        if result["success"]:
+            return "Tests already passed. No fix needed."
+
+        error_log = result["output"]
+        spec_content = self.read_spec(name)
+        
+        module_name = name.replace(".spec.md", "")
+        code_path = os.path.join(self.build_dir, f"{module_name}.py")
+        test_path = os.path.join(self.build_dir, f"test_{module_name}.py")
+        
+        code_content = ""
+        if os.path.exists(code_path):
+            with open(code_path, 'r') as f: code_content = f.read()
+
+        test_content = ""
+        if os.path.exists(test_path):
+            with open(test_path, 'r') as f: test_content = f.read()
+
+        # 2. Construct Analysis Prompt
+        prompt = f"""
+You are a Senior Software Engineer tasked with fixing a build failure.
+Analyze the discrepancy between the Code, the Test, and the Specification.
+
+# 1. The Specification (Source of Truth)
+{spec_content}
+
+# 2. The Current Implementation ({module_name}.py)
+{code_content}
+
+# 3. The Failing Test Suite (test_{module_name}.py)
+{test_content}
+
+# 4. The Test Failure Output
+{error_log}
+
+# Instructions
+1. Analyze why the test failed.
+2. Determine if the **Code** is buggy (violates spec) or if the **Test** is wrong (hallucinated expectation).
+3. Provide the CORRECTED content for the file that needs fixing.
+4. Use the following format for your output so I can apply the patch:
+
+### FILE: build/{module_name}.py
+... (full corrected code content) ...
+### END
+
+OR
+
+### FILE: build/test_{module_name}.py
+... (full corrected test content) ...
+### END
+
+Only provide the file(s) that need to change.
+"""
+
+        # 3. Call LLM
+        response = self._call_google_llm(prompt, model)
+
+        # 4. Apply Fixes
+        changes_made = []
+        
+        # Regex to find file blocks
+        # We look for "### FILE: path" ... content ... "### END"
+        # Using DOTALL so . matches newlines
+        pattern = r"### FILE: (.+?)\n(.*?)### END"
+        matches = re.findall(pattern, response, re.DOTALL)
+        
+        if not matches:
+            return f"LLM analyzed the error but provided no formatted fix.\nResponse:\n{response}"
+
+        for filename, content in matches:
+            filename = filename.strip()
+            # Security check: ensure we are only writing to build dir
+            clean_name = os.path.basename(filename)
+            target_path = os.path.join(self.build_dir, clean_name)
+            
+            with open(target_path, 'w') as f:
+                f.write(content.strip())
+            changes_made.append(clean_name)
+
+        return f"Applied fixes to: {', '.join(changes_made)}. Run tests again to verify."
+
     def _call_google_llm(self, prompt: str, model: str) -> str:
         if not self.api_key:
             print("WARNING: No API Key found. Returning mock code.")
