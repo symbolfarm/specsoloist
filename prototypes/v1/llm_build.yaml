@@ -2,7 +2,7 @@ version: 1.0
 project_name: "specular_demo"
 
 llm_config:
-  provider: "mock" # Options: openai, google, mock
+  provider: "google" # Options: mock, google
   model: "gemini-1.5-flash"
   temperature: 0.1
   max_output_tokens: 2000

@@ -1,6 +1,9 @@
 import yaml
 import os
 import sys
+import json
+import urllib.request
+import urllib.error
 
 def read_file(path):
     with open(path, 'r') as f:
@@ -34,7 +37,7 @@ Your task is to implement the code described in the following specification.
 1. Implement the component exactly as described in the Functional Requirements.
 2. Adhere strictly to the Non-Functional Requirements (Performance, Purity).
 3. Ensure the code satisfies the Design Contract (Pre/Post-conditions).
-4. Output ONLY the raw code for the implementation.
+4. Output ONLY the raw code for the implementation. Do not wrap in markdown code blocks.
 """
 
 def mock_llm_generate(prompt):
@@ -49,28 +52,67 @@ def slugify(text: str, separator: str = "-") -> str:
     \"\"\"
     Converts an input string into a URL-friendly "slug".
     \"\"\"
-    if not text:
+    if text is None:
         return ""
-
-    # 1. Normalization
+    
+    # FR-01: Normalize Unicode
     text = unicodedata.normalize('NFKD', text)
     
-    # 2. Filtering (keep ASCII) & 3. Case Conversion
-    text = text.encode('ascii', 'ignore').decode('ascii').lower()
+    # FR-02: Filter non-ASCII
+    text = text.encode('ascii', 'ignore').decode('ascii')
     
-    # 4. Replacement (replace non-alphanumeric with separator)
+    # FR-03: Lowercase
+    text = text.lower()
+    
+    # FR-04: Replace non-alphanumeric with separator
     text = re.sub(r'[^a-z0-9]+', separator, text)
     
-    # 5. Trimming
+    # FR-05: Trim separator
     text = text.strip(separator)
-    
-    # 6. Deduplication
-    # Escape separator if it might be a regex special char
-    sep_pattern = re.escape(separator)
-    text = re.sub(f'{sep_pattern}+', separator, text)
     
     return text
 """
+
+def google_llm_generate(prompt, model, api_key):
+    if not api_key:
+        raise ValueError("GEMINI_API_KEY environment variable is not set.")
+    
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
+    headers = {"Content-Type": "application/json"}
+    data = {
+        "contents": [{
+            "parts": [{"text": prompt}]
+        }],
+        "generationConfig": {
+            "temperature": 0.1
+        }
+    }
+    
+    try:
+        req = urllib.request.Request(url, data=json.dumps(data).encode('utf-8'), headers=headers)
+        with urllib.request.urlopen(req) as response:
+            result = json.loads(response.read().decode('utf-8'))
+            
+            # Extract text from response
+            try:
+                content = result['candidates'][0]['content']['parts'][0]['text']
+                # Clean up markdown code blocks if present (LLMs often add them despite instructions)
+                if content.startswith("```"):
+                    lines = content.split('\n')
+                    if lines[0].startswith("```"):
+                        lines = lines[1:]
+                    if lines and lines[-1].startswith("```"):
+                        lines = lines[:-1]
+                    content = "\n".join(lines)
+                return content
+            except (KeyError, IndexError):
+                print(f"Error parsing Gemini response: {result}")
+                return ""
+                
+    except urllib.error.HTTPError as e:
+        print(f"HTTP Error calling Gemini API: {e.code} {e.reason}")
+        print(e.read().decode('utf-8'))
+        return ""
 
 def main():
     config_path = "llm_build.yaml"
@@ -83,23 +125,40 @@ def main():
 
     global_context_path = config.get('global_context')
     global_context = read_file(global_context_path) if global_context_path else ""
+    
+    llm_config = config.get('llm_config', {})
+    provider = llm_config.get('provider', 'mock')
+    model = llm_config.get('model', 'gemini-1.5-flash')
 
     for target in config.get('targets', []):
         spec_path = target['spec']
         output_path = target['output_path']
         language = target.get('language', 'python')
 
-        print(f"Compiling {spec_path} to {output_path} ({language})...")
+        print(f"Compiling {spec_path} to {output_path} ({language}) using {provider}...")
 
         spec_content = read_file(spec_path)
         prompt = construct_prompt(global_context, spec_content, language)
 
-        # In a real scenario, we would switch based on config['llm_config']['provider']
-        # For now, we default to mock.
-        generated_code = mock_llm_generate(prompt)
+        generated_code = ""
+        if provider == 'mock':
+            generated_code = mock_llm_generate(prompt)
+        elif provider == 'google':
+            api_key = os.environ.get("GEMINI_API_KEY")
+            try:
+                generated_code = google_llm_generate(prompt, model, api_key)
+            except Exception as e:
+                print(f"Error generating code: {e}")
+                continue
+        else:
+            print(f"Unknown provider: {provider}")
+            continue
 
-        write_file(output_path, generated_code)
-        print(f"Generated {output_path}")
+        if generated_code:
+            write_file(output_path, generated_code)
+            print(f"Generated {output_path}")
+        else:
+            print(f"Failed to generate code for {spec_path}")
 
 if __name__ == "__main__":
     main()
