@@ -55,6 +55,23 @@ def compile_spec(name: str) -> str:
     except Exception as e:
         return f"Error compiling spec: {str(e)}"
 
+@mcp.tool()
+def compile_tests(name: str) -> str:
+    """Generate a test suite for the specification using the configured LLM."""
+    try:
+        return core.compile_tests(name)
+    except Exception as e:
+        return f"Error compiling tests: {str(e)}"
+
+@mcp.tool()
+def run_tests(name: str) -> str:
+    """Run the generated tests for a specification."""
+    result = core.run_tests(name)
+    if result["success"]:
+        return f"Tests PASSED:\n{result['output']}"
+    else:
+        return f"Tests FAILED:\n{result['output']}"
+
 def main():
     # This entry point is used by the 'specular' CLI command
     mcp.run()

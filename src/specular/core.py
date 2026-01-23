@@ -4,6 +4,7 @@ import json
 import urllib.request
 import urllib.error
 import importlib.resources
+import subprocess
 from typing import Dict, List, Optional, Any
 
 class SpecularCore:
@@ -162,6 +163,84 @@ Your task is to implement the code described in the following specification.
             f.write(code)
             
         return f"Compiled to {output_path}"
+
+    def compile_tests(self, name: str, model: str = "gemini-1.5-flash") -> str:
+        """Generates a test file for the spec using the LLM."""
+        content = self.read_spec(name)
+        
+        # 2. Parse Frontmatter
+        language = "python" # Default
+        match = re.search(r"language_target:\s*(\w+)", content)
+        if match:
+            language = match.group(1)
+            
+        module_name = name.replace(".spec.md", "")
+        
+        prompt_content = content
+        if content.startswith("---"):
+            parts = content.split("---", 2)
+            if len(parts) >= 3:
+                prompt_content = parts[2].strip()
+
+        prompt = f"""
+You are an expert QA Engineer specialized in {language}.
+Your task is to write a comprehensive unit test suite for the component described below.
+
+# Component Specification
+{prompt_content}
+
+# Instructions
+1. Write a standard test file (e.g., using `pytest` for Python).
+2. The component implementation will be in a module named `{module_name}`. Import it like `from {module_name} import ...`.
+3. Implement a test case for EVERY scenario listed in the 'Test Scenarios' section of the spec.
+4. Implement additional edge cases based on the 'Design Contract' (Pre/Post-conditions).
+5. Output ONLY the raw code.
+"""
+
+        code = self._call_google_llm(prompt, model)
+        
+        output_filename = f"test_{module_name}.py"
+        output_path = os.path.join(self.build_dir, output_filename)
+        
+        with open(output_path, 'w') as f:
+            f.write(code)
+            
+        return f"Generated tests at {output_path}"
+
+    def run_tests(self, name: str) -> Dict[str, Any]:
+        """Runs the tests for a specific component."""
+        module_name = name.replace(".spec.md", "")
+        test_file = f"test_{module_name}.py"
+        test_path = os.path.join(self.build_dir, test_file)
+        
+        if not os.path.exists(test_path):
+            return {"success": False, "output": "Test file not found. Run compile_tests() first."}
+
+        # Run pytest on the specific file
+        # We add self.build_dir to PYTHONPATH so the tests can import the module
+        env = os.environ.copy()
+        env["PYTHONPATH"] = self.build_dir + os.pathsep + env.get("PYTHONPATH", "")
+
+        try:
+            # Check if pytest is available
+            cmd = ["pytest", test_path]
+            # If running in uv, we might need 'uv run pytest' but assuming we are in a venv or global
+            # For robustness in this prototype, let's try calling it.
+            
+            result = subprocess.run(
+                cmd, 
+                env=env, 
+                capture_output=True, 
+                text=True,
+                check=False # We handle return code manually
+            )
+            
+            return {
+                "success": result.returncode == 0,
+                "output": result.stdout + "\n" + result.stderr
+            }
+        except FileNotFoundError:
+             return {"success": False, "output": "pytest command not found."}
 
     def _call_google_llm(self, prompt: str, model: str) -> str:
         if not self.api_key:
