@@ -18,6 +18,9 @@ dev = [
 [project.scripts]
 specular = "specular.server:main"
 
+[tool.hatch.build.targets.wheel]
+packages = ["src/specular"]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
