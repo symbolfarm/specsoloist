@@ -5,7 +5,6 @@ import urllib.request
 import urllib.error
 import importlib.resources
 from typing import Dict, List, Optional, Any
-from pathlib import Path
 
 class SpecularCore:
     def __init__(self, root_dir: str = ".", api_key: Optional[str] = None):
@@ -182,10 +181,13 @@ Your task is to implement the code described in the following specification.
                 result = json.loads(response.read().decode('utf-8'))
                 try:
                     content = result['candidates'][0]['content']['parts'][0]['text']
+                    # Clean markdown
                     if content.startswith("```"):
                         lines = content.split('\n')
-                        if lines[0].startswith("```"): lines = lines[1:]
-                        if lines and lines[-1].startswith("```"): lines = lines[:-1]
+                        if lines[0].startswith("```"):
+                            lines = lines[1:]
+                        if lines and lines[-1].startswith("```"):
+                            lines = lines[:-1]
                         content = "\n".join(lines)
                     return content
                 except (KeyError, IndexError):
