@@ -261,11 +261,13 @@ Your task is to write a comprehensive unit test suite for the component describe
         
         code_content = ""
         if os.path.exists(code_path):
-            with open(code_path, 'r') as f: code_content = f.read()
+            with open(code_path, "r") as f:
+                code_content = f.read()
 
         test_content = ""
         if os.path.exists(test_path):
-            with open(test_path, 'r') as f: test_content = f.read()
+            with open(test_path, "r") as f:
+                test_content = f.read()
 
         # 2. Construct Analysis Prompt
         prompt = f"""
@@ -320,12 +322,23 @@ Only provide the file(s) that need to change.
 
         for filename, content in matches:
             filename = filename.strip()
+            content = content.strip()
+
+            # Strip markdown code blocks if the LLM included them inside our FILE markers
+            if content.startswith("```"):
+                lines = content.split("\n")
+                if lines[0].startswith("```"):
+                    lines = lines[1:]
+                if lines and lines[-1].startswith("```"):
+                    lines = lines[:-1]
+                content = "\n".join(lines).strip()
+
             # Security check: ensure we are only writing to build dir
             clean_name = os.path.basename(filename)
             target_path = os.path.join(self.build_dir, clean_name)
-            
-            with open(target_path, 'w') as f:
-                f.write(content.strip())
+
+            with open(target_path, "w") as f:
+                f.write(content)
             changes_made.append(clean_name)
 
         return f"Applied fixes to: {', '.join(changes_made)}. Run tests again to verify."
