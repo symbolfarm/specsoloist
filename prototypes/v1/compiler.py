@@ -12,6 +12,14 @@ def write_file(path, content):
         f.write(content)
 
 def construct_prompt(global_context, spec_content, language):
+    # Strip YAML frontmatter if present
+    if spec_content.startswith("---"):
+        try:
+            _, _, content = spec_content.split("---", 2)
+            spec_content = content.strip()
+        except ValueError:
+            pass # Malformed frontmatter, use as is
+
     return f"""
 You are an expert {language} developer.
 Your task is to implement the code described in the following specification.
@@ -23,10 +31,10 @@ Your task is to implement the code described in the following specification.
 {spec_content}
 
 # Instructions
-1. Implement the component exactly as specified.
-2. Follow the global coding standards.
-3. Output ONLY the raw code for the implementation. Do not wrap in markdown code blocks unless requested.
-4. If tests are requested, provide them in the same file or a separate block as instructed (for this prototype, assume implementation only).
+1. Implement the component exactly as described in the Functional Requirements.
+2. Adhere strictly to the Non-Functional Requirements (Performance, Purity).
+3. Ensure the code satisfies the Design Contract (Pre/Post-conditions).
+4. Output ONLY the raw code for the implementation.
 """
 
 def mock_llm_generate(prompt):

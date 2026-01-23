@@ -1,53 +1,51 @@
-# Component Specification: URL Slugifier
+---
+name: slugify
+type: function
+language_target: python
+status: draft
+---
 
-## 1. Metadata
-- **Component Name**: `slugify`
-- **Type**: `Function`
-- **Complexity**: `Low`
+# 1. Overview
+Converts an input string into a URL-friendly "slug" by normalizing, filtering, and sanitizing characters.
 
-## 2. Objective
-Converts an input string into a URL-friendly "slug". This involves standardizing character case, removing invalid characters, and managing whitespace.
+# 2. Interface Specification
 
-## 3. Interface
+## 2.1 Inputs
+| Name | Type | Constraints | Description |
+|------|------|-------------|-------------|
+| `text` | `str` | None | The raw input text. |
+| `separator` | `str` | Default=`"-"` | The replacement string for non-valid chars. |
 
-### 3.1 Inputs
-| Name | Type | Required | Constraints | Description |
-|------|------|----------|-------------|-------------|
-| `text` | `String` | Yes | None | The raw input text to convert. |
-| `separator` | `String` | No | Default: `"-"` | The character used to replace whitespace. |
+## 2.2 Outputs
+| Type | Description |
+|------|-------------|
+| `str` | The sanitized slug. |
 
-### 3.2 Outputs
-| Type | Description | Guarantees |
-|------|-------------|------------|
-| `String` | The generated slug. | Lowercase, contains only alphanumeric and separator. |
+# 3. Functional Requirements (Behavior)
+*   **FR-01**: The function shall normalize Unicode characters to NFKD form (decomposing accents, e.g., 'é' -> 'e' + '´').
+*   **FR-02**: The function shall filter out non-ASCII characters (e.g., removing the standalone '´' after normalization) to ensure the output is pure ASCII.
+*   **FR-03**: The function shall convert all characters to lowercase.
+*   **FR-04**: The function shall replace any sequence of non-alphanumeric characters (regex `[^a-z0-9]+`) with a single instance of `separator`.
+*   **FR-05**: The function shall remove any leading or trailing instances of `separator` from the final result.
 
-## 4. Logical Specification
+# 4. Non-Functional Requirements (Constraints)
+*   **NFR-Performance**: Time complexity must be linear O(n) relative to the input string length.
+*   **NFR-Purity**: The function must be pure (no side effects, no global state usage).
+*   **NFR-Dependencies**: Use standard library `unicodedata` and `re` only.
 
-1. **Normalization**: Convert the `text` to a unicode normalized form (NFKD) to decompose combined characters (e.g., 'é' -> 'e' + '´').
-2. **Filtering**: Remove any non-ASCII characters that remain after normalization.
-3. **Case Conversion**: Convert the string to lowercase.
-4. **Replacement**: Replace any sequence of whitespace or non-alphanumeric characters (excluding the separator itself if strictly alphanumeric is not required, but usually we replace *everything* that isn't a letter or number) with the `separator`. 
-    *Refinement*: Replace all characters that are NOT alphanumeric (a-z, 0-9) with the `separator`.
-5. **Trimming**: Remove any leading or trailing `separator` characters.
-6. **Deduplication**: Collapse multiple consecutive `separator` characters into a single instance.
+# 5. Design Contract
+*   **Pre-condition**: `text` can be `None` (should handle gracefully) or any string.
+*   **Post-condition**: Output string contains only lowercase alphanumeric characters and the `separator`.
+*   **Post-condition**: Output string never contains consecutive `separator`s.
+*   **Post-condition**: If input is `None` or empty, output is `""`.
 
-## 5. Edge Cases & Error Handling
-- **Null/Empty Input**: Return an empty string.
-- **All Special Characters**: If input is `!@#$%`, result should be empty string (after trimming).
-- **Separator Collision**: If input contains the separator, it should be treated as a break/merged if consecutive.
-
-## 6. Dependencies
-- Standard String Manipulation Libraries.
-- Unicode normalization libraries.
-
-## 7. Test Plan
-
+# 6. Test Scenarios
 | Scenario | Input (`text`, `separator`) | Expected Output |
 |----------|-----------------------------|-----------------|
 | Basic | `"Hello World"`, `"-"` | `"hello-world"` |
 | Punctuation | `"Hello, World!"`, `"-"` | `"hello-world"` |
 | Accents | `"Crème Brûlée"`, `"-"` | `"creme-brulee"` |
-| Multiple Spaces | `"foo    bar"`, `"-"` | `"foo-bar"` |
-| Custom Separator | `"Hello World"`, `"_"` | `"hello_world"` |
-| Leading/Trailing | `"  foo bar  "`, `"-"` | `"foo-bar"` |
-| Empty | `""`, `"-"` | `""` |
+| Consecutive Special | `"foo & bar"`, `"-"` | `"foo-bar"` |
+| Custom Sep | `"Hello World"`, `"_"` | `"hello_world"` |
+| Trimming | `" -foo- "`, `"-"` | `"foo"` |
+| None Input | `None`, `"-"` | `""` |

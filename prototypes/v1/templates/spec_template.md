@@ -1,46 +1,40 @@
-# Component Specification Template
+---
+name: [Component Name]
+type: [function | class | module]
+language_target: [python | typescript | etc]
+status: [draft | stable]
+---
 
-## 1. Metadata
-- **Component Name**: `[Name]`
-- **Type**: `[Function | Class | Module]`
-- **Complexity**: `[Low | Medium | High]`
+# 1. Overview
+[Brief summary of the component's purpose.]
 
-## 2. Objective
-[Concise description of what this component does.]
+# 2. Interface Specification
 
-## 3. Interface
+## 2.1 Inputs
+| Name | Type | Description |
+|------|------|-------------|
+| `arg1` | `String` | Description... |
 
-### 3.1 Inputs
-| Name | Type (Abstract) | Required | Constraints/Validation | Description |
-|------|-----------------|----------|------------------------|-------------|
-| `arg1` | `String` | Yes | Max length 100 | The primary identifier. |
+## 2.2 Outputs
+| Type | Description |
+|------|-------------|
+| `Result` | Description... |
 
-### 3.2 Outputs
-| Type (Abstract) | Description | Guarantees |
-|-----------------|-------------|------------|
-| `Result<String, Error>` | The processed string or an error. | Output is always lowercase. |
+# 3. Functional Requirements (Behavior)
+*   **FR-01**: The component shall...
+*   **FR-02**: The component shall...
 
-## 4. Logical Specification
-[Describe the algorithm or logic flow step-by-step. Avoid language-specific syntax.]
+# 4. Non-Functional Requirements (Constraints)
+*   **NFR-Performance**: [e.g., O(n) complexity]
+*   **NFR-Security**: [e.g., No unsafe memory operations]
+*   **NFR-Purity**: [e.g., Pure function, no side effects]
 
-1. Validate inputs according to constraints.
-2. ...
-3. ...
+# 5. Design Contract
+*   **Pre-condition**: [Condition that must be true before call]
+*   **Post-condition**: [Condition guaranteed to be true after call]
+*   **Invariant**: [Condition that is always true]
 
-## 5. Edge Cases & Error Handling
-- **Case 1**: Input is empty -> Return Error("Empty input").
-- **Case 2**: ...
-
-## 6. Data Structures
-[Define any internal data structures or schemas required.]
-
-## 7. Dependencies (Abstract)
-[List logical dependencies, e.g., "HTTP Client", "Random Number Generator".]
-
-## 8. Test Plan
-[Provide concrete examples for verification.]
-
+# 6. Test Scenarios
 | Scenario | Input | Expected Output | Notes |
 |----------|-------|-----------------|-------|
-| Happy Path | `...` | `...` | |
-| Edge Case | `...` | `...` | |
+| ... | ... | ... | ... |
