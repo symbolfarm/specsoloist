@@ -110,7 +110,7 @@ class SpecularCore:
             "errors": errors
         }
 
-    def compile_spec(self, name: str, model: str = "gemini-1.5-flash-latest") -> str:
+    def compile_spec(self, name: str, model: str = "gemini-2.0-flash") -> str:
         """Compiles a spec to code using the LLM."""
         # 1. Validate first
         validation = self.validate_spec(name)
@@ -164,7 +164,7 @@ Your task is to implement the code described in the following specification.
             
         return f"Compiled to {output_path}"
 
-    def compile_tests(self, name: str, model: str = "gemini-1.5-flash-latest") -> str:
+    def compile_tests(self, name: str, model: str = "gemini-2.0-flash") -> str:
         """Generates a test file for the spec using the LLM."""
         content = self.read_spec(name)
         
