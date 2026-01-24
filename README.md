@@ -14,7 +14,7 @@
 
 ```bash
 # Requires Python 3.10+ and uv
-git clone https://github.com/yourusername/specular.git
+git clone https://github.com/symbolfarm/specular.git
 cd specular
 uv sync
 ```
