@@ -27,11 +27,15 @@
 - [x] **Build Caching**: Track file hashes and build manifest (`.specular-manifest.json`).
 - [x] **Parallel Compilation**: Compile independent specs concurrently using `ThreadPoolExecutor`.
 
-## Phase 3: Release Readiness (v1.0)
-- [ ] **CLI Polish**: Rich terminal output (spinners, colored diffs) for the `specular` command.
+## Phase 2c: Release Prep (Completed)
+- [x] **Human CLI**: `specular` command with list, create, compile, test, fix, build commands.
+- [x] **PyPI Publication**: Released `specular-ai` v0.1.0 to PyPI.
+
+## Phase 3: Polish (v1.0)
+- [ ] **CLI Polish**: Rich terminal output (spinners, colored diffs).
 - [ ] **Multi-Language Support**: Verify and template support for TypeScript and Go.
-- [ ] **PyPI Publication**: Release `specular-ai` to PyPI.
 - [ ] **Documentation Site**: Examples and API reference.
+- [ ] **Error Messages**: Improve user-facing error messages and edge case handling.
 
 ## Phase 4: Developer Experience
 - [ ] **VS Code Extension**: Live preview of generated code/tests while editing specs.
