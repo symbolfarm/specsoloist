@@ -8,6 +8,7 @@
 -   **Contracts over Code**: Define *what* you want (Functional Requirements) and *constraints* (Non-Functional Requirements).
 -   **Agent-Native**: Built as a **Model Context Protocol (MCP)** server, making it a powerful skill for AI Agents.
 -   **Self-Healing**: Includes an autonomous loop (`attempt_fix`) that analyzes test failures and rewrites code or tests to resolve discrepancies.
+-   **Multi-Provider**: Supports multiple LLM backends (Google Gemini, Anthropic Claude) via a pluggable provider system.
 
 ## Installation
 
@@ -43,9 +44,24 @@ Add this to your Claude Desktop or Agent configuration:
 }
 ```
 
-### Supported Models
+### Supported LLM Providers
 
-Defaults to **Google Gemini 2.0 Flash** for high speed and reasoning capabilities.
+Specular supports multiple LLM providers via environment variables:
+
+**Google Gemini (default)**
+```bash
+export GEMINI_API_KEY="your-key-here"
+# Optionally specify model
+export SPECULAR_LLM_MODEL="gemini-2.0-flash"
+```
+
+**Anthropic Claude**
+```bash
+export SPECULAR_LLM_PROVIDER="anthropic"
+export ANTHROPIC_API_KEY="your-key-here"
+# Optionally specify model
+export SPECULAR_LLM_MODEL="claude-sonnet-4-20250514"
+```
 
 ## Development
 

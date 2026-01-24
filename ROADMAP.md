@@ -8,11 +8,23 @@
 - [x] **Agentic Self-Healing**: `attempt_fix` loop that analyzes failures and patches code/tests.
 - [x] **MCP Server**: Expose all tools via the Model Context Protocol.
 
-## Phase 2: Architecture & Scalability (Next)
-- [ ] **Dependency Graph**: Support importing types/functions across specs (e.g., `import { User } from 'types.spec.md'`).
+## Phase 1.5: Foundation Hardening (Completed)
+- [x] **Code Separation**: Extract specialized modules (parser, compiler, runner, config).
+- [x] **LLM Provider Abstraction**: `LLMProvider` protocol with Gemini and Anthropic implementations.
+- [x] **Configuration System**: `SpecularConfig` with environment-based loading.
+- [x] **Thin Orchestrator**: Refactor `SpecularCore` to delegate to specialized modules.
+- [x] **Updated Self-Hosting Spec**: The Quine updated to reflect new architecture.
+
+## Phase 2a: Multi-Spec Architecture (Next)
+- [ ] **Dependency Syntax**: Add frontmatter syntax for declaring spec dependencies.
+- [ ] **Dependency Graph**: Build and resolve dependency order for multi-spec compilation.
+- [ ] **Type Specs**: Support `type: typedef` specs for shared data structures.
 - [ ] **Project-Level Specs**: `project.spec.md` to define global architecture and module boundaries.
-- [ ] **Type Sharing**: A mechanism to share data structures between specs to ensure contract compatibility.
+
+## Phase 2b: Build Optimization
 - [ ] **Incremental Builds**: Only recompile specs that have changed.
+- [ ] **Build Caching**: Track file hashes and build manifest.
+- [ ] **Parallel Compilation**: Compile independent specs concurrently.
 
 ## Phase 3: Release Readiness (v1.0)
 - [ ] **CLI Polish**: Rich terminal output (spinners, colored diffs) for the `specular` command.
