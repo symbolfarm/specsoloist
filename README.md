@@ -13,7 +13,11 @@
 ## Installation
 
 ```bash
-# Requires Python 3.10+ and uv
+pip install specular-ai
+```
+
+Or for development:
+```bash
 git clone https://github.com/symbolfarm/specular.git
 cd specular
 uv sync
