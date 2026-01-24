@@ -2,7 +2,7 @@
 Base protocol for LLM providers.
 """
 
-from typing import Protocol
+from typing import Optional, Protocol
 
 
 class LLMProvider(Protocol):
@@ -13,7 +13,12 @@ class LLMProvider(Protocol):
     must implement this interface to be used with Specular.
     """
 
-    def generate(self, prompt: str, temperature: float = 0.1) -> str:
+    def generate(
+        self,
+        prompt: str,
+        temperature: float = 0.1,
+        model: Optional[str] = None
+    ) -> str:
         """
         Generate a response from the LLM.
 
@@ -21,6 +26,7 @@ class LLMProvider(Protocol):
             prompt: The prompt to send to the LLM.
             temperature: Sampling temperature (0.0 = deterministic, 1.0 = creative).
                         Default is 0.1 for consistent code generation.
+            model: Optional model override. If None, uses the provider's default model.
 
         Returns:
             The generated text response.

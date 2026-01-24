@@ -12,8 +12,8 @@ class MockProvider:
         self.response_func = response_func or (lambda p: "# Mock code")
         self.calls = []
 
-    def generate(self, prompt: str, temperature: float = 0.1) -> str:
-        self.calls.append(prompt)
+    def generate(self, prompt: str, temperature: float = 0.1, model=None) -> str:
+        self.calls.append({"prompt": prompt, "model": model})
         return self.response_func(prompt)
 
 

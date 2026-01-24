@@ -3,17 +3,10 @@ Spec compilation: prompt construction and code generation.
 """
 
 import re
-from typing import Protocol
+from typing import Optional
 
 from .parser import ParsedSpec
-
-
-class LLMProvider(Protocol):
-    """Protocol for LLM providers."""
-
-    def generate(self, prompt: str, temperature: float = 0.1) -> str:
-        """Generate a response from the LLM."""
-        ...
+from .providers import LLMProvider
 
 
 class SpecCompiler:
@@ -23,8 +16,21 @@ class SpecCompiler:
         self.provider = provider
         self.global_context = global_context
 
-    def compile_code(self, spec: ParsedSpec) -> str:
-        """Compiles a spec to implementation code."""
+    def compile_code(
+        self,
+        spec: ParsedSpec,
+        model: Optional[str] = None
+    ) -> str:
+        """
+        Compiles a spec to implementation code.
+
+        Args:
+            spec: The parsed specification.
+            model: Optional model override.
+
+        Returns:
+            The generated code.
+        """
         language = spec.metadata.language_target
 
         prompt = f"""
@@ -43,11 +49,24 @@ Your task is to implement the code described in the following specification.
 3. Ensure the code satisfies the Design Contract (Pre/Post-conditions).
 4. Output ONLY the raw code for the implementation. Do not wrap in markdown code blocks.
 """
-        code = self.provider.generate(prompt)
+        code = self.provider.generate(prompt, model=model)
         return self._strip_markdown_fences(code)
 
-    def compile_tests(self, spec: ParsedSpec) -> str:
-        """Generates a test suite for a spec."""
+    def compile_tests(
+        self,
+        spec: ParsedSpec,
+        model: Optional[str] = None
+    ) -> str:
+        """
+        Generates a test suite for a spec.
+
+        Args:
+            spec: The parsed specification.
+            model: Optional model override.
+
+        Returns:
+            The generated test code.
+        """
         language = spec.metadata.language_target
         module_name = spec.metadata.name or spec.path.replace(".spec.md", "")
 
@@ -65,7 +84,7 @@ Your task is to write a comprehensive unit test suite for the component describe
 4. Implement additional edge cases based on the 'Design Contract' (Pre/Post-conditions).
 5. Output ONLY the raw code.
 """
-        code = self.provider.generate(prompt)
+        code = self.provider.generate(prompt, model=model)
         return self._strip_markdown_fences(code)
 
     def generate_fix(
@@ -73,11 +92,21 @@ Your task is to write a comprehensive unit test suite for the component describe
         spec: ParsedSpec,
         code_content: str,
         test_content: str,
-        error_log: str
+        error_log: str,
+        model: Optional[str] = None
     ) -> str:
         """
         Generates a fix for failing tests.
-        Returns the raw LLM response with FILE markers.
+
+        Args:
+            spec: The parsed specification (source of truth).
+            code_content: Current implementation code.
+            test_content: Current test code.
+            error_log: Test failure output.
+            model: Optional model override.
+
+        Returns:
+            The raw LLM response with FILE markers.
         """
         module_name = spec.metadata.name or spec.path.replace(".spec.md", "")
 
@@ -115,7 +144,7 @@ OR
 
 Only provide the file(s) that need to change.
 """
-        return self.provider.generate(prompt)
+        return self.provider.generate(prompt, model=model)
 
     def parse_fix_response(self, response: str) -> dict[str, str]:
         """

@@ -19,21 +19,25 @@ class AnthropicProvider:
     DEFAULT_MODEL = "claude-sonnet-4-20250514"
     API_BASE = "https://api.anthropic.com/v1/messages"
     API_VERSION = "2023-06-01"
+    DEFAULT_MAX_TOKENS = 8192
 
     def __init__(
         self,
         api_key: Optional[str] = None,
-        model: str = DEFAULT_MODEL
+        model: str = DEFAULT_MODEL,
+        max_tokens: int = DEFAULT_MAX_TOKENS
     ):
         """
         Initialize the Anthropic provider.
 
         Args:
             api_key: Anthropic API key. Falls back to ANTHROPIC_API_KEY env var.
-            model: Model identifier (default: claude-sonnet-4-20250514).
+            model: Default model identifier (default: claude-sonnet-4-20250514).
+            max_tokens: Maximum tokens in response (default: 8192).
         """
         self.api_key = api_key or os.environ.get("ANTHROPIC_API_KEY")
         self.model = model
+        self.max_tokens = max_tokens
 
         if not self.api_key:
             raise ValueError(
@@ -41,13 +45,19 @@ class AnthropicProvider:
                 "variable or pass api_key parameter."
             )
 
-    def generate(self, prompt: str, temperature: float = 0.1) -> str:
+    def generate(
+        self,
+        prompt: str,
+        temperature: float = 0.1,
+        model: Optional[str] = None
+    ) -> str:
         """
         Generate a response from Claude.
 
         Args:
             prompt: The prompt to send.
             temperature: Sampling temperature (0.0-1.0).
+            model: Optional model override. If None, uses the default model.
 
         Returns:
             The generated text.
@@ -55,14 +65,15 @@ class AnthropicProvider:
         Raises:
             RuntimeError: If the API call fails.
         """
+        effective_model = model or self.model
         headers = {
             "Content-Type": "application/json",
             "x-api-key": self.api_key,
             "anthropic-version": self.API_VERSION
         }
         data = {
-            "model": self.model,
-            "max_tokens": 8192,
+            "model": effective_model,
+            "max_tokens": self.max_tokens,
             "temperature": temperature,
             "messages": [
                 {"role": "user", "content": prompt}

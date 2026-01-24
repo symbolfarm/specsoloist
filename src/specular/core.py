@@ -6,7 +6,6 @@ It delegates to specialized modules for parsing, compilation, and testing.
 """
 
 import os
-import importlib.resources
 from typing import Any, Dict, List, Optional
 
 from .config import SpecularConfig
@@ -71,27 +70,12 @@ class SpecularCore:
     def _get_compiler(self) -> SpecCompiler:
         """Lazily create the compiler with global context."""
         if self._compiler is None:
-            global_context = self._get_template_content("global_context.md")
+            global_context = self.parser.load_global_context()
             self._compiler = SpecCompiler(
                 provider=self._get_provider(),
                 global_context=global_context
             )
         return self._compiler
-
-    def _get_template_content(self, filename: str) -> str:
-        """Load a template from package resources."""
-        try:
-            ref = importlib.resources.files('specular.templates').joinpath(filename)
-            return ref.read_text(encoding='utf-8')
-        except Exception:
-            # Fallback for local dev
-            local_path = os.path.join(
-                os.path.dirname(__file__), "templates", filename
-            )
-            if os.path.exists(local_path):
-                with open(local_path, 'r') as f:
-                    return f.read()
-            return ""
 
     # =========================================================================
     # Public API - Spec Management
@@ -122,26 +106,7 @@ class SpecularCore:
         Returns:
             Success message with path to created file.
         """
-        path = self.parser._get_spec_path(name)
-        if os.path.exists(path):
-            raise FileExistsError(f"Spec '{name}' already exists at {path}")
-
-        content = self._get_template_content("spec_template.md")
-        if not content:
-            content = "---\nname: {name}\n---\n# Overview\n{description}\n"
-
-        # Fill in template placeholders
-        content = content.replace("[Component Name]", name)
-        content = content.replace(
-            "[Brief summary of the component's purpose.]", description
-        )
-        content = content.replace(
-            "type: [function | class | module]", f"type: {type}"
-        )
-
-        with open(path, 'w') as f:
-            f.write(content)
-
+        path = self.parser.create_spec(name, description, spec_type=type)
         return f"Created spec: {path}"
 
     def validate_spec(self, name: str) -> Dict[str, Any]:
@@ -178,7 +143,7 @@ class SpecularCore:
         # Parse and compile
         spec = self.parser.parse_spec(name)
         compiler = self._get_compiler()
-        code = compiler.compile_code(spec)
+        code = compiler.compile_code(spec, model=model)
 
         # Write output
         module_name = self.parser.get_module_name(name)
@@ -199,7 +164,7 @@ class SpecularCore:
         """
         spec = self.parser.parse_spec(name)
         compiler = self._get_compiler()
-        code = compiler.compile_tests(spec)
+        code = compiler.compile_tests(spec, model=model)
 
         module_name = self.parser.get_module_name(name)
         output_path = self.runner.write_tests(module_name, code)
@@ -260,7 +225,8 @@ class SpecularCore:
             spec=spec,
             code_content=code_content,
             test_content=test_content,
-            error_log=result.output
+            error_log=result.output,
+            model=model
         )
 
         # 4. Parse and apply fixes

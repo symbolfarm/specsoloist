@@ -1,10 +1,13 @@
 """
-Spec parsing, validation, and frontmatter extraction.
+Spec parsing, validation, creation, and frontmatter extraction.
 """
 
+import importlib.resources
 import os
 from dataclasses import dataclass, field
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
+
+import yaml
 
 
 @dataclass
@@ -28,12 +31,20 @@ class ParsedSpec:
 
 
 class SpecParser:
-    """Handles spec file discovery, reading, parsing, and validation."""
+    """Handles spec file discovery, reading, parsing, creation, and validation."""
 
-    def __init__(self, src_dir: str):
+    def __init__(self, src_dir: str, template_dir: Optional[str] = None):
+        """
+        Initialize the parser.
+
+        Args:
+            src_dir: Directory where spec files are stored.
+            template_dir: Optional override for template location (for testing).
+        """
         self.src_dir = os.path.abspath(src_dir)
+        self.template_dir = template_dir
 
-    def _get_spec_path(self, name: str) -> str:
+    def get_spec_path(self, name: str) -> str:
         """Resolves a spec name to its full path."""
         if not name.endswith(".spec.md"):
             name += ".spec.md"
@@ -51,7 +62,7 @@ class SpecParser:
 
     def read_spec(self, name: str) -> str:
         """Reads the raw content of a specification file."""
-        path = self._get_spec_path(name)
+        path = self.get_spec_path(name)
         if not os.path.exists(path):
             raise FileNotFoundError(f"Spec '{name}' not found at {path}")
         with open(path, 'r') as f:
@@ -59,13 +70,59 @@ class SpecParser:
 
     def spec_exists(self, name: str) -> bool:
         """Checks if a spec file exists."""
-        path = self._get_spec_path(name)
+        path = self.get_spec_path(name)
         return os.path.exists(path)
+
+    def create_spec(
+        self,
+        name: str,
+        description: str,
+        spec_type: str = "function"
+    ) -> str:
+        """
+        Creates a new specification file from the template.
+
+        Args:
+            name: Component name (e.g., "auth" creates "auth.spec.md").
+            description: Brief description of the component.
+            spec_type: Component type ("function", "class", "module", "typedef").
+
+        Returns:
+            Path to the created spec file.
+
+        Raises:
+            FileExistsError: If the spec already exists.
+        """
+        path = self.get_spec_path(name)
+        if os.path.exists(path):
+            raise FileExistsError(f"Spec '{name}' already exists at {path}")
+
+        # Ensure directory exists
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+
+        content = self._load_template("spec_template.md")
+        if not content:
+            # Emergency fallback
+            content = f"---\nname: {name}\ntype: {spec_type}\n---\n# 1. Overview\n{description}\n"
+        else:
+            # Fill in template placeholders
+            content = content.replace("[Component Name]", name)
+            content = content.replace(
+                "[Brief summary of the component's purpose.]", description
+            )
+            content = content.replace(
+                "type: [function | class | module]", f"type: {spec_type}"
+            )
+
+        with open(path, 'w') as f:
+            f.write(content)
+
+        return path
 
     def parse_spec(self, name: str) -> ParsedSpec:
         """Parses a spec file into structured data."""
         content = self.read_spec(name)
-        path = self._get_spec_path(name)
+        path = self.get_spec_path(name)
 
         metadata = self._parse_frontmatter(content)
         body = self._strip_frontmatter(content)
@@ -88,29 +145,31 @@ class SpecParser:
         if len(parts) < 3:
             return metadata
 
-        frontmatter = parts[1].strip()
-        raw = {}
+        frontmatter_text = parts[1].strip()
 
-        # Simple YAML-like parsing (avoids pyyaml dependency for core)
-        for line in frontmatter.split("\n"):
-            line = line.strip()
-            if ":" in line:
-                key, _, value = line.partition(":")
-                key = key.strip()
-                value = value.strip()
-                raw[key] = value
+        try:
+            raw = yaml.safe_load(frontmatter_text) or {}
+        except yaml.YAMLError:
+            # Fall back to empty if YAML is malformed
+            raw = {}
 
-                if key == "name":
-                    metadata.name = value
-                elif key == "type":
-                    metadata.type = value
-                elif key == "language_target":
-                    metadata.language_target = value
-                elif key == "status":
-                    metadata.status = value
+        if not isinstance(raw, dict):
+            raw = {}
 
-        # Parse dependencies if present (future Phase 2a)
-        # Format: dependencies:\n  - name: X\n    from: Y
+        # Extract known fields
+        metadata.name = raw.get("name", "")
+        metadata.type = raw.get("type", "function")
+        metadata.language_target = raw.get("language_target", "python")
+        metadata.status = raw.get("status", "draft")
+
+        # Parse dependencies (Phase 2a format)
+        # Format: dependencies:
+        #           - name: User
+        #             from: types.spec.md
+        deps = raw.get("dependencies", [])
+        if isinstance(deps, list):
+            metadata.dependencies = deps
+
         metadata.raw = raw
 
         return metadata
@@ -161,3 +220,34 @@ class SpecParser:
     def get_module_name(self, name: str) -> str:
         """Extracts the module name from a spec filename."""
         return name.replace(".spec.md", "")
+
+    def load_global_context(self) -> str:
+        """Loads the global context template for compilation prompts."""
+        return self._load_template("global_context.md")
+
+    def _load_template(self, filename: str) -> str:
+        """Load a template from package resources or local directory."""
+        # If template_dir is set, use it (for testing)
+        if self.template_dir:
+            path = os.path.join(self.template_dir, filename)
+            if os.path.exists(path):
+                with open(path, 'r') as f:
+                    return f.read()
+            return ""
+
+        # Try package resources first
+        try:
+            ref = importlib.resources.files('specular.templates').joinpath(filename)
+            return ref.read_text(encoding='utf-8')
+        except Exception:
+            pass
+
+        # Fallback for local dev
+        local_path = os.path.join(
+            os.path.dirname(__file__), "templates", filename
+        )
+        if os.path.exists(local_path):
+            with open(local_path, 'r') as f:
+                return f.read()
+
+        return ""

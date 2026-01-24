@@ -29,7 +29,7 @@ class GeminiProvider:
 
         Args:
             api_key: Google AI API key. Falls back to GEMINI_API_KEY env var.
-            model: Model identifier (default: gemini-2.0-flash).
+            model: Default model identifier (default: gemini-2.0-flash).
         """
         self.api_key = api_key or os.environ.get("GEMINI_API_KEY")
         self.model = model
@@ -40,13 +40,19 @@ class GeminiProvider:
                 "variable or pass api_key parameter."
             )
 
-    def generate(self, prompt: str, temperature: float = 0.1) -> str:
+    def generate(
+        self,
+        prompt: str,
+        temperature: float = 0.1,
+        model: Optional[str] = None
+    ) -> str:
         """
         Generate a response from Gemini.
 
         Args:
             prompt: The prompt to send.
             temperature: Sampling temperature (0.0-1.0).
+            model: Optional model override. If None, uses the default model.
 
         Returns:
             The generated text.
@@ -54,7 +60,8 @@ class GeminiProvider:
         Raises:
             RuntimeError: If the API call fails.
         """
-        url = f"{self.API_BASE}/{self.model}:generateContent?key={self.api_key}"
+        effective_model = model or self.model
+        url = f"{self.API_BASE}/{effective_model}:generateContent?key={self.api_key}"
         headers = {"Content-Type": "application/json"}
         data = {
             "contents": [{"parts": [{"text": prompt}]}],
