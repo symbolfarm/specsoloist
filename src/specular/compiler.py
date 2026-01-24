@@ -33,12 +33,18 @@ class SpecCompiler:
         """
         language = spec.metadata.language_target
 
+        # Build import context from dependencies
+        import_context = self._build_import_context(spec)
+
         prompt = f"""
 You are an expert {language} developer.
 Your task is to implement the code described in the following specification.
 
 # Global Project Context
 {self.global_context}
+
+# Dependencies
+{import_context}
 
 # Component Specification
 {spec.body}
@@ -47,10 +53,67 @@ Your task is to implement the code described in the following specification.
 1. Implement the component exactly as described in the Functional Requirements.
 2. Adhere strictly to the Non-Functional Requirements (Performance, Purity).
 3. Ensure the code satisfies the Design Contract (Pre/Post-conditions).
-4. Output ONLY the raw code for the implementation. Do not wrap in markdown code blocks.
+4. Import required types/functions from dependency modules as specified.
+5. Output ONLY the raw code for the implementation. Do not wrap in markdown code blocks.
 """
         code = self.provider.generate(prompt, model=model)
         return self._strip_markdown_fences(code)
+
+    def compile_typedef(
+        self,
+        spec: ParsedSpec,
+        model: Optional[str] = None
+    ) -> str:
+        """
+        Compiles a typedef spec to type definitions (dataclasses, TypedDicts, etc.).
+
+        Args:
+            spec: The parsed specification (must be type: typedef).
+            model: Optional model override.
+
+        Returns:
+            The generated type definition code.
+        """
+        language = spec.metadata.language_target
+
+        prompt = f"""
+You are an expert {language} developer specializing in type systems.
+Your task is to define the data types described in the following specification.
+
+# Global Project Context
+{self.global_context}
+
+# Type Specification
+{spec.body}
+
+# Instructions
+1. Define all types exactly as described in the Interface Specification.
+2. For Python, prefer dataclasses with type hints. Use TypedDict for dictionary-like types.
+3. Include all validation constraints from the Design Contract as field validators if appropriate.
+4. Add docstrings explaining each type's purpose.
+5. Output ONLY the raw code for the type definitions. Do not wrap in markdown code blocks.
+6. Include necessary imports (dataclasses, typing, etc.) at the top.
+"""
+        code = self.provider.generate(prompt, model=model)
+        return self._strip_markdown_fences(code)
+
+    def _build_import_context(self, spec: ParsedSpec) -> str:
+        """Build import instructions from spec dependencies."""
+        if not spec.metadata.dependencies:
+            return "No external dependencies."
+
+        lines = ["This component depends on the following modules:"]
+        for dep in spec.metadata.dependencies:
+            if isinstance(dep, dict):
+                name = dep.get("name", "")
+                from_spec = dep.get("from", "").replace(".spec.md", "")
+                if name and from_spec:
+                    lines.append(f"- Import `{name}` from `{from_spec}`")
+            elif isinstance(dep, str):
+                from_spec = dep.replace(".spec.md", "")
+                lines.append(f"- Import from `{from_spec}`")
+
+        return "\n".join(lines)
 
     def compile_tests(
         self,

@@ -15,13 +15,15 @@
 - [x] **Thin Orchestrator**: Refactor `SpecularCore` to delegate to specialized modules.
 - [x] **Updated Self-Hosting Spec**: The Quine updated to reflect new architecture.
 
-## Phase 2a: Multi-Spec Architecture (Next)
-- [ ] **Dependency Syntax**: Add frontmatter syntax for declaring spec dependencies.
-- [ ] **Dependency Graph**: Build and resolve dependency order for multi-spec compilation.
-- [ ] **Type Specs**: Support `type: typedef` specs for shared data structures.
-- [ ] **Project-Level Specs**: `project.spec.md` to define global architecture and module boundaries.
+## Phase 2a: Multi-Spec Architecture (Completed)
+- [x] **Dependency Syntax**: YAML frontmatter syntax for declaring spec dependencies.
+- [x] **Dependency Graph**: `DependencyResolver` with topological sort for build order.
+- [x] **Type Specs**: Support `type: typedef` specs with specialized compilation.
+- [x] **Multi-Spec Builds**: `compile_project()` compiles all specs in dependency order.
+- [x] **Affected Specs**: Track which specs need rebuilding when a dependency changes.
 
-## Phase 2b: Build Optimization
+## Phase 2b: Build Optimization & Project Config (Next)
+- [ ] **Project-Level Specs**: `project.spec.md` to define global architecture and module boundaries.
 - [ ] **Incremental Builds**: Only recompile specs that have changed.
 - [ ] **Build Caching**: Track file hashes and build manifest.
 - [ ] **Parallel Compilation**: Compile independent specs concurrently.

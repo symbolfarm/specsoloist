@@ -6,13 +6,25 @@ It delegates to specialized modules for parsing, compilation, and testing.
 """
 
 import os
+from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
 from .config import SpecularConfig
 from .parser import SpecParser
 from .compiler import SpecCompiler
 from .runner import TestRunner
+from .resolver import DependencyResolver, DependencyGraph
 from .providers import LLMProvider
+
+
+@dataclass
+class BuildResult:
+    """Result of a multi-spec build operation."""
+    success: bool
+    specs_compiled: List[str]
+    specs_failed: List[str]
+    build_order: List[str]
+    errors: Dict[str, str]  # spec name -> error message
 
 
 class SpecularCore:
@@ -58,6 +70,7 @@ class SpecularCore:
         # Initialize components
         self.parser = SpecParser(self.config.src_path)
         self.runner = TestRunner(self.config.build_path)
+        self.resolver = DependencyResolver(self.parser)
         self._compiler: Optional[SpecCompiler] = None
         self._provider: Optional[LLMProvider] = None
 
@@ -122,13 +135,19 @@ class SpecularCore:
     # Public API - Compilation
     # =========================================================================
 
-    def compile_spec(self, name: str, model: Optional[str] = None) -> str:
+    def compile_spec(
+        self,
+        name: str,
+        model: Optional[str] = None,
+        skip_tests: bool = False
+    ) -> str:
         """
         Compile a spec to implementation code.
 
         Args:
             name: Spec filename (with or without .spec.md extension).
             model: Override the default LLM model (optional).
+            skip_tests: If True, don't generate tests (default for typedef specs).
 
         Returns:
             Success message with path to generated code.
@@ -143,7 +162,12 @@ class SpecularCore:
         # Parse and compile
         spec = self.parser.parse_spec(name)
         compiler = self._get_compiler()
-        code = compiler.compile_code(spec, model=model)
+
+        # Use appropriate compilation method based on spec type
+        if spec.metadata.type == "typedef":
+            code = compiler.compile_typedef(spec, model=model)
+        else:
+            code = compiler.compile_code(spec, model=model)
 
         # Write output
         module_name = self.parser.get_module_name(name)
@@ -163,6 +187,11 @@ class SpecularCore:
             Success message with path to generated tests.
         """
         spec = self.parser.parse_spec(name)
+
+        # Skip test generation for typedef specs
+        if spec.metadata.type == "typedef":
+            return f"Skipped tests for typedef spec: {name}"
+
         compiler = self._get_compiler()
         code = compiler.compile_tests(spec, model=model)
 
@@ -170,6 +199,84 @@ class SpecularCore:
         output_path = self.runner.write_tests(module_name, code)
 
         return f"Generated tests at {output_path}"
+
+    def compile_project(
+        self,
+        specs: List[str] = None,
+        model: Optional[str] = None,
+        generate_tests: bool = True
+    ) -> BuildResult:
+        """
+        Compile multiple specs in dependency order.
+
+        This is the main entry point for building a project with
+        interdependent specs.
+
+        Args:
+            specs: List of spec names to compile. If None, compiles all specs.
+            model: Override the default LLM model (optional).
+            generate_tests: Whether to generate tests for non-typedef specs.
+
+        Returns:
+            BuildResult with compilation status and details.
+        """
+        # Resolve build order
+        build_order = self.resolver.resolve_build_order(specs)
+
+        compiled = []
+        failed = []
+        errors = {}
+
+        for spec_name in build_order:
+            try:
+                # Compile the spec
+                self.compile_spec(spec_name, model=model)
+                compiled.append(spec_name)
+
+                # Generate tests if requested and not a typedef
+                if generate_tests:
+                    spec = self.parser.parse_spec(spec_name)
+                    if spec.metadata.type != "typedef":
+                        self.compile_tests(spec_name, model=model)
+
+            except Exception as e:
+                failed.append(spec_name)
+                errors[spec_name] = str(e)
+                # Continue with other specs even if one fails
+
+        return BuildResult(
+            success=len(failed) == 0,
+            specs_compiled=compiled,
+            specs_failed=failed,
+            build_order=build_order,
+            errors=errors
+        )
+
+    def get_build_order(self, specs: List[str] = None) -> List[str]:
+        """
+        Get the build order for specs without actually compiling.
+
+        Useful for previewing what would be built and in what order.
+
+        Args:
+            specs: List of spec names. If None, includes all specs.
+
+        Returns:
+            List of spec names in build order.
+        """
+        return self.resolver.resolve_build_order(specs)
+
+    def get_dependency_graph(self, specs: List[str] = None) -> DependencyGraph:
+        """
+        Get the dependency graph for specs.
+
+        Args:
+            specs: List of spec names. If None, includes all specs.
+
+        Returns:
+            DependencyGraph showing relationships between specs.
+        """
+        return self.resolver.build_graph(specs)
 
     # =========================================================================
     # Public API - Testing
@@ -187,6 +294,41 @@ class SpecularCore:
         return {
             "success": result.success,
             "output": result.output
+        }
+
+    def run_all_tests(self) -> Dict[str, Any]:
+        """
+        Run tests for all compiled specs.
+
+        Returns:
+            Dict with overall 'success' and per-spec results.
+        """
+        specs = self.parser.list_specs()
+        results = {}
+        all_passed = True
+
+        for spec_file in specs:
+            spec_name = spec_file.replace(".spec.md", "")
+            spec = self.parser.parse_spec(spec_name)
+
+            # Skip typedef specs (no tests)
+            if spec.metadata.type == "typedef":
+                results[spec_name] = {"success": True, "output": "Skipped (typedef)"}
+                continue
+
+            # Check if test file exists
+            if not self.runner.test_exists(spec_name):
+                results[spec_name] = {"success": True, "output": "No tests found"}
+                continue
+
+            result = self.run_tests(spec_name)
+            results[spec_name] = result
+            if not result["success"]:
+                all_passed = False
+
+        return {
+            "success": all_passed,
+            "results": results
         }
 
     # =========================================================================
