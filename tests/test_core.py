@@ -2,6 +2,20 @@ import pytest
 import os
 import shutil
 from specular.core import SpecularCore
+from specular.config import SpecularConfig
+
+
+class MockProvider:
+    """Mock LLM provider for testing."""
+
+    def __init__(self, response_func=None):
+        self.response_func = response_func or (lambda p: "# Mock code")
+        self.calls = []
+
+    def generate(self, prompt: str, temperature: float = 0.1) -> str:
+        self.calls.append(prompt)
+        return self.response_func(prompt)
+
 
 @pytest.fixture
 def test_env():
@@ -10,68 +24,68 @@ def test_env():
     if os.path.exists(env_dir):
         shutil.rmtree(env_dir)
     os.makedirs(env_dir)
-    
+
     yield env_dir
-    
+
     if os.path.exists(env_dir):
         shutil.rmtree(env_dir)
+
 
 def test_create_spec(test_env):
     core = SpecularCore(test_env)
     msg = core.create_spec("login", "Handles user login.")
-    
+
     path = os.path.join(test_env, "src", "login.spec.md")
     assert os.path.exists(path)
     assert "login.spec.md" in core.list_specs()
-    
+
     content = core.read_spec("login")
     assert "name: login" in content
     assert "Handles user login." in content
 
+
 def test_validate_spec_invalid(test_env):
     core = SpecularCore(test_env)
-    # Create a spec but don't fill it in (it has placeholders but missing required sections depending on template state)
-    # Actually, our template currently HAS the headers. 
-    # So `create_spec` produces a structurally "valid" file regarding HEADERS, 
-    # even if the content is just placeholders.
-    # Let's manually create a broken file.
-    
+    # Create a manually broken spec file
     bad_path = os.path.join(test_env, "src", "broken.spec.md")
     os.makedirs(os.path.dirname(bad_path), exist_ok=True)
     with open(bad_path, 'w') as f:
         f.write("Just some text")
-        
+
     res = core.validate_spec("broken")
     assert res["valid"] is False
     assert "Missing YAML frontmatter." in res["errors"]
 
-def test_compile_spec_mock(test_env, monkeypatch):
-    """Test compilation without hitting the real API."""
-    core = SpecularCore(test_env, api_key="test_key")
+
+def test_compile_spec_mock(test_env):
+    """Test compilation with a mock provider."""
+    core = SpecularCore(test_env)
     core.create_spec("math_utils", "Adds two numbers.")
-    
-    # Mock the _call_google_llm method to avoid network calls
-    def mock_llm(*args, **kwargs):
-        return "def add(a, b): return a + b"
-    
-    monkeypatch.setattr(core, "_call_google_llm", mock_llm)
-    
+
+    # Create and inject mock provider
+    mock_provider = MockProvider(lambda p: "def add(a, b): return a + b")
+    core._provider = mock_provider
+
     output_msg = core.compile_spec("math_utils")
     assert "Compiled to" in output_msg
-    
+
     build_file = os.path.join(test_env, "build", "math_utils.py")
     assert os.path.exists(build_file)
     with open(build_file, 'r') as f:
         assert "def add(a, b):" in f.read()
 
-def test_compile_and_run_tests_mock(test_env, monkeypatch):
-    core = SpecularCore(test_env, api_key="test_key")
+    # Verify the provider was called
+    assert len(mock_provider.calls) == 1
+
+
+def test_compile_and_run_tests_mock(test_env):
+    """Test full compile and run workflow with mock provider."""
+    core = SpecularCore(test_env)
     core.create_spec("math_utils", "Adds two numbers.")
-    
-    # Mock LLM to return different code based on the prompt content
-    def mock_llm(prompt, model):
+
+    # Mock provider that returns different code based on prompt
+    def mock_response(prompt):
         if "QA Engineer" in prompt:
-            # Return a valid pytest file
             return """
 import pytest
 from math_utils import add
@@ -80,30 +94,44 @@ def test_add():
     assert add(1, 2) == 3
 """
         else:
-            # Return the implementation
             return "def add(a, b): return a + b"
 
-    monkeypatch.setattr(core, "_call_google_llm", mock_llm)
-    
+    mock_provider = MockProvider(mock_response)
+    core._provider = mock_provider
+
     # 1. Compile Code
     core.compile_spec("math_utils")
-    
+
     # 2. Compile Tests
     msg = core.compile_tests("math_utils")
     assert "Generated tests" in msg
     test_file = os.path.join(test_env, "build", "test_math_utils.py")
     assert os.path.exists(test_file)
-    
+
     # 3. Run Tests
-    # We need to ensure pytest is available. Since we are running FROM pytest, 
-    # we know it's installed.
     result = core.run_tests("math_utils")
-    
-    # Note: subprocess.run inside the test might fail if 'pytest' isn't in PATH correctly
-    # or if it picks up the wrong env. 
-    # But since we use 'uv run pytest' to run THIS test, the environment should be consistent.
+
     if not result["success"]:
         print("Test Output Failure:", result["output"])
-        
+
     assert result["success"] is True
     assert "1 passed" in result["output"]
+
+
+def test_config_from_env(test_env, monkeypatch):
+    """Test that config loads from environment variables."""
+    monkeypatch.setenv("SPECULAR_LLM_PROVIDER", "anthropic")
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "test_key")
+
+    config = SpecularConfig.from_env(test_env)
+    assert config.llm_provider == "anthropic"
+    assert config.api_key == "test_key"
+
+
+def test_config_creates_directories(test_env):
+    """Test that config creates required directories."""
+    config = SpecularConfig(root_dir=test_env)
+    config.ensure_directories()
+
+    assert os.path.exists(config.src_path)
+    assert os.path.exists(config.build_path)
