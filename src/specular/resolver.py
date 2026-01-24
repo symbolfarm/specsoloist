@@ -213,6 +213,65 @@ class DependencyResolver:
 
         return remaining[:1]  # Fallback
 
+    def get_parallel_build_order(self, spec_names: List[str] = None) -> List[List[str]]:
+        """
+        Compute build order grouped into parallelizable levels.
+
+        Each level contains specs that only depend on specs from previous
+        levels, so all specs within a level can be compiled in parallel.
+
+        Args:
+            spec_names: List of spec names to build. If None, includes all specs.
+
+        Returns:
+            List of levels, where each level is a list of spec names
+            that can be compiled in parallel.
+
+        Raises:
+            CircularDependencyError: If a circular dependency is detected.
+            MissingDependencyError: If a dependency references a non-existent spec.
+        """
+        graph = self.build_graph(spec_names)
+        return self._topological_sort_levels(graph)
+
+    def _topological_sort_levels(self, graph: DependencyGraph) -> List[List[str]]:
+        """
+        Modified Kahn's algorithm that returns specs grouped by levels.
+
+        Level 0: specs with no dependencies
+        Level 1: specs that only depend on level 0
+        Level N: specs that only depend on levels 0..N-1
+        """
+        # Calculate in-degree (number of dependencies) for each spec
+        in_degree = {name: len(graph.get_dependencies(name)) for name in graph.specs}
+
+        # Start with specs that have no dependencies (level 0)
+        current_level = sorted([name for name, degree in in_degree.items() if degree == 0])
+        levels = []
+        processed = set()
+
+        while current_level:
+            levels.append(current_level)
+            processed.update(current_level)
+
+            next_level = []
+            for name in current_level:
+                # Reduce in-degree for dependents
+                for dependent in graph.get_dependents(name):
+                    in_degree[dependent] -= 1
+                    if in_degree[dependent] == 0:
+                        next_level.append(dependent)
+
+            current_level = sorted(next_level)
+
+        # Check for cycles
+        if len(processed) != len(graph.specs):
+            remaining = [name for name in graph.specs if name not in processed]
+            cycle = self._find_cycle(graph, remaining)
+            raise CircularDependencyError(cycle)
+
+        return levels
+
     def get_affected_specs(self, changed_spec: str, graph: DependencyGraph = None) -> List[str]:
         """
         Get all specs that need to be rebuilt when a spec changes.

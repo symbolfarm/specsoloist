@@ -6,6 +6,7 @@ It delegates to specialized modules for parsing, compilation, and testing.
 """
 
 import os
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
@@ -14,6 +15,7 @@ from .parser import SpecParser
 from .compiler import SpecCompiler
 from .runner import TestRunner
 from .resolver import DependencyResolver, DependencyGraph
+from .manifest import BuildManifest, IncrementalBuilder, compute_content_hash
 from .providers import LLMProvider
 
 
@@ -22,6 +24,7 @@ class BuildResult:
     """Result of a multi-spec build operation."""
     success: bool
     specs_compiled: List[str]
+    specs_skipped: List[str]  # Skipped due to no changes (incremental)
     specs_failed: List[str]
     build_order: List[str]
     errors: Dict[str, str]  # spec name -> error message
@@ -73,6 +76,18 @@ class SpecularCore:
         self.resolver = DependencyResolver(self.parser)
         self._compiler: Optional[SpecCompiler] = None
         self._provider: Optional[LLMProvider] = None
+        self._manifest: Optional[BuildManifest] = None
+
+    def _get_manifest(self) -> BuildManifest:
+        """Lazily load the build manifest."""
+        if self._manifest is None:
+            self._manifest = BuildManifest.load(self.config.build_path)
+        return self._manifest
+
+    def _save_manifest(self):
+        """Save the build manifest to disk."""
+        if self._manifest is not None:
+            self._manifest.save(self.config.build_path)
 
     def _get_provider(self) -> LLMProvider:
         """Lazily create the LLM provider."""
@@ -204,7 +219,10 @@ class SpecularCore:
         self,
         specs: List[str] = None,
         model: Optional[str] = None,
-        generate_tests: bool = True
+        generate_tests: bool = True,
+        incremental: bool = False,
+        parallel: bool = False,
+        max_workers: int = 4
     ) -> BuildResult:
         """
         Compile multiple specs in dependency order.
@@ -216,41 +234,183 @@ class SpecularCore:
             specs: List of spec names to compile. If None, compiles all specs.
             model: Override the default LLM model (optional).
             generate_tests: Whether to generate tests for non-typedef specs.
+            incremental: If True, only recompile specs that have changed.
+            parallel: If True, compile independent specs concurrently.
+            max_workers: Maximum number of parallel compilation workers.
 
         Returns:
             BuildResult with compilation status and details.
         """
+        if parallel:
+            return self._compile_project_parallel(
+                specs, model, generate_tests, incremental, max_workers
+            )
+        else:
+            return self._compile_project_sequential(
+                specs, model, generate_tests, incremental
+            )
+
+    def _compile_project_sequential(
+        self,
+        specs: List[str],
+        model: Optional[str],
+        generate_tests: bool,
+        incremental: bool
+    ) -> BuildResult:
+        """Sequential compilation - original implementation."""
         # Resolve build order
         build_order = self.resolver.resolve_build_order(specs)
 
+        # For incremental builds, determine what needs rebuilding
+        specs_to_build = set(build_order)
+        if incremental:
+            specs_to_build = set(self._get_incremental_build_list(build_order))
+
         compiled = []
+        skipped = []
         failed = []
         errors = {}
 
         for spec_name in build_order:
-            try:
-                # Compile the spec
-                self.compile_spec(spec_name, model=model)
+            if spec_name not in specs_to_build:
+                skipped.append(spec_name)
+                continue
+
+            result = self._compile_single_spec(spec_name, model, generate_tests)
+            if result["success"]:
                 compiled.append(spec_name)
-
-                # Generate tests if requested and not a typedef
-                if generate_tests:
-                    spec = self.parser.parse_spec(spec_name)
-                    if spec.metadata.type != "typedef":
-                        self.compile_tests(spec_name, model=model)
-
-            except Exception as e:
+            else:
                 failed.append(spec_name)
-                errors[spec_name] = str(e)
-                # Continue with other specs even if one fails
+                errors[spec_name] = result["error"]
+
+        # Save manifest after build
+        self._save_manifest()
 
         return BuildResult(
             success=len(failed) == 0,
             specs_compiled=compiled,
+            specs_skipped=skipped,
             specs_failed=failed,
             build_order=build_order,
             errors=errors
         )
+
+    def _compile_project_parallel(
+        self,
+        specs: List[str],
+        model: Optional[str],
+        generate_tests: bool,
+        incremental: bool,
+        max_workers: int
+    ) -> BuildResult:
+        """Parallel compilation - compiles independent specs concurrently."""
+        # Get build order grouped by levels
+        levels = self.resolver.get_parallel_build_order(specs)
+        build_order = [spec for level in levels for spec in level]
+
+        # For incremental builds, determine what needs rebuilding
+        specs_to_build = set(build_order)
+        if incremental:
+            specs_to_build = set(self._get_incremental_build_list(build_order))
+
+        compiled = []
+        skipped = []
+        failed = []
+        errors = {}
+
+        # Process each level - specs within a level can be compiled in parallel
+        for level in levels:
+            level_to_build = [s for s in level if s in specs_to_build]
+            level_skipped = [s for s in level if s not in specs_to_build]
+            skipped.extend(level_skipped)
+
+            if not level_to_build:
+                continue
+
+            # Compile this level in parallel
+            with ThreadPoolExecutor(max_workers=min(max_workers, len(level_to_build))) as executor:
+                futures = {
+                    executor.submit(self._compile_single_spec, spec_name, model, generate_tests): spec_name
+                    for spec_name in level_to_build
+                }
+
+                for future in as_completed(futures):
+                    spec_name = futures[future]
+                    result = future.result()
+                    if result["success"]:
+                        compiled.append(spec_name)
+                    else:
+                        failed.append(spec_name)
+                        errors[spec_name] = result["error"]
+
+        # Save manifest after build
+        self._save_manifest()
+
+        return BuildResult(
+            success=len(failed) == 0,
+            specs_compiled=compiled,
+            specs_skipped=skipped,
+            specs_failed=failed,
+            build_order=build_order,
+            errors=errors
+        )
+
+    def _compile_single_spec(
+        self,
+        spec_name: str,
+        model: Optional[str],
+        generate_tests: bool
+    ) -> Dict[str, Any]:
+        """
+        Compile a single spec and return result.
+
+        Returns dict with 'success' (bool) and 'error' (str if failed).
+        """
+        try:
+            # Parse spec for metadata
+            spec = self.parser.parse_spec(spec_name)
+            spec_hash = compute_content_hash(spec.content)
+            deps = [d.get("from", "").replace(".spec.md", "")
+                    for d in spec.metadata.dependencies
+                    if isinstance(d, dict)]
+
+            # Compile the spec
+            self.compile_spec(spec_name, model=model)
+
+            # Generate tests if requested and not a typedef
+            output_files = [f"{spec_name}.py"]
+            if generate_tests and spec.metadata.type != "typedef":
+                self.compile_tests(spec_name, model=model)
+                output_files.append(f"test_{spec_name}.py")
+
+            # Update manifest
+            manifest = self._get_manifest()
+            manifest.update_spec(spec_name, spec_hash, deps, output_files)
+
+            return {"success": True, "error": ""}
+
+        except Exception as e:
+            return {"success": False, "error": str(e)}
+
+    def _get_incremental_build_list(self, build_order: List[str]) -> List[str]:
+        """Determine which specs need rebuilding for incremental build."""
+        manifest = self._get_manifest()
+        builder = IncrementalBuilder(manifest, self.config.src_path)
+
+        # Compute current hashes and deps
+        spec_hashes = {}
+        spec_deps = {}
+
+        for spec_name in build_order:
+            spec = self.parser.parse_spec(spec_name)
+            spec_hashes[spec_name] = compute_content_hash(spec.content)
+            spec_deps[spec_name] = [
+                d.get("from", "").replace(".spec.md", "")
+                for d in spec.metadata.dependencies
+                if isinstance(d, dict)
+            ]
+
+        return builder.get_rebuild_plan(build_order, spec_hashes, spec_deps)
 
     def get_build_order(self, specs: List[str] = None) -> List[str]:
         """

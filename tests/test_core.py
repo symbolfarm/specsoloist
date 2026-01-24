@@ -33,7 +33,7 @@ def test_env():
 
 def test_create_spec(test_env):
     core = SpecularCore(test_env)
-    msg = core.create_spec("login", "Handles user login.")
+    core.create_spec("login", "Handles user login.")
 
     path = os.path.join(test_env, "src", "login.spec.md")
     assert os.path.exists(path)

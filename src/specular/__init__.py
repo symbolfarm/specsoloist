@@ -16,6 +16,7 @@ from .resolver import (
     CircularDependencyError,
     MissingDependencyError,
 )
+from .manifest import BuildManifest, IncrementalBuilder
 from .providers import LLMProvider, GeminiProvider, AnthropicProvider
 
 __all__ = [
@@ -37,6 +38,9 @@ __all__ = [
     "DependencyGraph",
     "CircularDependencyError",
     "MissingDependencyError",
+    # Manifest
+    "BuildManifest",
+    "IncrementalBuilder",
     # Providers
     "LLMProvider",
     "GeminiProvider",

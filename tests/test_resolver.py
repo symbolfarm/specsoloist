@@ -8,7 +8,6 @@ from specular.parser import SpecParser
 from specular.resolver import (
     DependencyResolver,
     CircularDependencyError,
-    MissingDependencyError,
 )
 
 
@@ -184,3 +183,55 @@ def test_build_graph_structure(test_env):
     # Check dependents (reverse mapping)
     assert "service" in graph.get_dependents("types")
     assert graph.get_dependents("service") == []
+
+
+def test_parallel_build_order_levels(test_env):
+    """Test that parallel build order groups specs into levels correctly."""
+    src_dir = os.path.join(test_env, "src")
+    #     types    utils
+    #       \      /
+    #        service
+    #          |
+    #         api
+    create_spec(src_dir, "types")
+    create_spec(src_dir, "utils")
+    create_spec(src_dir, "service", deps=["types", "utils"])
+    create_spec(src_dir, "api", deps=["service"])
+
+    parser = SpecParser(src_dir)
+    resolver = DependencyResolver(parser)
+
+    levels = resolver.get_parallel_build_order()
+
+    # Level 0: types and utils (no dependencies, can be parallel)
+    assert set(levels[0]) == {"types", "utils"}
+    # Level 1: service (depends on level 0)
+    assert levels[1] == ["service"]
+    # Level 2: api (depends on level 1)
+    assert levels[2] == ["api"]
+
+
+def test_parallel_build_order_diamond(test_env):
+    """Test parallel build order with diamond dependency pattern."""
+    src_dir = os.path.join(test_env, "src")
+    #     types
+    #    /     \
+    # auth     users
+    #    \     /
+    #      api
+    create_spec(src_dir, "types")
+    create_spec(src_dir, "auth", deps=["types"])
+    create_spec(src_dir, "users", deps=["types"])
+    create_spec(src_dir, "api", deps=["auth", "users"])
+
+    parser = SpecParser(src_dir)
+    resolver = DependencyResolver(parser)
+
+    levels = resolver.get_parallel_build_order()
+
+    # Level 0: types only
+    assert levels[0] == ["types"]
+    # Level 1: auth and users can be parallel
+    assert set(levels[1]) == {"auth", "users"}
+    # Level 2: api
+    assert levels[2] == ["api"]

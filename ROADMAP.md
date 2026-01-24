@@ -22,11 +22,10 @@
 - [x] **Multi-Spec Builds**: `compile_project()` compiles all specs in dependency order.
 - [x] **Affected Specs**: Track which specs need rebuilding when a dependency changes.
 
-## Phase 2b: Build Optimization & Project Config (Next)
-- [ ] **Project-Level Specs**: `project.spec.md` to define global architecture and module boundaries.
-- [ ] **Incremental Builds**: Only recompile specs that have changed.
-- [ ] **Build Caching**: Track file hashes and build manifest.
-- [ ] **Parallel Compilation**: Compile independent specs concurrently.
+## Phase 2b: Build Optimization (Completed)
+- [x] **Incremental Builds**: Only recompile specs that have changed.
+- [x] **Build Caching**: Track file hashes and build manifest (`.specular-manifest.json`).
+- [x] **Parallel Compilation**: Compile independent specs concurrently using `ThreadPoolExecutor`.
 
 ## Phase 3: Release Readiness (v1.0)
 - [ ] **CLI Polish**: Rich terminal output (spinners, colored diffs) for the `specular` command.

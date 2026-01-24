@@ -15,6 +15,8 @@ The module is organized into specialized components:
 - **TestRunner**: Executes tests and manages build artifacts
 - **SpecularConfig**: Configuration management with environment-based loading
 - **LLMProvider**: Protocol for pluggable LLM backends (Gemini, Anthropic)
+- **DependencyResolver**: Resolves spec dependencies and computes build order
+- **BuildManifest**: Tracks file hashes for incremental builds
 
 # 2. Interface Specification
 
@@ -55,6 +57,22 @@ The module is organized into specialized components:
 ### `attempt_fix(name: str, model: Optional[str] = None) -> str`
 *   The "Self-Healing" loop. Analyzes test failures and patches code/tests.
 *   **Returns**: Status message describing applied fixes.
+
+### `compile_project(specs: List[str] = None, model: Optional[str] = None, generate_tests: bool = True, incremental: bool = False, parallel: bool = False, max_workers: int = 4) -> BuildResult`
+*   Compiles multiple specs in dependency order.
+*   If `incremental=True`, only recompiles specs that have changed.
+*   If `parallel=True`, compiles independent specs concurrently.
+*   **Returns**: `BuildResult(success, specs_compiled, specs_skipped, specs_failed, build_order, errors)`.
+
+### `get_build_order(specs: List[str] = None) -> List[str]`
+*   Returns specs in topological order (dependencies before dependents).
+
+### `get_dependency_graph(specs: List[str] = None) -> DependencyGraph`
+*   Returns the dependency graph for inspection.
+
+### `run_all_tests() -> Dict[str, Any]`
+*   Runs tests for all compiled specs.
+*   **Returns**: Dict with overall `success` and per-spec results.
 
 ## 2.2 SpecParser
 
@@ -129,9 +147,59 @@ The module is organized into specialized components:
 
 ## 2.6 LLMProvider Protocol
 
-### `generate(prompt: str, temperature: float = 0.1) -> str`
+### `generate(prompt: str, temperature: float = 0.1, model: Optional[str] = None) -> str`
 *   Sends a prompt to the LLM and returns the generated text.
+*   If `model` is provided, overrides the default model for this call.
 *   Implementations: `GeminiProvider`, `AnthropicProvider`
+
+## 2.7 DependencyResolver
+
+### `__init__(parser: SpecParser)`
+*   Initializes with a parser for reading spec files.
+
+### `build_graph(spec_names: List[str] = None) -> DependencyGraph`
+*   Builds a dependency graph from spec files.
+*   Raises `MissingDependencyError` if a dependency doesn't exist.
+
+### `resolve_build_order(spec_names: List[str] = None) -> List[str]`
+*   Returns specs in topological order via Kahn's algorithm.
+*   Raises `CircularDependencyError` if a cycle is detected.
+
+### `get_parallel_build_order(spec_names: List[str] = None) -> List[List[str]]`
+*   Returns specs grouped into parallelizable levels.
+*   Specs within a level can be compiled concurrently.
+
+### `get_affected_specs(changed_spec: str, graph: DependencyGraph = None) -> List[str]`
+*   Returns all specs that need rebuilding when a spec changes.
+
+## 2.8 BuildManifest
+
+### `__init__()`
+*   Initializes an empty manifest.
+
+### `load(build_dir: str) -> BuildManifest`
+*   Class method to load manifest from `.specular-manifest.json`.
+*   Returns empty manifest if file doesn't exist or is corrupted.
+
+### `save(build_dir: str)`
+*   Saves manifest to the build directory.
+
+### `update_spec(name: str, spec_hash: str, dependencies: List[str], output_files: List[str])`
+*   Updates build info for a spec after successful compilation.
+
+### `get_spec_info(name: str) -> Optional[SpecBuildInfo]`
+*   Returns build info for a spec, or None if never built.
+
+## 2.9 IncrementalBuilder
+
+### `__init__(manifest: BuildManifest, src_dir: str)`
+*   Initializes with a manifest and source directory.
+
+### `needs_rebuild(spec_name: str, current_hash: str, current_deps: List[str], rebuilt_specs: set) -> bool`
+*   Determines if a spec needs rebuilding based on hash, deps, or cascade.
+
+### `get_rebuild_plan(build_order: List[str], spec_hashes: Dict, spec_deps: Dict) -> List[str]`
+*   Returns which specs in the build order need rebuilding.
 
 # 3. Functional Requirements (Behavior)
 
@@ -161,6 +229,22 @@ The module is organized into specialized components:
 *   **FR-13**: The system shall support multiple LLM providers via a common `LLMProvider` protocol.
 *   **FR-14**: Provider selection shall be configurable via environment variables or explicit config.
 *   **FR-15**: The LLM provider shall be lazily initialized on first use.
+
+## Multi-Spec Builds
+*   **FR-16**: Specs may declare dependencies in YAML frontmatter using `dependencies: [{name: X, from: y.spec.md}]` syntax.
+*   **FR-17**: The system shall resolve dependencies using topological sort (Kahn's algorithm).
+*   **FR-18**: The system shall detect and report circular dependencies with the cycle path.
+*   **FR-19**: The system shall support `type: typedef` specs for shared data structures.
+*   **FR-20**: `compile_project` shall compile all specs in dependency order, passing import context.
+
+## Incremental Builds
+*   **FR-21**: The system shall track spec content hashes and build metadata in `.specular-manifest.json`.
+*   **FR-22**: When `incremental=True`, only specs with changed content, changed deps, or rebuilt deps shall be recompiled.
+*   **FR-23**: The manifest shall persist across builds and recover gracefully from corruption.
+
+## Parallel Compilation
+*   **FR-24**: When `parallel=True`, specs at the same dependency level shall be compiled concurrently.
+*   **FR-25**: Parallel compilation shall respect dependency order (level N completes before level N+1).
 
 # 4. Non-Functional Requirements (Constraints)
 
@@ -192,3 +276,10 @@ The module is organized into specialized components:
 | Attempt fix | Failing tests | Files patched, status message | Only named files changed |
 | Config from env | `SPECULAR_LLM_PROVIDER=anthropic` | Config with anthropic provider | Env override works |
 | Provider injection | Mock provider assigned | Mock used for generation | Supports testing |
+| Build order | A depends on B | `["B", "A"]` | Dependencies first |
+| Circular dependency | A -> B -> C -> A | `CircularDependencyError` | Reports cycle path |
+| Diamond dependency | A -> B,C -> D | All built, D last | No duplicate builds |
+| Incremental build | Unchanged spec | `specs_skipped` includes spec | Hash unchanged |
+| Incremental cascade | Dependency changed | Dependents rebuilt | Cascade to dependents |
+| Parallel levels | A,B independent | Both in level 0 | Can compile together |
+| Manifest persistence | Build, reload | Same spec info | Survives restarts |
