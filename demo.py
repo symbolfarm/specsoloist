@@ -23,7 +23,7 @@ def main():
         print(f"Spec {spec_name} already exists, proceeding to overwrite with demo content.")
 
     # 2. Overwrite with a high-quality definition to ensure LLM success
-    spec_path = core._get_spec_path(spec_name)
+    spec_path = core.parser.get_spec_path(spec_name)
     demo_spec_content = """---
 name: math_demo
 type: module

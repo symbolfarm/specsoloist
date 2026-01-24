@@ -16,7 +16,8 @@ dev = [
 ]
 
 [project.scripts]
-specular = "specular.server:main"
+specular = "specular.cli:main"
+specular-mcp = "specular.server:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/specular"]

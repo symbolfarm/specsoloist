@@ -1,14 +1,14 @@
 # Specular
 
-**Specular** is a "Spec-as-Source" AI coding framework. It treats rigorous, SRS-style specifications as the source of truth and uses LLMs (like Google Gemini) to compile them into executable code.
+**Specular** is a "Spec-as-Source" AI coding framework. It treats rigorous, SRS-style specifications as the source of truth and uses LLMs to compile them into executable code.
 
 ## Key Features
 
 -   **Spec-as-Source**: Code is a build artifact. You edit the Spec, not the Python/JS file.
 -   **Contracts over Code**: Define *what* you want (Functional Requirements) and *constraints* (Non-Functional Requirements).
--   **Agent-Native**: Built as a **Model Context Protocol (MCP)** server, making it a powerful skill for AI Agents.
--   **Self-Healing**: Includes an autonomous loop (`attempt_fix`) that analyzes test failures and rewrites code or tests to resolve discrepancies.
--   **Multi-Provider**: Supports multiple LLM backends (Google Gemini, Anthropic Claude) via a pluggable provider system.
+-   **Self-Healing**: An autonomous loop (`attempt_fix`) analyzes test failures and patches code to resolve discrepancies.
+-   **Multi-Provider**: Supports Google Gemini and Anthropic Claude via a pluggable provider system.
+-   **Agent-Native**: Also available as an MCP server for AI agents.
 
 ## Installation
 
@@ -19,55 +19,75 @@ cd specular
 uv sync
 ```
 
-## Quick Start (Demo)
-
-We have included a robust end-to-end demo that creates a component, generates code/tests, encounters a bug, and **automatically fixes it**.
+## Quick Start
 
 ```bash
+# Set your API key
 export GEMINI_API_KEY="your-key-here"
-uv run python3 demo.py
+
+# Create a new spec
+specular create calculator "A simple calculator with add and multiply"
+
+# Edit src/calculator.spec.md to define your requirements...
+
+# Compile to code
+specular compile calculator
+
+# Run the generated tests
+specular test calculator
+
+# If tests fail, auto-fix
+specular fix calculator
 ```
 
-## Usage
+## CLI Reference
 
-### As an MCP Server (Recommended for Agents)
-
-Add this to your Claude Desktop or Agent configuration:
-
-```json
-"specular": {
-  "command": "uv",
-  "args": ["run", "specular"],
-  "env": {
-    "GEMINI_API_KEY": "your-key-here"
-  }
-}
+```
+specular list                     List all specs in src/
+specular create <name> <desc>     Create a new spec from template
+specular validate <name>          Check spec structure
+specular compile <name>           Compile spec to code + tests
+specular test <name>              Run tests for a spec
+specular fix <name>               Auto-fix failing tests
+specular build                    Compile all specs in dependency order
+  --incremental                   Only recompile changed specs
+  --parallel                      Compile independent specs concurrently
 ```
 
-### Supported LLM Providers
-
-Specular supports multiple LLM providers via environment variables:
+## LLM Providers
 
 **Google Gemini (default)**
 ```bash
 export GEMINI_API_KEY="your-key-here"
-# Optionally specify model
-export SPECULAR_LLM_MODEL="gemini-2.0-flash"
+export SPECULAR_LLM_MODEL="gemini-2.0-flash"  # optional
 ```
 
 **Anthropic Claude**
 ```bash
 export SPECULAR_LLM_PROVIDER="anthropic"
 export ANTHROPIC_API_KEY="your-key-here"
-# Optionally specify model
-export SPECULAR_LLM_MODEL="claude-sonnet-4-20250514"
+export SPECULAR_LLM_MODEL="claude-sonnet-4-20250514"  # optional
 ```
+
+## MCP Server (for AI Agents)
+
+Specular can run as an MCP server for Claude Desktop or other AI agents:
+
+```json
+"specular": {
+  "command": "uv",
+  "args": ["run", "specular-mcp"],
+  "env": {
+    "GEMINI_API_KEY": "your-key-here"
+  }
+}
+```
+
+Or use the CLI: `specular mcp`
 
 ## Development
 
-Managed with `uv`.
-
 ```bash
-uv run specular  # Runs the MCP server
-uv run pytest    # Runs the framework's own unit tests
+uv run pytest    # Run tests
+uv run ruff check src/  # Lint
 ```
