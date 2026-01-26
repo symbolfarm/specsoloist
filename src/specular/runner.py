@@ -5,7 +5,9 @@ Test execution and result handling.
 import os
 import subprocess
 from dataclasses import dataclass
-from typing import Optional
+from typing import Dict, List, Optional
+
+from .config import SpecularConfig, LanguageConfig
 
 
 @dataclass
@@ -19,51 +21,71 @@ class TestResult:
 class TestRunner:
     """Handles test execution for compiled specs."""
 
-    def __init__(self, build_dir: str):
+    def __init__(self, build_dir: str, config: Optional[SpecularConfig] = None):
         self.build_dir = os.path.abspath(build_dir)
+        # If no config provided, we'll have to fall back to hardcoded defaults or raise
+        self.config = config
 
-    def get_test_path(self, module_name: str) -> str:
+    def _get_lang_config(self, language: str = "python") -> LanguageConfig:
+        """Helper to get language config from SpecularConfig."""
+        if not self.config or language not in self.config.languages:
+            # Fallback to a default if config is missing (for backwards compatibility)
+            if language == "python":
+                return LanguageConfig(
+                    extension=".py",
+                    test_extension=".py",
+                    test_filename_pattern="test_{name}",
+                    test_command=["pytest", "{file}"],
+                    env_vars={"PYTHONPATH": "{build_dir}"}
+                )
+            raise ValueError(f"No configuration found for language: {language}")
+        return self.config.languages[language]
+
+    def get_test_path(self, module_name: str, language: str = "python") -> str:
         """Returns the path to the test file for a module."""
-        return os.path.join(self.build_dir, f"test_{module_name}.py")
+        cfg = self._get_lang_config(language)
+        filename = cfg.test_filename_pattern.format(name=module_name) + cfg.test_extension
+        return os.path.join(self.build_dir, filename)
 
-    def get_code_path(self, module_name: str) -> str:
+    def get_code_path(self, module_name: str, language: str = "python") -> str:
         """Returns the path to the implementation file for a module."""
-        return os.path.join(self.build_dir, f"{module_name}.py")
+        cfg = self._get_lang_config(language)
+        return os.path.join(self.build_dir, f"{module_name}{cfg.extension}")
 
-    def test_exists(self, module_name: str) -> bool:
+    def test_exists(self, module_name: str, language: str = "python") -> bool:
         """Checks if a test file exists for the module."""
-        return os.path.exists(self.get_test_path(module_name))
+        return os.path.exists(self.get_test_path(module_name, language))
 
-    def code_exists(self, module_name: str) -> bool:
+    def code_exists(self, module_name: str, language: str = "python") -> bool:
         """Checks if an implementation file exists for the module."""
-        return os.path.exists(self.get_code_path(module_name))
+        return os.path.exists(self.get_code_path(module_name, language))
 
-    def read_code(self, module_name: str) -> Optional[str]:
+    def read_code(self, module_name: str, language: str = "python") -> Optional[str]:
         """Reads the implementation file content."""
-        path = self.get_code_path(module_name)
+        path = self.get_code_path(module_name, language)
         if not os.path.exists(path):
             return None
         with open(path, 'r') as f:
             return f.read()
 
-    def read_tests(self, module_name: str) -> Optional[str]:
+    def read_tests(self, module_name: str, language: str = "python") -> Optional[str]:
         """Reads the test file content."""
-        path = self.get_test_path(module_name)
+        path = self.get_test_path(module_name, language)
         if not os.path.exists(path):
             return None
         with open(path, 'r') as f:
             return f.read()
 
-    def write_code(self, module_name: str, content: str) -> str:
+    def write_code(self, module_name: str, content: str, language: str = "python") -> str:
         """Writes implementation code to the build directory."""
-        path = self.get_code_path(module_name)
+        path = self.get_code_path(module_name, language)
         with open(path, 'w') as f:
             f.write(content)
         return path
 
-    def write_tests(self, module_name: str, content: str) -> str:
+    def write_tests(self, module_name: str, content: str, language: str = "python") -> str:
         """Writes test code to the build directory."""
-        path = self.get_test_path(module_name)
+        path = self.get_test_path(module_name, language)
         with open(path, 'w') as f:
             f.write(content)
         return path
@@ -80,31 +102,36 @@ class TestRunner:
             f.write(content)
         return target_path
 
-    def run_tests(self, module_name: str) -> TestResult:
+    def run_tests(self, module_name: str, language: str = "python") -> TestResult:
         """
-        Runs pytest on the test file for a module.
-        Returns a TestResult with success status and output.
+        Runs the test command for a module based on its language configuration.
         """
-        test_path = self.get_test_path(module_name)
+        cfg = self._get_lang_config(language)
+        test_path = self.get_test_path(module_name, language)
 
         if not os.path.exists(test_path):
             return TestResult(
                 success=False,
-                output="Test file not found. Run compile_tests() first.",
+                output=f"Test file not found at {test_path}. Compile first.",
                 return_code=-1
             )
 
-        # Set up environment with build_dir in PYTHONPATH
+        # Prepare environment
         env = os.environ.copy()
-        env["PYTHONPATH"] = self.build_dir + os.pathsep + env.get("PYTHONPATH", "")
+        for k, v in cfg.env_vars.items():
+            # Inject build_dir if placeholder used
+            env[k] = v.format(build_dir=self.build_dir) + os.pathsep + env.get(k, "")
+
+        # Prepare command
+        cmd = [part.format(file=test_path) for part in cfg.test_command]
 
         try:
             result = subprocess.run(
-                ["pytest", test_path],
+                cmd,
                 env=env,
                 capture_output=True,
                 text=True,
-                check=False  # We handle return code manually
+                check=False
             )
 
             return TestResult(
@@ -115,6 +142,12 @@ class TestRunner:
         except FileNotFoundError:
             return TestResult(
                 success=False,
-                output="pytest command not found. Is pytest installed?",
+                output=f"Command not found: {cmd[0]}",
+                return_code=-1
+            )
+        except Exception as e:
+            return TestResult(
+                success=False,
+                output=f"Execution error: {str(e)}",
                 return_code=-1
             )

@@ -72,7 +72,7 @@ class SpecularCore:
 
         # Initialize components
         self.parser = SpecParser(self.config.src_path)
-        self.runner = TestRunner(self.config.build_path)
+        self.runner = TestRunner(self.config.build_path, config=self.config)
         self.resolver = DependencyResolver(self.parser)
         self._compiler: Optional[SpecCompiler] = None
         self._provider: Optional[LLMProvider] = None
@@ -186,7 +186,9 @@ class SpecularCore:
 
         # Write output
         module_name = self.parser.get_module_name(name)
-        output_path = self.runner.write_code(module_name, code)
+        output_path = self.runner.write_code(
+            module_name, code, language=spec.metadata.language_target
+        )
 
         return f"Compiled to {output_path}"
 
@@ -211,7 +213,9 @@ class SpecularCore:
         code = compiler.compile_tests(spec, model=model)
 
         module_name = self.parser.get_module_name(name)
-        output_path = self.runner.write_tests(module_name, code)
+        output_path = self.runner.write_tests(
+            module_name, code, language=spec.metadata.language_target
+        )
 
         return f"Generated tests at {output_path}"
 
@@ -369,6 +373,7 @@ class SpecularCore:
         try:
             # Parse spec for metadata
             spec = self.parser.parse_spec(spec_name)
+            lang = spec.metadata.language_target
             spec_hash = compute_content_hash(spec.content)
             deps = [d.get("from", "").replace(".spec.md", "")
                     for d in spec.metadata.dependencies
@@ -377,11 +382,15 @@ class SpecularCore:
             # Compile the spec
             self.compile_spec(spec_name, model=model)
 
+            # Determine output files from config
+            code_path = os.path.basename(self.runner.get_code_path(spec_name, language=lang))
+            output_files = [code_path]
+            
             # Generate tests if requested and not a typedef
-            output_files = [f"{spec_name}.py"]
             if generate_tests and spec.metadata.type != "typedef":
                 self.compile_tests(spec_name, model=model)
-                output_files.append(f"test_{spec_name}.py")
+                test_path = os.path.basename(self.runner.get_test_path(spec_name, language=lang))
+                output_files.append(test_path)
 
             # Update manifest
             manifest = self._get_manifest()
@@ -449,8 +458,11 @@ class SpecularCore:
         Returns:
             Dict with 'success' (bool) and 'output' (str) keys.
         """
+        spec = self.parser.parse_spec(name)
         module_name = self.parser.get_module_name(name)
-        result = self.runner.run_tests(module_name)
+        result = self.runner.run_tests(
+            module_name, language=spec.metadata.language_target
+        )
         return {
             "success": result.success,
             "output": result.output
@@ -470,6 +482,7 @@ class SpecularCore:
         for spec_file in specs:
             spec_name = spec_file.replace(".spec.md", "")
             spec = self.parser.parse_spec(spec_name)
+            lang = spec.metadata.language_target
 
             # Skip typedef specs (no tests)
             if spec.metadata.type == "typedef":
@@ -477,7 +490,7 @@ class SpecularCore:
                 continue
 
             # Check if test file exists
-            if not self.runner.test_exists(spec_name):
+            if not self.runner.test_exists(spec_name, language=lang):
                 results[spec_name] = {"success": True, "output": "No tests found"}
                 continue
 
@@ -510,16 +523,17 @@ class SpecularCore:
             Status message describing what was fixed.
         """
         module_name = self.parser.get_module_name(name)
+        spec = self.parser.parse_spec(name)
+        lang = spec.metadata.language_target
 
         # 1. Run tests to get current error
-        result = self.runner.run_tests(module_name)
+        result = self.runner.run_tests(module_name, language=lang)
         if result.success:
             return "Tests already passed. No fix needed."
 
         # 2. Gather context
-        spec = self.parser.parse_spec(name)
-        code_content = self.runner.read_code(module_name) or ""
-        test_content = self.runner.read_tests(module_name) or ""
+        code_content = self.runner.read_code(module_name, language=lang) or ""
+        test_content = self.runner.read_tests(module_name, language=lang) or ""
 
         # 3. Generate fix
         compiler = self._get_compiler()

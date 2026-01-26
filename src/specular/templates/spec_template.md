@@ -1,8 +1,8 @@
 ---
 name: [Component Name]
-type: [function | class | module | typedef]
-language_target: [python | typescript | etc]
-status: [draft | stable]
+type: function
+language_target: python
+status: draft
 dependencies: []
   # - name: TypeName
   #   from: other.spec.md

@@ -178,11 +178,16 @@ class SpecParser:
         if not isinstance(raw, dict):
             raw = {}
 
-        # Extract known fields
         metadata.name = raw.get("name", "")
         metadata.description = raw.get("description", "")
         metadata.type = raw.get("type", "function")
-        metadata.language_target = raw.get("language_target", "python")
+        
+        target = raw.get("language_target", "python")
+        if isinstance(target, list) and target:
+            metadata.language_target = str(target[0])
+        else:
+            metadata.language_target = str(target)
+            
         metadata.status = raw.get("status", "draft")
 
         # Parse dependencies (Phase 2a format)

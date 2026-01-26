@@ -4,9 +4,19 @@ Configuration management for Specular.
 
 import os
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Dict, List, Optional
 
 from .providers import LLMProvider, GeminiProvider, AnthropicProvider
+
+
+@dataclass
+class LanguageConfig:
+    """Configuration for a specific programming language."""
+    extension: str
+    test_extension: str
+    test_filename_pattern: str  # e.g., "test_{name}" or "{name}.test"
+    test_command: List[str]      # e.g., ["pytest", "{file}"]
+    env_vars: Dict[str, str] = field(default_factory=dict)
 
 
 @dataclass
@@ -29,6 +39,24 @@ class SpecularConfig:
     root_dir: str = "."
     src_dir: str = "src"
     build_dir: str = "build"
+
+    # Language Configuration
+    languages: Dict[str, LanguageConfig] = field(default_factory=lambda: {
+        "python": LanguageConfig(
+            extension=".py",
+            test_extension=".py",
+            test_filename_pattern="test_{name}",
+            test_command=["pytest", "{file}"],
+            env_vars={"PYTHONPATH": "{build_dir}"}
+        ),
+        "typescript": LanguageConfig(
+            extension=".ts",
+            test_extension=".test.ts",
+            test_filename_pattern="{name}.test",
+            test_command=["npm", "test", "--", "{file}"],
+            env_vars={}
+        )
+    })
 
     # Computed paths (set in __post_init__)
     src_path: str = field(init=False, default="")
