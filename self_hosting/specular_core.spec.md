@@ -17,6 +17,7 @@ The module is organized into specialized components:
 - **LLMProvider**: Protocol for pluggable LLM backends (Gemini, Anthropic)
 - **DependencyResolver**: Resolves spec dependencies and computes build order
 - **BuildManifest**: Tracks file hashes for incremental builds
+- **UI**: Provides rich terminal output and progress indicators
 
 # 2. Interface Specification
 
@@ -87,6 +88,7 @@ The module is organized into specialized components:
 
 ### `parse_spec(name: str) -> ParsedSpec`
 *   Parses a spec into structured data: `ParsedSpec(metadata, content, body, path)`.
+*   **Behavior**: If `description` is missing from frontmatter, extracts the first non-empty line from the "# 1. Overview" section.
 
 ### `validate_spec(name: str) -> Dict[str, Any]`
 *   Checks for required sections (Overview, Interface, FRs, NFRs, Design Contract).
@@ -201,10 +203,24 @@ The module is organized into specialized components:
 ### `get_rebuild_plan(build_order: List[str], spec_hashes: Dict, spec_deps: Dict) -> List[str]`
 *   Returns which specs in the build order need rebuilding.
 
+## 2.10 UI (Terminal Output)
+
+### `print_header(title: str, subtitle: str = "")`
+*   Displays a styled panel with a blue title.
+
+### `print_success(message: str) / print_error(message: str) / print_warning(message: str)`
+*   Displays themed status messages with icons.
+
+### `create_table(columns: List[str], title: Optional[str] = None) -> Table`
+*   Returns a Rich Table object with standard styling.
+
+### `spinner(message: str) -> Status`
+*   Returns a context manager for a "dots" spinner.
+
 # 3. Functional Requirements (Behavior)
 
 ## Module Organization
-*   **FR-01**: The system shall be organized into specialized modules (parser, compiler, runner, config, providers) with SpecularCore as the thin orchestrator.
+*   **FR-01**: The system shall be organized into specialized modules (parser, compiler, runner, config, providers, ui) with SpecularCore as the thin orchestrator.
 *   **FR-02**: Each module shall have a single responsibility and be independently testable.
 
 ## File Management
@@ -246,9 +262,13 @@ The module is organized into specialized components:
 *   **FR-24**: When `parallel=True`, specs at the same dependency level shall be compiled concurrently.
 *   **FR-25**: Parallel compilation shall respect dependency order (level N completes before level N+1).
 
+## UI and Feedback
+*   **FR-26**: The CLI shall use the `rich` library to provide formatted tables, colored output, and spinners for asynchronous operations.
+*   **FR-27**: Tables for `list` and `build` commands shall include metadata like type, status, and description.
+
 # 4. Non-Functional Requirements (Constraints)
 
-*   **NFR-Dependencies**: Runtime dependencies limited to Python Standard Library (urllib, json, os, subprocess, dataclasses). No `requests`, `openai`, or `anthropic` packages.
+*   **NFR-Dependencies**: Runtime dependencies limited to Python Standard Library plus `pyyaml`, `rich`, and `mcp`.
 *   **NFR-Security**: File writes constrained to configured directories (no path traversal). API keys never logged or exposed.
 *   **NFR-Robustness**: All API calls include error handling with descriptive exceptions.
 *   **NFR-Testability**: All components support dependency injection for testing (mock providers).
