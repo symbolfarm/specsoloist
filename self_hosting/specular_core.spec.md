@@ -115,11 +115,12 @@ The module is organized into specialized components:
 
 ## 2.4 TestRunner
 
-### `__init__(build_dir: str)`
-*   Initializes with the build directory path.
+### `__init__(build_dir: str, config: Optional[SpecularConfig] = None)`
+*   Initializes with build directory and optional configuration.
 
-### `run_tests(module_name: str) -> TestResult`
-*   Executes pytest and returns `TestResult(success, output, return_code)`.
+### `run_tests(module_name: str, language: str = "python") -> TestResult`
+*   Executes the test command defined in the language configuration.
+*   Resolves placeholders like `{file}` and `{build_dir}` in commands and environment variables.
 
 ### `write_code(module_name: str, content: str) -> str`
 *   Writes implementation code to build directory.
@@ -146,6 +147,9 @@ The module is organized into specialized components:
 
 ### `ensure_directories()`
 *   Creates `src/` and `build/` directories if they don't exist.
+
+### `languages: Dict[str, LanguageConfig]`
+*   A mapping of language names to their execution configurations (extensions, commands, env vars).
 
 ## 2.6 LLMProvider Protocol
 
