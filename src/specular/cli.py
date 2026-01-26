@@ -16,6 +16,8 @@ import sys
 import os
 
 from .core import SpecularCore
+from .resolver import CircularDependencyError, MissingDependencyError
+from . import ui
 
 
 def main():
@@ -71,100 +73,158 @@ def main():
         sys.exit(0)
 
     # Initialize core
-    core = SpecularCore(os.getcwd())
+    try:
+        core = SpecularCore(os.getcwd())
+    except Exception as e:
+        ui.print_error(f"Failed to initialize Specular: {e}")
+        sys.exit(1)
 
-    if args.command == "list":
-        cmd_list(core)
-    elif args.command == "create":
-        cmd_create(core, args.name, args.description, args.type)
-    elif args.command == "validate":
-        cmd_validate(core, args.name)
-    elif args.command == "compile":
-        cmd_compile(core, args.name, args.model, not args.no_tests)
-    elif args.command == "test":
-        cmd_test(core, args.name)
-    elif args.command == "fix":
-        cmd_fix(core, args.name, args.model)
-    elif args.command == "build":
-        cmd_build(core, args.incremental, args.parallel, args.workers, args.model, not args.no_tests)
-    elif args.command == "mcp":
-        cmd_mcp()
+    try:
+        if args.command == "list":
+            cmd_list(core)
+        elif args.command == "create":
+            cmd_create(core, args.name, args.description, args.type)
+        elif args.command == "validate":
+            cmd_validate(core, args.name)
+        elif args.command == "compile":
+            cmd_compile(core, args.name, args.model, not args.no_tests)
+        elif args.command == "test":
+            cmd_test(core, args.name)
+        elif args.command == "fix":
+            cmd_fix(core, args.name, args.model)
+        elif args.command == "build":
+            cmd_build(core, args.incremental, args.parallel, args.workers, args.model, not args.no_tests)
+        elif args.command == "mcp":
+            cmd_mcp()
+    except KeyboardInterrupt:
+        ui.print_warning("\nOperation cancelled by user.")
+        sys.exit(130)
+    except CircularDependencyError as e:
+        ui.print_error(str(e))
+        sys.exit(1)
+    except MissingDependencyError as e:
+        ui.print_error(str(e))
+        sys.exit(1)
+    except Exception as e:
+        ui.print_error(f"Unexpected error: {e}")
+        # In verbose mode, we might want to print the stack trace
+        sys.exit(1)
 
 
 def cmd_list(core: SpecularCore):
     specs = core.list_specs()
     if not specs:
-        print("No specs found in src/")
-        print("Create one with: specular create <name> '<description>'")
+        ui.print_warning("No specs found in src/")
+        ui.print_info("Create one with: specular create <name> '<description>'")
         return
-    print(f"Found {len(specs)} spec(s):")
-    for spec in specs:
-        print(f"  - {spec}")
+
+    table = ui.create_table(["Name", "Type", "Status", "Description"], title="Project Specifications")
+
+    for spec_file in specs:
+        try:
+            name = spec_file.replace(".spec.md", "")
+            # Parse to get metadata
+            parsed = core.parser.parse_spec(name)
+            meta = parsed.metadata
+            
+            # Color code status
+            status_style = "green" if meta.status == "stable" else "yellow"
+            
+            table.add_row(
+                f"[bold]{name}[/]", 
+                meta.type,
+                f"[{status_style}]{meta.status}[/]",
+                meta.description or ""
+            )
+        except Exception as e:
+            # Fallback for unparseable specs
+            table.add_row(spec_file, "???", "error", f"Error: {str(e)}")
+
+    ui.console.print(table)
 
 
 def cmd_create(core: SpecularCore, name: str, description: str, spec_type: str):
+    ui.print_header("Creating Spec", name)
     try:
-        result = core.create_spec(name, description, type=spec_type)
-        print(result)
+        path = core.create_spec(name, description, type=spec_type)
+        ui.print_success(f"Created spec at: [bold]{path}[/]")
     except FileExistsError:
-        print(f"Error: {name}.spec.md already exists")
+        ui.print_error(f"Spec already exists: {name}.spec.md")
         sys.exit(1)
 
 
 def cmd_validate(core: SpecularCore, name: str):
+    ui.print_header("Validating Spec", name)
     result = core.validate_spec(name)
+    
     if result["valid"]:
-        print(f"{name}: VALID")
+        ui.print_success(f"{name} is VALID")
     else:
-        print(f"{name}: INVALID")
+        ui.print_error(f"{name} is INVALID")
         for error in result["errors"]:
-            print(f"  - {error}")
+            ui.print_step(f"[red]{error}[/]")
         sys.exit(1)
 
 
 def cmd_compile(core: SpecularCore, name: str, model: str, generate_tests: bool):
     _check_api_key()
+    
+    ui.print_header("Compiling Spec", name)
+
+    # Validate first
+    validation = core.validate_spec(name)
+    if not validation["valid"]:
+        ui.print_error("Invalid spec")
+        for error in validation["errors"]:
+            ui.print_step(f"[red]{error}[/]")
+        sys.exit(1)
 
     try:
-        # Validate first
-        validation = core.validate_spec(name)
-        if not validation["valid"]:
-            print("Error: Invalid spec")
-            for error in validation["errors"]:
-                print(f"  - {error}")
-            sys.exit(1)
-
         # Compile code
-        print(f"Compiling {name}...")
-        result = core.compile_spec(name, model=model)
-        print(result)
+        with ui.spinner(f"Compiling [bold]{name}[/] implementation..."):
+            result = core.compile_spec(name, model=model)
+        ui.print_success(result)
 
         # Generate tests
         if generate_tests:
             spec = core.parser.parse_spec(name)
             if spec.metadata.type != "typedef":
-                print("Generating tests...")
-                result = core.compile_tests(name, model=model)
-                print(result)
+                with ui.spinner(f"Generating tests for [bold]{name}[/]..."):
+                    result = core.compile_tests(name, model=model)
+                ui.print_success(result)
+            else:
+                ui.print_info("Skipping tests for typedef spec")
 
     except Exception as e:
-        print(f"Error: {e}")
+        ui.print_error(str(e))
         sys.exit(1)
 
 
 def cmd_test(core: SpecularCore, name: str):
-    result = core.run_tests(name)
-    print(result["output"])
-    if not result["success"]:
+    ui.print_header("Running Tests", name)
+    
+    with ui.spinner(f"Running tests for [bold]{name}[/]..."):
+        result = core.run_tests(name)
+    
+    if result["success"]:
+        ui.print_success("Tests PASSED")
+        # Only show output if verbose? For now, nice to see summary
+        # ui.console.print(Panel(result["output"], title="Output", border_style="dim"))
+    else:
+        ui.print_error("Tests FAILED")
+        ui.console.print(ui.Panel(result["output"], title="Failure Output", border_style="red"))
         sys.exit(1)
 
 
 def cmd_fix(core: SpecularCore, name: str, model: str):
     _check_api_key()
 
-    print(f"Analyzing failures and generating fix for {name}...")
-    result = core.attempt_fix(name, model=model)
-    print(result)
+    ui.print_header("Auto-Fixing Spec", name)
+    
+    with ui.spinner(f"Analyzing [bold]{name}[/] failures and generating fix..."):
+        result = core.attempt_fix(name, model=model)
+    
+    ui.print_success(result)
 
 
 def cmd_build(core: SpecularCore, incremental: bool, parallel: bool, workers: int, model: str, generate_tests: bool):
@@ -172,39 +232,46 @@ def cmd_build(core: SpecularCore, incremental: bool, parallel: bool, workers: in
 
     specs = core.list_specs()
     if not specs:
-        print("No specs found in src/")
+        ui.print_warning("No specs found in src/")
         sys.exit(1)
 
-    mode = []
-    if incremental:
-        mode.append("incremental")
-    if parallel:
-        mode.append("parallel")
-    mode_str = f" ({', '.join(mode)})" if mode else ""
+    mode_parts = []
+    if incremental: mode_parts.append("incremental")
+    if parallel: mode_parts.append(f"parallel-{workers}")
+    mode_str = f"[{', '.join(mode_parts)}]" if mode_parts else "[full]"
 
-    print(f"Building {len(specs)} spec(s){mode_str}...")
+    ui.print_header("Building Project", f"{len(specs)} specs {mode_str}")
 
-    result = core.compile_project(
-        model=model,
-        generate_tests=generate_tests,
-        incremental=incremental,
-        parallel=parallel,
-        max_workers=workers
-    )
+    with ui.spinner("Compiling project..."):
+        result = core.compile_project(
+            model=model,
+            generate_tests=generate_tests,
+            incremental=incremental,
+            parallel=parallel,
+            max_workers=workers
+        )
 
-    if result.specs_compiled:
-        print(f"Compiled: {', '.join(result.specs_compiled)}")
-    if result.specs_skipped:
-        print(f"Skipped (unchanged): {', '.join(result.specs_skipped)}")
-    if result.specs_failed:
-        print(f"Failed: {', '.join(result.specs_failed)}")
-        for name, error in result.errors.items():
-            print(f"  {name}: {error}")
+    # Summary Table
+    table = ui.create_table(["Result", "Spec", "Details"], title="Build Summary")
+    
+    for spec in result.specs_compiled:
+        table.add_row("[green]Compiled[/]", spec, "Success")
+    
+    for spec in result.specs_skipped:
+        table.add_row("[dim]Skipped[/]", spec, "Unchanged")
+        
+    for spec in result.specs_failed:
+        error = result.errors.get(spec, "Unknown error")
+        # Truncate long errors
+        if len(error) > 50: error = error[:47] + "..."
+        table.add_row("[red]Failed[/]", spec, error)
+
+    ui.console.print(table)
 
     if result.success:
-        print("Build complete.")
+        ui.print_success("Build complete.")
     else:
-        print("Build failed.")
+        ui.print_error("Build failed.")
         sys.exit(1)
 
 
@@ -218,12 +285,12 @@ def _check_api_key():
     """Check that an API key is configured."""
     provider = os.environ.get("SPECULAR_LLM_PROVIDER", "gemini")
     if provider == "gemini" and "GEMINI_API_KEY" not in os.environ:
-        print("Error: GEMINI_API_KEY not set")
-        print("Run: export GEMINI_API_KEY='your-key-here'")
+        ui.print_error("GEMINI_API_KEY not set")
+        ui.print_info("Run: export GEMINI_API_KEY='your-key-here'")
         sys.exit(1)
     elif provider == "anthropic" and "ANTHROPIC_API_KEY" not in os.environ:
-        print("Error: ANTHROPIC_API_KEY not set")
-        print("Run: export ANTHROPIC_API_KEY='your-key-here'")
+        ui.print_error("ANTHROPIC_API_KEY not set")
+        ui.print_info("Run: export ANTHROPIC_API_KEY='your-key-here'")
         sys.exit(1)
 
 

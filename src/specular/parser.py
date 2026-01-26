@@ -14,6 +14,7 @@ import yaml
 class SpecMetadata:
     """Parsed frontmatter from a spec file."""
     name: str = ""
+    description: str = ""
     type: str = "function"  # function | class | module | typedef
     language_target: str = "python"
     status: str = "draft"
@@ -127,6 +128,27 @@ class SpecParser:
         metadata = self._parse_frontmatter(content)
         body = self._strip_frontmatter(content)
 
+        # Fallback: Extract description from Overview if missing
+        if not metadata.description and "# 1. Overview" in body:
+            try:
+                # Find content between "1. Overview" and the next section header
+                parts = body.split("# 1. Overview", 1)[1]
+                # Split by next header (start with #)
+                overview_text = ""
+                for line in parts.splitlines():
+                    line = line.strip()
+                    if not line:
+                        continue
+                    if line.startswith("#"):
+                        break
+                    overview_text = line
+                    break # Take first non-empty line
+                
+                if overview_text:
+                    metadata.description = overview_text
+            except Exception:
+                pass  # Keep empty if extraction fails
+
         return ParsedSpec(
             metadata=metadata,
             content=content,
@@ -158,6 +180,7 @@ class SpecParser:
 
         # Extract known fields
         metadata.name = raw.get("name", "")
+        metadata.description = raw.get("description", "")
         metadata.type = raw.get("type", "function")
         metadata.language_target = raw.get("language_target", "python")
         metadata.status = raw.get("status", "draft")
