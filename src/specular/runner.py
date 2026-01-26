@@ -5,7 +5,7 @@ Test execution and result handling.
 import os
 import subprocess
 from dataclasses import dataclass
-from typing import Dict, List, Optional
+from typing import Optional
 
 from .config import SpecularConfig, LanguageConfig
 

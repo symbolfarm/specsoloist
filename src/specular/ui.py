@@ -2,7 +2,7 @@
 UI module for Specular CLI using Rich.
 """
 
-from typing import List, Optional, Dict, Any
+from typing import List, Optional
 from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel

@@ -4,7 +4,6 @@ Tests for SpecParser.
 
 import os
 import tempfile
-import pytest
 from specular.parser import SpecParser
 
 

@@ -236,8 +236,10 @@ def cmd_build(core: SpecularCore, incremental: bool, parallel: bool, workers: in
         sys.exit(1)
 
     mode_parts = []
-    if incremental: mode_parts.append("incremental")
-    if parallel: mode_parts.append(f"parallel-{workers}")
+    if incremental:
+        mode_parts.append("incremental")
+    if parallel:
+        mode_parts.append(f"parallel-{workers}")
     mode_str = f"[{', '.join(mode_parts)}]" if mode_parts else "[full]"
 
     ui.print_header("Building Project", f"{len(specs)} specs {mode_str}")
@@ -263,7 +265,8 @@ def cmd_build(core: SpecularCore, incremental: bool, parallel: bool, workers: in
     for spec in result.specs_failed:
         error = result.errors.get(spec, "Unknown error")
         # Truncate long errors
-        if len(error) > 50: error = error[:47] + "..."
+        if len(error) > 50:
+            error = error[:47] + "..."
         table.add_row("[red]Failed[/]", spec, error)
 
     ui.console.print(table)

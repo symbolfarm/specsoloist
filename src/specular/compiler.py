@@ -184,13 +184,9 @@ Your task is to write a comprehensive unit test suite for the component describe
         
         # Simple extension mapping (could use config, but this is prompt-side)
         ext = ".py"
-        test_ext = ".py"
-        test_prefix = "test_"
         
         if language.lower() in ["typescript", "ts"]:
             ext = ".ts"
-            test_ext = ".test.ts"
-            test_prefix = ""
             # for TS, test file pattern is usually module.test.ts
             test_filename = f"{module_name}.test.ts"
         else:

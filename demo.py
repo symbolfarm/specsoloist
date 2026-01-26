@@ -84,7 +84,7 @@ A library for mathematical operations including factorial calculation and primal
     print(core.compile_tests(spec_name))
 
     # 5. Run Tests
-    print(f"4. Running tests...")
+    print("4. Running tests...")
     result = core.run_tests(spec_name)
     
     if result["success"]:
