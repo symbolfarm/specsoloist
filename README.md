@@ -44,6 +44,17 @@ specular test calculator
 specular fix calculator
 ```
 
+## The Workflow
+
+Specular isn't just a code generator; it's an architecture tool.
+
+1.  **Architecture First**: Define your data types (`types.spec.md`) before your logic.
+2.  **Leaves-Up Strategy**: Build dependencies (utils, helpers) before the core business logic.
+3.  **The Loop**:
+    *   **Edit Spec** -> `specular compile` -> `specular test`.
+    *   **Failure?** -> `specular fix` (Let the AI patch the code).
+    *   **Ambiguity?** -> Refine the Spec (don't touch the code).
+
 ## CLI Reference
 
 ```

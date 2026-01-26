@@ -40,6 +40,8 @@ markdown_extensions:
 nav:
   - Home: index.md
   - Getting Started: getting_started.md
+  - Guide:
+      - The Workflow: guide/workflow.md
   - Core Concepts:
       - Spec-as-Source: concepts/spec_as_source.md
       - Self-Healing: concepts/self_healing.md
