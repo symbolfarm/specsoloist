@@ -133,6 +133,14 @@ Your task is to define the data types described in the following specification.
         language = spec.metadata.language_target
         module_name = spec.metadata.name or spec.path.replace(".spec.md", "")
 
+        test_instructions = "1. Write a standard test file (e.g., using `pytest` for Python)."
+        if language.lower() in ["typescript", "javascript", "ts", "js"]:
+            test_instructions = (
+                "1. Use the Node.js built-in test runner: `import { describe, it } from 'node:test';` "
+                "and `import assert from 'node:assert';`.\n"
+                "2. Do NOT use Jest, Mocha, or Chai."
+            )
+
         prompt = f"""
 You are an expert QA Engineer specialized in {language}.
 Your task is to write a comprehensive unit test suite for the component described below.
@@ -141,7 +149,7 @@ Your task is to write a comprehensive unit test suite for the component describe
 {spec.body}
 
 # Instructions
-1. Write a standard test file (e.g., using `pytest` for Python).
+{test_instructions}
 2. The component implementation will be in a module named `{module_name}`. Import it like `from {module_name} import ...`.
 3. Implement a test case for EVERY scenario listed in the 'Test Scenarios' section of the spec.
 4. Implement additional edge cases based on the 'Design Contract' (Pre/Post-conditions).
@@ -172,6 +180,21 @@ Your task is to write a comprehensive unit test suite for the component describe
             The raw LLM response with FILE markers.
         """
         module_name = spec.metadata.name or spec.path.replace(".spec.md", "")
+        language = spec.metadata.language_target
+        
+        # Simple extension mapping (could use config, but this is prompt-side)
+        ext = ".py"
+        test_ext = ".py"
+        test_prefix = "test_"
+        
+        if language.lower() in ["typescript", "ts"]:
+            ext = ".ts"
+            test_ext = ".test.ts"
+            test_prefix = ""
+            # for TS, test file pattern is usually module.test.ts
+            test_filename = f"{module_name}.test.ts"
+        else:
+            test_filename = f"test_{module_name}.py"
 
         prompt = f"""
 You are a Senior Software Engineer tasked with fixing a build failure.
@@ -180,10 +203,10 @@ Analyze the discrepancy between the Code, the Test, and the Specification.
 # 1. The Specification (Source of Truth)
 {spec.content}
 
-# 2. The Current Implementation ({module_name}.py)
+# 2. The Current Implementation ({module_name}{ext})
 {code_content}
 
-# 3. The Failing Test Suite (test_{module_name}.py)
+# 3. The Failing Test Suite ({test_filename})
 {test_content}
 
 # 4. The Test Failure Output
@@ -195,13 +218,13 @@ Analyze the discrepancy between the Code, the Test, and the Specification.
 3. Provide the CORRECTED content for the file that needs fixing.
 4. Use the following format for your output so I can apply the patch:
 
-### FILE: build/{module_name}.py
+### FILE: build/{module_name}{ext}
 ... (full corrected code content) ...
 ### END
 
 OR
 
-### FILE: build/test_{module_name}.py
+### FILE: build/{test_filename}
 ... (full corrected test content) ...
 ### END
 

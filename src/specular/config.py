@@ -51,9 +51,9 @@ class SpecularConfig:
         ),
         "typescript": LanguageConfig(
             extension=".ts",
-            test_extension=".test.ts",
+            test_extension=".ts",
             test_filename_pattern="{name}.test",
-            test_command=["npm", "test", "--", "{file}"],
+            test_command=["npx", "-y", "tsx", "{file}"],
             env_vars={}
         )
     })
