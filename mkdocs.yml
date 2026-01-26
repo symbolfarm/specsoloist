@@ -51,3 +51,4 @@ nav:
   - Examples:
       - Math Demo (Python): examples/math_demo.md
       - TS Demo (TypeScript): examples/ts_demo.md
+      - ML Research (PyTorch): examples/ml_demo.md
