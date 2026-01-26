@@ -31,13 +31,14 @@
 - [x] **Human CLI**: `specular` command with list, create, compile, test, fix, build commands.
 - [x] **PyPI Publication**: Released `specular-ai` v0.1.0 to PyPI.
 
-## Phase 3: Polish (v1.0)
-- [ ] **CLI Polish**: Rich terminal output (spinners, colored diffs).
-- [ ] **Multi-Language Support**: Verify and template support for TypeScript and Go.
-- [ ] **Documentation Site**: Examples and API reference.
-- [ ] **Error Messages**: Improve user-facing error messages and edge case handling.
+## Phase 3: Polish (Completed)
+- [x] **CLI Polish**: Rich terminal output (spinners, tables, colored panels).
+- [x] **Multi-Language Support**: Config-driven runner with TypeScript support (via `tsx` and `node:test`).
+- [x] **Documentation Site**: MkDocs Material site with "Leaves-Up" workflow guide.
+- [x] **Error Handling**: Friendly messages for circular dependencies and missing API keys.
 
-## Phase 4: Developer Experience
+## Phase 4: Developer Experience (Future)
+- [ ] **Sandboxed Execution**: Run generated code in Docker containers for safety.
 - [ ] **VS Code Extension**: Live preview of generated code/tests while editing specs.
 - [ ] **Visual Spec Editor**: A GUI for defining Functional Requirements and Contracts.
-- [ ] **Sandboxed Execution**: Run generated code in Docker containers for safety.
+

@@ -1,6 +1,6 @@
 [project]
 name = "specular-ai"
-version = "0.1.0"
+version = "0.2.0"
 description = "Spec-as-Source Framework: AI-driven development where specifications are the source of truth."
 readme = "README.md"
 license = "MIT"
