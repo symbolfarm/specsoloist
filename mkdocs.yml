@@ -1,0 +1,51 @@
+site_name: Specular
+site_description: Spec-as-Source AI coding framework
+site_author: Toby Lightheart
+repo_url: https://github.com/symbolfarm/specular
+
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - content.code.copy
+    - content.code.annotate
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - tables
+
+nav:
+  - Home: index.md
+  - Getting Started: getting_started.md
+  - Core Concepts:
+      - Spec-as-Source: concepts/spec_as_source.md
+      - Self-Healing: concepts/self_healing.md
+  - Reference:
+      - CLI: reference/cli.md
+      - Spec Template: reference/template.md
+  - Examples:
+      - Math Demo (Python): examples/math_demo.md
+      - TS Demo (TypeScript): examples/ts_demo.md
