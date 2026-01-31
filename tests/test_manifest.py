@@ -4,7 +4,7 @@ import pytest
 import os
 import shutil
 
-from specular.manifest import (
+from specsoloist.manifest import (
     BuildManifest,
     IncrementalBuilder,
     compute_content_hash,
@@ -73,7 +73,7 @@ def test_manifest_save_and_load(test_dir):
     manifest.save(test_dir)
 
     # Verify file exists
-    manifest_path = os.path.join(test_dir, ".specular-manifest.json")
+    manifest_path = os.path.join(test_dir, ".specsoloist-manifest.json")
     assert os.path.exists(manifest_path)
 
     # Load
@@ -93,7 +93,7 @@ def test_manifest_load_nonexistent(test_dir):
 
 def test_manifest_load_corrupted(test_dir):
     """Test loading manifest when file is corrupted."""
-    path = os.path.join(test_dir, ".specular-manifest.json")
+    path = os.path.join(test_dir, ".specsoloist-manifest.json")
     with open(path, 'w') as f:
         f.write("not valid json")
 

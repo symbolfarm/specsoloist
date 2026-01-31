@@ -34,12 +34,12 @@ class BuildManifest:
     """
     Tracks build state for incremental compilation.
 
-    Stored as `.specular-manifest.json` in the build directory.
+    Stored as `.specsoloist-manifest.json` in the build directory.
     """
     version: str = "1.0"
     specs: Dict[str, SpecBuildInfo] = field(default_factory=dict)
 
-    MANIFEST_FILENAME = ".specular-manifest.json"
+    MANIFEST_FILENAME = ".specsoloist-manifest.json"
 
     def get_spec_info(self, name: str) -> Optional[SpecBuildInfo]:
         """Get build info for a spec, or None if never built."""

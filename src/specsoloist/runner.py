@@ -7,7 +7,7 @@ import subprocess
 from dataclasses import dataclass
 from typing import Optional
 
-from .config import SpecularConfig, LanguageConfig
+from .config import SpecSoloistConfig, LanguageConfig
 
 
 @dataclass
@@ -15,31 +15,29 @@ class TestResult:
     """Result of a test run."""
     success: bool
     output: str
-    return_code: int
+    return_code: int = 0
 
 
 class TestRunner:
-    """Handles test execution for compiled specs."""
+    """
+    Handles execution of tests for different languages.
+    """
 
-    def __init__(self, build_dir: str, config: Optional[SpecularConfig] = None):
+    def __init__(self, build_dir: str, config: Optional[SpecSoloistConfig] = None):
+        """
+        Initialize the test runner.
+
+        Args:
+            build_dir: Directory where code and tests are built.
+            config: SpecSoloist configuration.
+        """
         self.build_dir = os.path.abspath(build_dir)
-        # If no config provided, we'll have to fall back to hardcoded defaults or raise
         self.config = config
 
-    def _get_lang_config(self, language: str = "python") -> LanguageConfig:
-        """Helper to get language config from SpecularConfig."""
-        if not self.config or language not in self.config.languages:
-            # Fallback to a default if config is missing (for backwards compatibility)
-            if language == "python":
-                return LanguageConfig(
-                    extension=".py",
-                    test_extension=".py",
-                    test_filename_pattern="test_{name}",
-                    test_command=["pytest", "{file}"],
-                    env_vars={"PYTHONPATH": "{build_dir}"}
-                )
-            raise ValueError(f"No configuration found for language: {language}")
-        return self.config.languages[language]
+    def _get_lang_config(self, language: str) -> LanguageConfig:
+        """Helper to get language config from SpecSoloistConfig."""
+        if self.config and language in self.config.languages:
+            return self.config.languages[language]
 
     def get_test_path(self, module_name: str, language: str = "python") -> str:
         """Returns the path to the test file for a module."""

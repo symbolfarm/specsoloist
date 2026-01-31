@@ -10,7 +10,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
-from .config import SpecularConfig
+from .config import SpecSoloistConfig
 from .parser import SpecParser
 from .compiler import SpecCompiler
 from .runner import TestRunner
@@ -30,9 +30,9 @@ class BuildResult:
     errors: Dict[str, str]  # spec name -> error message
 
 
-class SpecularCore:
+class SpecSoloistCore:
     """
-    Main orchestrator for the Specular framework.
+    Main orchestrator for the SpecSoloist framework.
 
     Coordinates spec parsing, code compilation, test generation,
     and the self-healing fix loop.
@@ -42,10 +42,10 @@ class SpecularCore:
         self,
         root_dir: str = ".",
         api_key: Optional[str] = None,
-        config: Optional[SpecularConfig] = None
+        config: Optional[SpecSoloistConfig] = None
     ):
         """
-        Initialize SpecularCore.
+        Initialize SpecSoloistCore.
 
         Args:
             root_dir: Project root directory.
@@ -57,7 +57,7 @@ class SpecularCore:
         if config:
             self.config = config
         else:
-            self.config = SpecularConfig.from_env(root_dir)
+            self.config = SpecSoloistConfig.from_env(root_dir)
             if api_key:
                 self.config.api_key = api_key
 

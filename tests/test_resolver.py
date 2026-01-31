@@ -4,8 +4,8 @@ import pytest
 import os
 import shutil
 
-from specular.parser import SpecParser
-from specular.resolver import (
+from specsoloist.parser import SpecParser
+from specsoloist.resolver import (
     DependencyResolver,
     CircularDependencyError,
 )

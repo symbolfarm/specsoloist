@@ -1,108 +1,113 @@
-# Specular
+# SpecSoloist
 
-**Specular** is a "Spec-as-Source" AI coding framework. It treats rigorous, SRS-style specifications as the source of truth and uses LLMs to compile them into executable code.
+**SpecSoloist** is a "Spec-as-Source" AI coding framework. It treats rigorous, SRS-style specifications as the source of truth and uses LLMs to compile them into executable code.
 
-## Key Features
+## Why SpecSoloist?
 
--   **Spec-as-Source**: Code is a build artifact. You edit the Spec, not the Python/JS file.
--   **Contracts over Code**: Define *what* you want (Functional Requirements) and *constraints* (Non-Functional Requirements).
--   **Self-Healing**: An autonomous loop (`attempt_fix`) analyzes test failures and patches code to resolve discrepancies.
--   **Multi-Provider**: Supports Google Gemini and Anthropic Claude via a pluggable provider system.
--   **Agent-Native**: Also available as an MCP server for AI agents.
+Code is often messy, poorly documented, and prone to drift from original requirements. SpecSoloist flips the script:
+
+1.  **Write Specs**: You write high-level, human-readable specifications (Markdown).
+2.  **Compile to Code**: SpecSoloist uses LLMs (Gemini/Claude) to implement the spec.
+3.  **Self-Healing**: If tests fail, SpecSoloist analyzes the failure and patches the code or tests automatically.
 
 ## Installation
 
 ```bash
-pip install specular-ai
-```
-
-Or for development:
-```bash
-git clone https://github.com/symbolfarm/specular.git
-cd specular
-uv sync
+pip install specsoloist
 ```
 
 ## Quick Start
 
-```bash
-# Set your API key
-export GEMINI_API_KEY="your-key-here"
+1.  Clone the repository (or create a new folder):
+    ```bash
+    git clone https://github.com/symbolfarm/specsoloist.git
+    cd specsoloist
+    ```
 
-# Create a new spec
-specular create calculator "A simple calculator with add and multiply"
+2.  Set your API Key (Gemini or Anthropic):
+    ```bash
+    export GEMINI_API_KEY="your_key_here"
+    # or
+    export ANTHROPIC_API_KEY="your_key_here"
+    ```
 
-# Edit src/calculator.spec.md to define your requirements...
+3.  Create a new specification:
+    ```bash
+    sp create calculator "A simple calculator with add and multiply"
+    ```
+    This creates `src/calculator.spec.md`.
 
-# Compile to code
-specular compile calculator
+4.  Compile it to code:
+    ```bash
+    sp compile calculator
+    ```
+    This generates `build/calculator.py` and `build/test_calculator.py`.
 
-# Run the generated tests
-specular test calculator
+5.  Run the tests:
+    ```bash
+    sp test calculator
+    ```
 
-# If tests fail, auto-fix
-specular fix calculator
-```
+6.  (Optional) If tests fail, try auto-fix:
+    ```bash
+    sp fix calculator
+    ```
 
 ## The Workflow
 
-Specular isn't just a code generator; it's an architecture tool.
+SpecSoloist isn't just a code generator; it's an architecture tool.
 
-1.  **Architecture First**: Define your data types (`types.spec.md`) before your logic.
-2.  **Leaves-Up Strategy**: Build dependencies (utils, helpers) before the core business logic.
-3.  **The Loop**:
-    *   **Edit Spec** -> `specular compile` -> `specular test`.
-    *   **Failure?** -> `specular fix` (Let the AI patch the code).
-    *   **Ambiguity?** -> Refine the Spec (don't touch the code).
+*   **Edit Spec** -> `sp compile` -> `sp test`.
+*   **Failure?** -> `sp fix` (Let the AI patch the code).
+*   **Architecture Change?** -> Edit `src/*.spec.md`.
 
 ## CLI Reference
 
-```
-specular list                     List all specs in src/
-specular create <name> <desc>     Create a new spec from template
-specular validate <name>          Check spec structure
-specular compile <name>           Compile spec to code + tests
-specular test <name>              Run tests for a spec
-specular fix <name>               Auto-fix failing tests
-specular build                    Compile all specs in dependency order
-  --incremental                   Only recompile changed specs
-  --parallel                      Compile independent specs concurrently
-```
+| Command | Description |
+| :--- | :--- |
+| `sp list` | List all specs in `src/` |
+| `sp create <name> <desc>` | Create a new spec from template |
+| `sp validate <name>` | Check spec structure |
+| `sp compile <name>` | Compile spec to code + tests |
+| `sp test <name>` | Run tests for a spec |
+| `sp fix <name>` | Auto-fix failing tests |
+| `sp build` | Compile all specs in dependency order |
 
-## LLM Providers
+## Configuration
 
-**Google Gemini (default)**
+You can configure SpecSoloist via environment variables or a `.env` file:
+
 ```bash
-export GEMINI_API_KEY="your-key-here"
-export SPECULAR_LLM_MODEL="gemini-2.0-flash"  # optional
+export SPECSOLOIST_LLM_PROVIDER="gemini"  # or "anthropic"
+export SPEC_LLM_MODEL="gemini-2.0-flash"  # optional
 ```
 
-**Anthropic Claude**
+For Anthropic:
+
 ```bash
-export SPECULAR_LLM_PROVIDER="anthropic"
-export ANTHROPIC_API_KEY="your-key-here"
-export SPECULAR_LLM_MODEL="claude-sonnet-4-20250514"  # optional
+export SPECSOLOIST_LLM_PROVIDER="anthropic"
+export ANTHROPIC_API_KEY="your_key_here"
+export SPECSOLOIST_LLM_MODEL="claude-sonnet-4-20250514"  # optional
 ```
 
-## MCP Server (for AI Agents)
+## Agent Integration (MCP)
 
-Specular can run as an MCP server for Claude Desktop or other AI agents:
+SpecSoloist can run as an MCP server for Claude Desktop or other AI agents:
+
+Add to your `claude_desktop_config.json`:
 
 ```json
-"specular": {
-  "command": "uv",
-  "args": ["run", "specular-mcp"],
-  "env": {
-    "GEMINI_API_KEY": "your-key-here"
+{
+  "mcpServers": {
+    "specsoloist": {
+      "command": "uv",
+      "args": ["run", "specsoloist-mcp"],
+      "env": {
+        "GEMINI_API_KEY": "..."
+      }
+    }
   }
 }
 ```
 
-Or use the CLI: `specular mcp`
-
-## Development
-
-```bash
-uv run pytest    # Run tests
-uv run ruff check src/  # Lint
-```
+Or use the CLI: `sp mcp`

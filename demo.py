@@ -1,6 +1,6 @@
 import os
 import sys
-from specular.core import SpecularCore
+from specsoloist.core import SpecSoloistCore
 
 def main():
     # Ensure API Key is present
@@ -9,10 +9,10 @@ def main():
         print("Please run: export GEMINI_API_KEY='your_key_here'")
         sys.exit(1)
 
-    print("--- Specular Demo: End-to-End Flow ---")
+    print("--- SpecSoloist Demo: End-to-End Flow ---")
     
     # Initialize Core
-    core = SpecularCore(".")
+    core = SpecSoloistCore(".")
 
     spec_name = "math_demo"
     

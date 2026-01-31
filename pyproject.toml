@@ -1,5 +1,5 @@
 [project]
-name = "specular-ai"
+name = "specsoloist"
 version = "0.2.0"
 description = "Spec-as-Source Framework: AI-driven development where specifications are the source of truth."
 readme = "README.md"
@@ -26,9 +26,9 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/symbolfarm/specular"
-Repository = "https://github.com/symbolfarm/specular"
-Issues = "https://github.com/symbolfarm/specular/issues"
+Homepage = "https://github.com/symbolfarm/specsoloist"
+Repository = "https://github.com/symbolfarm/specsoloist"
+Issues = "https://github.com/symbolfarm/specsoloist/issues"
 
 [project.optional-dependencies]
 dev = [
@@ -39,11 +39,11 @@ dev = [
 ]
 
 [project.scripts]
-specular = "specular.cli:main"
-specular-mcp = "specular.server:main"
+sp = "specsoloist.cli:main"
+specsoloist-mcp = "specsoloist.server:main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/specular"]
+packages = ["src/specsoloist"]
 
 [build-system]
 requires = ["hatchling"]

@@ -24,7 +24,7 @@ user_service ←──┘
 ## Building
 
 ```python
-from specular import SpecularCore
+from specsoloist import SpecularCore
 
 core = SpecularCore("examples/user_project")
 

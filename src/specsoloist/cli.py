@@ -1,28 +1,28 @@
 """
-Command-line interface for Specular.
+Command-line interface for SpecSoloist.
 
 Usage:
-    specular list                     List all specs
-    specular create <name> <desc>     Create a new spec
-    specular validate <name>          Validate a spec
-    specular compile <name>           Compile a spec to code
-    specular test <name>              Run tests for a spec
-    specular fix <name>               Auto-fix failing tests
-    specular build                    Compile all specs
+    sp list                     List all specs
+    sp create <name> <desc>     Create a new spec
+    sp validate <name>          Validate a spec
+    sp compile <name>           Compile a spec to code
+    sp test <name>              Run tests for a spec
+    sp fix <name>               Auto-fix failing tests
+    sp build                    Compile all specs
 """
 
 import argparse
 import sys
 import os
 
-from .core import SpecularCore
+from .core import SpecSoloistCore
 from .resolver import CircularDependencyError, MissingDependencyError
 from . import ui
 
 
 def main():
     parser = argparse.ArgumentParser(
-        prog="specular",
+        prog="sp",
         description="Spec-as-Source AI coding framework"
     )
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
@@ -74,9 +74,9 @@ def main():
 
     # Initialize core
     try:
-        core = SpecularCore(os.getcwd())
+        core = SpecSoloistCore(os.getcwd())
     except Exception as e:
-        ui.print_error(f"Failed to initialize Specular: {e}")
+        ui.print_error(f"Failed to initialize SpecSoloist: {e}")
         sys.exit(1)
 
     try:
@@ -111,11 +111,11 @@ def main():
         sys.exit(1)
 
 
-def cmd_list(core: SpecularCore):
+def cmd_list(core: SpecSoloistCore):
     specs = core.list_specs()
     if not specs:
         ui.print_warning("No specs found in src/")
-        ui.print_info("Create one with: specular create <name> '<description>'")
+        ui.print_info("Create one with: sp create <name> '<description>'")
         return
 
     table = ui.create_table(["Name", "Type", "Status", "Description"], title="Project Specifications")
@@ -143,7 +143,7 @@ def cmd_list(core: SpecularCore):
     ui.console.print(table)
 
 
-def cmd_create(core: SpecularCore, name: str, description: str, spec_type: str):
+def cmd_create(core: SpecSoloistCore, name: str, description: str, spec_type: str):
     ui.print_header("Creating Spec", name)
     try:
         path = core.create_spec(name, description, type=spec_type)
@@ -153,7 +153,7 @@ def cmd_create(core: SpecularCore, name: str, description: str, spec_type: str):
         sys.exit(1)
 
 
-def cmd_validate(core: SpecularCore, name: str):
+def cmd_validate(core: SpecSoloistCore, name: str):
     ui.print_header("Validating Spec", name)
     result = core.validate_spec(name)
     
@@ -166,7 +166,7 @@ def cmd_validate(core: SpecularCore, name: str):
         sys.exit(1)
 
 
-def cmd_compile(core: SpecularCore, name: str, model: str, generate_tests: bool):
+def cmd_compile(core: SpecSoloistCore, name: str, model: str, generate_tests: bool):
     _check_api_key()
     
     ui.print_header("Compiling Spec", name)
@@ -200,7 +200,7 @@ def cmd_compile(core: SpecularCore, name: str, model: str, generate_tests: bool)
         sys.exit(1)
 
 
-def cmd_test(core: SpecularCore, name: str):
+def cmd_test(core: SpecSoloistCore, name: str):
     ui.print_header("Running Tests", name)
     
     with ui.spinner(f"Running tests for [bold]{name}[/]..."):
@@ -216,7 +216,7 @@ def cmd_test(core: SpecularCore, name: str):
         sys.exit(1)
 
 
-def cmd_fix(core: SpecularCore, name: str, model: str):
+def cmd_fix(core: SpecSoloistCore, name: str, model: str):
     _check_api_key()
 
     ui.print_header("Auto-Fixing Spec", name)
@@ -227,7 +227,7 @@ def cmd_fix(core: SpecularCore, name: str, model: str):
     ui.print_success(result)
 
 
-def cmd_build(core: SpecularCore, incremental: bool, parallel: bool, workers: int, model: str, generate_tests: bool):
+def cmd_build(core: SpecSoloistCore, incremental: bool, parallel: bool, workers: int, model: str, generate_tests: bool):
     _check_api_key()
 
     specs = core.list_specs()
@@ -286,7 +286,7 @@ def cmd_mcp():
 
 def _check_api_key():
     """Check that an API key is configured."""
-    provider = os.environ.get("SPECULAR_LLM_PROVIDER", "gemini")
+    provider = os.environ.get("SPECSOLOIST_LLM_PROVIDER", "gemini")
     if provider == "gemini" and "GEMINI_API_KEY" not in os.environ:
         ui.print_error("GEMINI_API_KEY not set")
         ui.print_info("Run: export GEMINI_API_KEY='your-key-here'")

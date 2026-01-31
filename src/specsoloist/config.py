@@ -20,9 +20,9 @@ class LanguageConfig:
 
 
 @dataclass
-class SpecularConfig:
+class SpecSoloistConfig:
     """
-    Configuration for Specular.
+    Configuration for SpecSoloist.
 
     Load order (later sources override earlier):
     1. Defaults (defined here)
@@ -69,18 +69,18 @@ class SpecularConfig:
         self.build_path = os.path.join(root, self.build_dir)
 
     @classmethod
-    def from_env(cls, root_dir: str = ".") -> "SpecularConfig":
+    def from_env(cls, root_dir: str = ".") -> "SpecSoloistConfig":
         """
         Load configuration from environment variables.
 
         Environment variables:
-            SPECULAR_LLM_PROVIDER: "gemini" or "anthropic"
-            SPECULAR_LLM_MODEL: Model identifier
+            SPECSOLOIST_LLM_PROVIDER: "gemini" or "anthropic"
+            SPECSOLOIST_LLM_MODEL: Model identifier
             GEMINI_API_KEY: API key for Gemini
             ANTHROPIC_API_KEY: API key for Anthropic
         """
-        provider = os.environ.get("SPECULAR_LLM_PROVIDER", "gemini")
-        model = os.environ.get("SPECULAR_LLM_MODEL")
+        provider = os.environ.get("SPECSOLOIST_LLM_PROVIDER", "gemini")
+        model = os.environ.get("SPECSOLOIST_LLM_MODEL")
 
         # Determine API key based on provider
         if provider == "anthropic":

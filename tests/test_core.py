@@ -1,8 +1,8 @@
 import pytest
 import os
 import shutil
-from specular.core import SpecularCore
-from specular.config import SpecularConfig
+from specsoloist.core import SpecSoloistCore
+from specsoloist.config import SpecSoloistConfig
 
 
 class MockProvider:
@@ -32,7 +32,7 @@ def test_env():
 
 
 def test_create_spec(test_env):
-    core = SpecularCore(test_env)
+    core = SpecSoloistCore(test_env)
     core.create_spec("login", "Handles user login.")
 
     path = os.path.join(test_env, "src", "login.spec.md")
@@ -45,7 +45,7 @@ def test_create_spec(test_env):
 
 
 def test_validate_spec_invalid(test_env):
-    core = SpecularCore(test_env)
+    core = SpecSoloistCore(test_env)
     # Create a manually broken spec file
     bad_path = os.path.join(test_env, "src", "broken.spec.md")
     os.makedirs(os.path.dirname(bad_path), exist_ok=True)
@@ -59,7 +59,7 @@ def test_validate_spec_invalid(test_env):
 
 def test_compile_spec_mock(test_env):
     """Test compilation with a mock provider."""
-    core = SpecularCore(test_env)
+    core = SpecSoloistCore(test_env)
     core.create_spec("math_utils", "Adds two numbers.")
 
     # Create and inject mock provider
@@ -80,7 +80,7 @@ def test_compile_spec_mock(test_env):
 
 def test_compile_and_run_tests_mock(test_env):
     """Test full compile and run workflow with mock provider."""
-    core = SpecularCore(test_env)
+    core = SpecSoloistCore(test_env)
     core.create_spec("math_utils", "Adds two numbers.")
 
     # Mock provider that returns different code based on prompt
@@ -120,17 +120,17 @@ def test_add():
 
 def test_config_from_env(test_env, monkeypatch):
     """Test that config loads from environment variables."""
-    monkeypatch.setenv("SPECULAR_LLM_PROVIDER", "anthropic")
+    monkeypatch.setenv("SPECSOLOIST_LLM_PROVIDER", "anthropic")
     monkeypatch.setenv("ANTHROPIC_API_KEY", "test_key")
 
-    config = SpecularConfig.from_env(test_env)
+    config = SpecSoloistConfig.from_env(test_env)
     assert config.llm_provider == "anthropic"
     assert config.api_key == "test_key"
 
 
 def test_config_creates_directories(test_env):
     """Test that config creates required directories."""
-    config = SpecularConfig(root_dir=test_env)
+    config = SpecSoloistConfig(root_dir=test_env)
     config.ensure_directories()
 
     assert os.path.exists(config.src_path)

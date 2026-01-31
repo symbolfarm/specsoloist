@@ -4,7 +4,7 @@ Tests for SpecParser.
 
 import os
 import tempfile
-from specular.parser import SpecParser
+from specsoloist.parser import SpecParser
 
 
 def test_parse_metadata_with_description():

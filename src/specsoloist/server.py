@@ -8,14 +8,14 @@ except ImportError:
     print("Error: 'mcp' library not found. Please run `pip install mcp` or use `uv run`.")
     sys.exit(1)
 
-from specular.core import SpecularCore
+from specsoloist.core import SpecSoloistCore
 
-# Initialize
-# We default to the current working directory for the user's project
-PROJECT_ROOT = os.getcwd()
-core = SpecularCore(PROJECT_ROOT)
+PROJECT_ROOT = os.environ.get("SPEC_ROOT", ".")
 
-mcp = FastMCP("Specular")
+# Initialize core
+core = SpecSoloistCore(PROJECT_ROOT)
+
+mcp = FastMCP("SpecSoloist")
 
 @mcp.tool()
 def list_specs() -> list[str]:

@@ -265,7 +265,7 @@ class SpecParser:
 
         # Try package resources first
         try:
-            ref = importlib.resources.files('specular.templates').joinpath(filename)
+            ref = importlib.resources.files('specsoloist.templates').joinpath(filename)
             return ref.read_text(encoding='utf-8')
         except Exception:
             pass
