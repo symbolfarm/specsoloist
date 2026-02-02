@@ -97,6 +97,57 @@ Your task is to define the data types described in the following specification.
         code = self.provider.generate(prompt, model=model)
         return self._strip_markdown_fences(code)
 
+    def compile_orchestrator(
+        self,
+        spec: ParsedSpec,
+        model: Optional[str] = None
+    ) -> str:
+        """
+        Compiles an orchestrator spec to workflow execution code.
+
+        Args:
+            spec: The parsed specification (must be type: orchestrator).
+            model: Optional model override.
+
+        Returns:
+            The generated orchestration code.
+        """
+        language = spec.metadata.language_target
+        
+        # Extract specs used in steps to include in import context
+        used_specs = []
+        if spec.schema and spec.schema.steps:
+            for step in spec.schema.steps:
+                if step.spec not in used_specs:
+                    used_specs.append(step.spec)
+        
+        import_context = "\n".join([f"- This workflow uses components from: {s}" for s in used_specs])
+
+        prompt = f"""
+You are an expert {language} developer specializing in multi-agent orchestration.
+Your task is to implement the workflow described in the following specification.
+
+# Global Project Context
+{self.global_context}
+
+# Components Available
+{import_context}
+
+# Orchestration Specification
+{spec.content}
+
+# Instructions
+1. Implement a class or function that executes the steps defined in the 'Interface Specification'.
+2. Use a 'state' dictionary to pass data between steps as mapped in the schema.
+3. For each step, call the corresponding component. Assume components are available as modules in the same package.
+4. Include error handling and logging for each step.
+5. If the 'Functional Requirements' describe complex logic (loops, conditionals), implement them.
+6. Adhere to the 'Non-Functional Requirements'.
+7. Output ONLY the raw code. Do not wrap in markdown code blocks.
+"""
+        code = self.provider.generate(prompt, model=model)
+        return self._strip_markdown_fences(code)
+
     def _build_import_context(self, spec: ParsedSpec) -> str:
         """Build import instructions from spec dependencies."""
         if not spec.metadata.dependencies:

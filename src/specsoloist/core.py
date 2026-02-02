@@ -147,6 +147,182 @@ class SpecSoloistCore:
         return self.parser.validate_spec(name)
 
     # =========================================================================
+    # Public API - Verification
+    # =========================================================================
+
+    def verify_project(self) -> Dict[str, Any]:
+        """
+        Verifies all specs in the project for strict schema compliance
+        and dependency integrity.
+        
+        Returns:
+            Dict containing verification results per spec and global success status.
+        """
+        specs = self.parser.list_specs()
+        results = {}
+        all_passed = True
+        
+        # 1. Check for missing or circular dependencies
+        try:
+            build_order = self.resolver.resolve_build_order()
+            graph = self.resolver.build_graph()
+        except Exception as e:
+            return {
+                "success": False,
+                "error": str(e),
+                "results": {}
+            }
+
+        for spec_file in specs:
+            spec_name = spec_file.replace(".spec.md", "")
+            try:
+                # Basic validation
+                basic_valid = self.validate_spec(spec_name)
+                errors = basic_valid.get("errors", [])
+                
+                # Dependency validation
+                deps = graph.get_dependencies(spec_name)
+                missing_schemas = []
+                
+                # Schema validation
+                spec = self.parser.parse_spec(spec_name)
+                
+                status = "valid"
+                if not basic_valid["valid"]:
+                    status = "invalid"
+                    all_passed = False
+                elif not spec.schema:
+                    status = "warning"
+                
+                # Check if dependencies have schemas
+                for dep_name in deps:
+                    try:
+                        dep_spec = self.parser.parse_spec(dep_name)
+                        if not dep_spec.schema:
+                            missing_schemas.append(dep_name)
+                    except Exception:
+                        pass # resolver should have caught missing files
+                
+                # Orchestration Step Verification
+                step_errors = []
+                if spec.schema and spec.schema.steps:
+                    step_errors = self._verify_orchestrator_steps(spec)
+                
+                message = ""
+                if not spec.schema:
+                    message = "Missing ```yaml:schema block. "
+                if missing_schemas:
+                    message += f"Deps missing schemas: {', '.join(missing_schemas)}"
+                if step_errors:
+                    message += " | Step errors: " + "; ".join(step_errors)
+                
+                if step_errors:
+                    status = "invalid"
+                    all_passed = False
+
+                results[spec_name] = {
+                    "status": status,
+                    "schema_defined": spec.schema is not None,
+                    "errors": errors + step_errors,
+                    "message": message.strip()
+                }
+                
+                if status == "invalid":
+                    all_passed = False
+                    
+            except Exception as e:
+                results[spec_name] = {
+                    "status": "error", 
+                    "errors": [str(e)]
+                }
+                all_passed = False
+                
+        return {
+            "success": all_passed,
+            "results": results
+        }
+
+    def _verify_orchestrator_steps(self, spec: 'ParsedSpec') -> List[str]:
+        """Verifies that all steps in an orchestrator have valid data flow."""
+        if not spec.schema or not spec.schema.steps:
+            return []
+            
+        errors = []
+        # Keep track of outputs available at each step
+        # Format: step_name -> {param_name -> ParameterDefinition}
+        available_outputs = {
+            "inputs": spec.schema.inputs
+        }
+        
+        for step in spec.schema.steps:
+            # 1. Does the target spec exist?
+            try:
+                target_spec = self.parser.parse_spec(step.spec)
+            except Exception:
+                errors.append(f"Step '{step.name}' references missing spec: {step.spec}")
+                continue
+                
+            if not target_spec.schema:
+                errors.append(f"Step '{step.name}' spec '{step.spec}' has no schema")
+                continue
+                
+            # 2. Check inputs
+            for input_name, source in step.inputs.items():
+                # Source should be 'step_name.outputs.param_name'
+                if "." not in source:
+                    errors.append(f"Step '{step.name}' input '{input_name}' source '{source}' must be in 'step.outputs.param' format")
+                    continue
+                    
+                parts = source.split(".")
+                if len(parts) != 3 or parts[1] != "outputs":
+                    # Special case for 'inputs.param_name'
+                    if len(parts) == 2 and parts[0] == "inputs":
+                        source_step = "inputs"
+                        source_param = parts[1]
+                    else:
+                        errors.append(f"Step '{step.name}' input '{input_name}' source '{source}' format invalid")
+                        continue
+                else:
+                    source_step = parts[0]
+                    source_param = parts[2]
+                
+                if source_step not in available_outputs:
+                    errors.append(f"Step '{step.name}' input '{input_name}' source step '{source_step}' not found or not yet executed")
+                    continue
+                    
+                if source_param not in available_outputs[source_step]:
+                    errors.append(f"Step '{step.name}' input '{input_name}' source param '{source_param}' not found in '{source_step}'")
+                    continue
+                    
+                # 3. Type compatibility check
+                out_def = available_outputs[source_step][source_param]
+                in_def = target_spec.schema.inputs.get(input_name)
+                
+                if not in_def:
+                    errors.append(f"Step '{step.name}' spec '{step.spec}' has no input named '{input_name}'")
+                    continue
+                    
+                # 3. Type compatibility check
+                if out_def.type != in_def.type:
+                    errors.append(f"Step '{step.name}' input '{input_name}' type mismatch: {out_def.type} (source) vs {in_def.type} (target)")
+                    continue
+
+                if not out_def.compatible_with(in_def):
+                    reason = ""
+                    if in_def.minimum is not None and (out_def.minimum is None or out_def.minimum < in_def.minimum):
+                        reason = f"source minimum ({out_def.minimum}) is less than target minimum ({in_def.minimum})"
+                    elif in_def.maximum is not None and (out_def.maximum is None or out_def.maximum > in_def.maximum):
+                        reason = f"source maximum ({out_def.maximum}) is greater than target maximum ({in_def.maximum})"
+                    
+                    errors.append(f"Step '{step.name}' input '{input_name}' constraint mismatch: {reason}")
+
+            # Record this step's outputs for future steps
+            available_outputs[step.name] = target_spec.schema.outputs
+            
+        return errors
+
+
+    # =========================================================================
     # Public API - Compilation
     # =========================================================================
 
@@ -181,6 +357,8 @@ class SpecSoloistCore:
         # Use appropriate compilation method based on spec type
         if spec.metadata.type == "typedef":
             code = compiler.compile_typedef(spec, model=model)
+        elif spec.metadata.type == "orchestrator":
+            code = compiler.compile_orchestrator(spec, model=model)
         else:
             code = compiler.compile_code(spec, model=model)
 
@@ -560,3 +738,26 @@ class SpecSoloistCore:
             changes_made.append(os.path.basename(path))
 
         return f"Applied fixes to: {', '.join(changes_made)}. Run tests again to verify."
+
+    # =========================================================================
+    # Public API - Orchestration
+    # =========================================================================
+
+    def run_orchestration(
+        self, 
+        name: str, 
+        inputs: Dict[str, Any], 
+        checkpoint_callback=None
+    ) -> Dict[str, Any]:
+        """
+        Run an orchestration workflow.
+        """
+        from .orchestrator import Orchestrator
+        conductor = Orchestrator(
+            self.parser, 
+            self.config.build_path, 
+            checkpoint_callback=checkpoint_callback
+        )
+        return conductor.run(name, inputs)
+
+    

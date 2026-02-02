@@ -113,6 +113,8 @@ class DependencyResolver:
     def _extract_dependencies(self, spec: ParsedSpec) -> List[str]:
         """Extract dependency spec names from a parsed spec."""
         deps = []
+        
+        # 1. Traditional frontmatter dependencies
         for dep in spec.metadata.dependencies:
             if isinstance(dep, dict) and "from" in dep:
                 # Format: {name: "User", from: "types.spec.md"}
@@ -124,6 +126,14 @@ class DependencyResolver:
                 from_spec = dep.replace(".spec.md", "")
                 if from_spec not in deps:
                     deps.append(from_spec)
+                    
+        # 2. Orchestration steps as dependencies
+        if spec.schema and spec.schema.steps:
+            for step in spec.schema.steps:
+                dep_name = step.spec.replace(".spec.md", "")
+                if dep_name not in deps:
+                    deps.append(dep_name)
+                    
         return deps
 
     def resolve_build_order(self, spec_names: List[str] = None) -> List[str]:
