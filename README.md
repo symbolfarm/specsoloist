@@ -2,6 +2,8 @@
 
 **SpecSoloist** is a "Spec-as-Source" AI coding framework. It treats rigorous, SRS-style specifications as the source of truth and uses LLMs to compile them into executable code.
 
+Now with **Spechestra** features: define and run multi-agent orchestration workflows directly from your specs.
+
 ## Why SpecSoloist?
 
 Code is often messy, poorly documented, and prone to drift from original requirements. SpecSoloist flips the script:
@@ -9,6 +11,7 @@ Code is often messy, poorly documented, and prone to drift from original require
 1.  **Write Specs**: You write high-level, human-readable specifications (Markdown).
 2.  **Compile to Code**: SpecSoloist uses LLMs (Gemini/Claude) to implement the spec.
 3.  **Self-Healing**: If tests fail, SpecSoloist analyzes the failure and patches the code or tests automatically.
+4.  **Orchestrate**: Define complex workflows where agents collaborate, share state, and pause for human input.
 
 ## Installation
 
@@ -53,13 +56,37 @@ pip install specsoloist
     sp fix calculator
     ```
 
-## The Workflow
+## Orchestration (Spechestra)
 
-SpecSoloist isn't just a code generator; it's an architecture tool.
+SpecSoloist allows you to chain multiple specs into a workflow.
 
-*   **Edit Spec** -> `sp compile` -> `sp test`.
-*   **Failure?** -> `sp fix` (Let the AI patch the code).
-*   **Architecture Change?** -> Edit `src/*.spec.md`.
+1.  **Define Interfaces**: Add a `yaml:schema` block to your component specs.
+    ```markdown
+    ```yaml:schema
+    inputs:
+      n: {type: integer}
+    outputs:
+      result: {type: integer}
+    ```
+    ```
+
+2.  **Create an Orchestrator**: Create a spec with `type: orchestrator`.
+    ```markdown
+    # 2. Interface Specification
+    ```yaml:schema
+    steps:
+      - name: step1
+        spec: calculator
+        inputs: {n: inputs.start_val}
+    ```
+    ```
+
+3.  **Verify & Run**:
+    ```bash
+    sp verify                   # Check for interface mismatches
+    sp compile my_orchestrator  # Generate the workflow code
+    sp run my_orchestrator '{"start_val": 10}'
+    ```
 
 ## CLI Reference
 
@@ -68,10 +95,13 @@ SpecSoloist isn't just a code generator; it's an architecture tool.
 | `sp list` | List all specs in `src/` |
 | `sp create <name> <desc>` | Create a new spec from template |
 | `sp validate <name>` | Check spec structure |
+| `sp verify` | Verify schemas and interface compatibility |
 | `sp compile <name>` | Compile spec to code + tests |
 | `sp test <name>` | Run tests for a spec |
 | `sp fix <name>` | Auto-fix failing tests |
 | `sp build` | Compile all specs in dependency order |
+| `sp run <name> <json>` | Run an orchestration workflow |
+| `sp graph` | Export dependency graph (Mermaid.js) |
 
 ## Configuration
 

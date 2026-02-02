@@ -1,4 +1,4 @@
-# Specular Roadmap
+# SpecSoloist Roadmap
 
 ## Phase 1: Core Framework & Self-Healing (Completed)
 - [x] **Spec-as-Source**: Define components using rigorous SRS-style Markdown.
@@ -28,8 +28,8 @@
 - [x] **Parallel Compilation**: Compile independent specs concurrently using `ThreadPoolExecutor`.
 
 ## Phase 2c: Release Prep (Completed)
-- [x] **Human CLI**: `specular` command with list, create, compile, test, fix, build commands.
-- [x] **PyPI Publication**: Released `specular-ai` v0.1.0 to PyPI.
+- [x] **Human CLI**: `sp` command with list, create, compile, test, fix, build commands.
+- [x] **PyPI Publication**: Released `specsoloist` to PyPI.
 
 ## Phase 3: Polish (Completed)
 - [x] **CLI Polish**: Rich terminal output (spinners, tables, colored panels).
@@ -37,8 +37,15 @@
 - [x] **Documentation Site**: MkDocs Material site with "Leaves-Up" workflow guide.
 - [x] **Error Handling**: Friendly messages for circular dependencies and missing API keys.
 
-## Phase 4: Developer Experience (Future)
+## Phase 4: Spechestra Orchestration (Completed)
+- [x] **Strict Validation**: Pydantic-based `sp verify` to ensure interface compatibility.
+- [x] **Orchestration Runtime**: `Orchestrator`, `Agent`, and `Blackboard` (shared state) modules.
+- [x] **Orchestrator Specs**: New `type: orchestrator` for defining multi-agent workflows in Markdown.
+- [x] **Human-in-the-Loop**: `checkpoint: true` support for pausing workflows for user approval.
+- [x] **Observability**: `sp run` execution tracing and `sp graph` Mermaid.js export.
+
+## Phase 5: Developer Experience (Future)
 - [ ] **Sandboxed Execution**: Run generated code in Docker containers for safety.
 - [ ] **VS Code Extension**: Live preview of generated code/tests while editing specs.
 - [ ] **Visual Spec Editor**: A GUI for defining Functional Requirements and Contracts.
-
+- [ ] **Advanced Orchestration**: Router agents, fan-out/fan-in parallelism, and loop constructs.

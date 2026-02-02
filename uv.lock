@@ -1251,6 +1251,7 @@ version = "0.2.0"
 source = { editable = "." }
 dependencies = [
     { name = "mcp" },
+    { name = "pydantic" },
     { name = "pyyaml" },
     { name = "rich" },
 ]
@@ -1268,6 +1269,7 @@ requires-dist = [
     { name = "mcp", specifier = ">=0.1.0" },
     { name = "mkdocs", marker = "extra == 'dev'", specifier = ">=1.5.0" },
     { name = "mkdocs-material", marker = "extra == 'dev'", specifier = ">=9.0.0" },
+    { name = "pydantic", specifier = ">=2.0.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=7.0" },
     { name = "pyyaml", specifier = ">=6.0" },
     { name = "rich", specifier = ">=13.0.0" },
