@@ -10,12 +10,30 @@ A library for mathematical operations including factorial calculation and primal
 
 # 2. Interface Specification
 
+```yaml:schema
+inputs:
+  operation:
+    type: string
+    enum: [factorial, is_prime]
+  n:
+    type: integer
+outputs:
+  result:
+    type: string
+```
+
 ## 2.1 Inputs
+### `run(operation: str, n: int) -> any`
+*   Standard entry point for the module.
+*   `operation`: Either "factorial" or "is_prime".
+*   `n`: The input number.
+
 ### `factorial(n: int) -> int`
 *   `n`: The non-negative integer to calculate the factorial of.
 
 ### `is_prime(n: int) -> bool`
 *   `n`: The integer to check for primality.
+
 
 ## 2.2 Outputs
 *   `factorial`: Returns the factorial as an integer.

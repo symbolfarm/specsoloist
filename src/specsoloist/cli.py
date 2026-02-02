@@ -40,6 +40,12 @@ def main():
     validate_parser = subparsers.add_parser("validate", help="Validate a spec's structure")
     validate_parser.add_argument("name", help="Spec name to validate")
 
+    # verify
+    verify_parser = subparsers.add_parser("verify", help="Verify all specs for orchestration readiness")
+
+    # graph
+    graph_parser = subparsers.add_parser("graph", help="Export dependency graph as Mermaid")
+
     # compile
     compile_parser = subparsers.add_parser("compile", help="Compile a spec to code")
     compile_parser.add_argument("name", help="Spec name to compile")
@@ -49,6 +55,11 @@ def main():
     # test
     test_parser = subparsers.add_parser("test", help="Run tests for a spec")
     test_parser.add_argument("name", help="Spec name to test")
+
+    # run (orchestrator)
+    run_parser = subparsers.add_parser("run", help="Run an orchestration workflow")
+    run_parser.add_argument("name", help="Orchestrator spec name")
+    run_parser.add_argument("inputs", help="JSON inputs for the workflow")
 
     # fix
     fix_parser = subparsers.add_parser("fix", help="Auto-fix failing tests")
@@ -86,10 +97,16 @@ def main():
             cmd_create(core, args.name, args.description, args.type)
         elif args.command == "validate":
             cmd_validate(core, args.name)
+        elif args.command == "verify":
+            cmd_verify(core)
+        elif args.command == "graph":
+            cmd_graph(core)
         elif args.command == "compile":
             cmd_compile(core, args.name, args.model, not args.no_tests)
         elif args.command == "test":
             cmd_test(core, args.name)
+        elif args.command == "run":
+            cmd_run(core, args.name, args.inputs)
         elif args.command == "fix":
             cmd_fix(core, args.name, args.model)
         elif args.command == "build":
@@ -166,6 +183,56 @@ def cmd_validate(core: SpecSoloistCore, name: str):
         sys.exit(1)
 
 
+def cmd_verify(core: SpecSoloistCore):
+    ui.print_header("Verifying Project", "Checking schemas")
+    
+    with ui.spinner("Verifying all specs..."):
+        result = core.verify_project()
+        
+    table = ui.create_table(["Spec", "Status", "Schema", "Details"], title="Verification Results")
+    
+    for name, data in result["results"].items():
+        status = data["status"]
+        status_color = "green" if status == "valid" else "yellow" if status == "warning" else "red"
+        
+        schema_status = "[green]Yes[/]" if data.get("schema_defined") else "[dim]No[/]"
+        details = data.get("message") or (", ".join(data.get("errors", [])) if "errors" in data else "")
+        
+        table.add_row(
+            name,
+            f"[{status_color}]{status.upper()}[/]",
+            schema_status,
+            details
+        )
+        
+    ui.console.print(table)
+    
+    if result["success"]:
+        ui.print_success("Project verification complete.")
+    else:
+        ui.print_warning("Some specs have issues or missing schemas.")
+        # We don't exit(1) here because warnings shouldn't break the build pipeline necessarily,
+        # unless strict mode is enabled (future feature).
+
+
+def cmd_graph(core: SpecSoloistCore):
+    ui.print_header("Dependency Graph", "Mermaid format")
+    
+    graph = core.get_dependency_graph()
+    
+    lines = ["graph TD"]
+    for spec in graph.specs:
+        deps = graph.get_dependencies(spec)
+        if not deps:
+            lines.append(f"    {spec}")
+        for dep in deps:
+            lines.append(f"    {spec} --> {dep}")
+            
+    mermaid = "\n".join(lines)
+    ui.console.print(ui.Panel(mermaid, title="Mermaid.js Output"))
+    ui.print_info("Paste this into https://mermaid.live to visualize.")
+
+
 def cmd_compile(core: SpecSoloistCore, name: str, model: str, generate_tests: bool):
     _check_api_key()
     
@@ -213,6 +280,41 @@ def cmd_test(core: SpecSoloistCore, name: str):
     else:
         ui.print_error("Tests FAILED")
         ui.console.print(ui.Panel(result["output"], title="Failure Output", border_style="red"))
+        sys.exit(1)
+
+
+def cmd_run(core: SpecSoloistCore, name: str, inputs_json: str):
+    import json
+    from rich.prompt import Confirm
+    
+    ui.print_header("Running Orchestration", name)
+    
+    try:
+        inputs = json.loads(inputs_json)
+    except json.JSONDecodeError:
+        ui.print_error("Invalid JSON inputs")
+        sys.exit(1)
+        
+    def checkpoint_callback(step_name: str) -> bool:
+        return Confirm.ask(f"[bold yellow]Checkpoint:[/] Proceed with step '{step_name}'?")
+
+    try:
+        results = core.run_orchestration(
+            name, 
+            inputs, 
+            checkpoint_callback=checkpoint_callback
+        )
+        
+        ui.print_success("Orchestration complete")
+        
+        # Display results
+        table = ui.create_table(["Step", "Result"], title="Workflow Summary")
+        for step_name, result in results.items():
+            table.add_row(step_name, str(result))
+        ui.console.print(table)
+        
+    except Exception as e:
+        ui.print_error(f"Orchestration failed: {e}")
         sys.exit(1)
 
 
