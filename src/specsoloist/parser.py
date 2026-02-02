@@ -9,6 +9,8 @@ from typing import Any, Dict, List, Optional
 
 import yaml
 
+from .schema import InterfaceSchema, parse_schema_block
+
 
 @dataclass
 class SpecMetadata:
@@ -29,6 +31,8 @@ class ParsedSpec:
     content: str  # Full content including frontmatter
     body: str     # Content without frontmatter
     path: str
+    schema: Optional[InterfaceSchema] = None
+
 
 
 class SpecParser:
@@ -127,6 +131,7 @@ class SpecParser:
 
         metadata = self._parse_frontmatter(content)
         body = self._strip_frontmatter(content)
+        schema = self._extract_schema(body)
 
         # Fallback: Extract description from Overview if missing
         if not metadata.description and "# 1. Overview" in body:
@@ -153,8 +158,40 @@ class SpecParser:
             metadata=metadata,
             content=content,
             body=body,
-            path=path
+            path=path,
+            schema=schema
         )
+
+    def _extract_schema(self, content: str) -> Optional[InterfaceSchema]:
+        """Extracts and parses the ```yaml:schema block."""
+        if "```yaml:schema" not in content:
+            return None
+            
+        try:
+            # Find the block
+            start_marker = "```yaml:schema"
+            end_marker = "```"
+            
+            start_idx = content.find(start_marker)
+            if start_idx == -1:
+                return None
+                
+            start_content = start_idx + len(start_marker)
+            end_idx = content.find(end_marker, start_content)
+            
+            if end_idx == -1:
+                return None
+                
+            yaml_text = content[start_content:end_idx].strip()
+            raw_data = yaml.safe_load(yaml_text)
+            
+            if not isinstance(raw_data, dict):
+                return None
+                
+            return parse_schema_block(raw_data)
+        except Exception:
+            # For now, return None on error (validator will catch it later)
+            return None
 
     def _parse_frontmatter(self, content: str) -> SpecMetadata:
         """Extracts and parses YAML frontmatter from spec content."""
