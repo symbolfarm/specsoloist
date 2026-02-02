@@ -46,7 +46,7 @@ class SpecSoloistConfig:
             extension=".py",
             test_extension=".py",
             test_filename_pattern="test_{name}",
-            test_command=["pytest", "{file}"],
+            test_command=["python", "-m", "pytest", "{file}"],
             env_vars={"PYTHONPATH": "{build_dir}"}
         ),
         "typescript": LanguageConfig(
