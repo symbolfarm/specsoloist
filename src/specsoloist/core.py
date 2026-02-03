@@ -17,6 +17,7 @@ from .runner import TestRunner
 from .resolver import DependencyResolver, DependencyGraph
 from .manifest import BuildManifest, IncrementalBuilder, compute_content_hash
 from .providers import LLMProvider
+from .parser import ParsedSpec
 
 
 @dataclass
@@ -164,7 +165,7 @@ class SpecSoloistCore:
         
         # 1. Check for missing or circular dependencies
         try:
-            build_order = self.resolver.resolve_build_order()
+            self.resolver.resolve_build_order()  # validates no circular deps
             graph = self.resolver.build_graph()
         except Exception as e:
             return {

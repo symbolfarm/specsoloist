@@ -1,7 +1,7 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict
 import os
 
-from .parser import ParsedSpec, SpecParser
+from .parser import SpecParser
 from .agent import Agent
 from .state import Blackboard
 

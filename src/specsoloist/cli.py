@@ -41,10 +41,10 @@ def main():
     validate_parser.add_argument("name", help="Spec name to validate")
 
     # verify
-    verify_parser = subparsers.add_parser("verify", help="Verify all specs for orchestration readiness")
+    subparsers.add_parser("verify", help="Verify all specs for orchestration readiness")
 
     # graph
-    graph_parser = subparsers.add_parser("graph", help="Export dependency graph as Mermaid")
+    subparsers.add_parser("graph", help="Export dependency graph as Mermaid")
 
     # compile
     compile_parser = subparsers.add_parser("compile", help="Compile a spec to code")

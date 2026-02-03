@@ -1,8 +1,7 @@
 import importlib.util
 import os
 import sys
-from typing import Any, Dict, Optional
-from .parser import ParsedSpec
+from typing import Any, Dict
 
 class Agent:
     """
