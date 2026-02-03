@@ -1,44 +1,96 @@
-# Specular for Agents
+# SpecSoloist for AI Agents
 
-Specular is designed to be **Agent-Native**. It provides a set of high-level tools via the **Model Context Protocol (MCP)** that allow an AI Agent to act as a Software Architect.
+This file provides context for AI agents working with SpecSoloist, whether developing the framework itself or using it as a tool.
 
-## The Role of the Agent
-When using Specular, the Agent's role shifts from "Writing Code" to **"Defining Behavior"**.
-*   **The Agent (Architect)**: Writes `*.spec.md` files.
-*   **Specular (Builder)**: Compiles specs to code, writes tests, runs them, and fixes low-level bugs.
+> **Note**: `CLAUDE.md` and `GEMINI.md` are symlinks to this file. This ensures all AI agents receive the same context regardless of which file their tooling reads.
 
-## MCP Toolset
+## What is SpecSoloist?
 
-### 1. `create_spec(name, description, type)`
-Initializes a new component specification.
-*   *Usage*: "Create a user authentication component."
+SpecSoloist is a "Spec-as-Source" AI coding framework. Users write rigorous Markdown specifications (SRS-style), and SpecSoloist uses LLMs to compile them into executable Python code with tests.
 
-### 2. `compile_spec(name)`
-Compiles the Markdown spec into source code (e.g., Python).
-*   *Usage*: "Build the auth component."
+**Key insight**: Code is a build artifact. Specs are the source of truth.
 
-### 3. `compile_tests(name)`
-Generates a test suite based on the `Test Scenarios` and `Design Contract` in the spec.
-*   *Usage*: "Generate tests for auth."
+Now with **Spechestra** features: define and run multi-agent orchestration workflows directly from specs.
 
-### 4. `run_tests(name)`
-Executes the test suite and returns the results.
-*   *Usage*: "Verify the auth component."
+---
 
-### 5. `attempt_fix(name)`
-Triggers the **Self-Healing Loop**. If tests fail, Specular analyzes the logs and automatically patches the Code or the Test file.
-*   *Usage*: "The tests failed. Fix it."
+## For Agents Developing SpecSoloist
 
-## Example System Prompt for an Architect Agent
+### Key Commands
 
-If you are configuring a custom agent to use Specular, use this system prompt:
+```bash
+uv run python -m pytest tests/   # Run tests (30 tests)
+uv run ruff check src/           # Lint (must pass with 0 errors)
+```
 
-> You are a Lead Software Architect. Your goal is to build robust software using the **Specular Framework**.
+### Project Structure
+
+```
+src/specsoloist/       # Main package
+  core.py              # SpecSoloistCore orchestrator
+  parser.py            # Spec parsing and validation
+  compiler.py          # LLM prompt construction
+  runner.py            # Test execution
+  resolver.py          # Dependency graph
+  config.py            # Configuration
+  cli.py               # CLI (sp command)
+  providers/           # LLM backends (Gemini, Anthropic)
+  agent.py             # Spechestra: Agent wrapper
+  orchestrator.py      # Spechestra: Workflow execution
+  state.py             # Spechestra: Blackboard (shared state)
+  schema.py            # Spechestra: Interface validation
+tests/                 # pytest tests
+self_hosting/          # The Quine - SpecSoloist's own spec
+src/*.spec.md          # Example specs
+```
+
+### Self-Hosting Spec ("The Quine")
+
+`self_hosting/specular_core.spec.md` is SpecSoloist's own specification - it describes itself. Keep this updated when making architectural changes.
+
+### Before Committing
+
+See `CONTRIBUTING.md` for required checks and conventions.
+
+---
+
+## For Agents Using SpecSoloist (MCP)
+
+SpecSoloist is **Agent-Native**. It provides high-level tools via the Model Context Protocol (MCP) that allow an AI agent to act as a Software Architect.
+
+### The Role of the Agent
+
+When using SpecSoloist, the agent's role shifts from "Writing Code" to **"Defining Behavior"**:
+
+- **The Agent (Architect)**: Writes `*.spec.md` files
+- **SpecSoloist (Builder)**: Compiles specs to code, writes tests, runs them, fixes bugs
+
+### MCP Toolset
+
+| Tool | Description |
+|------|-------------|
+| `create_spec(name, description, type)` | Create a new component specification |
+| `compile_spec(name)` | Compile the spec into source code |
+| `compile_tests(name)` | Generate a test suite from the spec |
+| `run_tests(name)` | Execute tests and return results |
+| `attempt_fix(name)` | Self-healing loop: analyze failures and patch code/tests |
+
+### Example System Prompt
+
+> You are a Lead Software Architect. Your goal is to build robust software using the **SpecSoloist Framework**.
 >
 > **Rules:**
-> 1.  **Never write source code** (Python/JS) directly. Always create or edit `*.spec.md` files.
-> 2.  **Be Rigorous**: When editing specs, clearly define **Functional Requirements (FRs)** and **Design Contracts**.
-> 3.  **Iterate**:
->     -   Create Spec -> `compile_spec` -> `compile_tests` -> `run_tests`.
->     -   If tests fail, use `attempt_fix` first.
->     -   If that fails, read the spec and refine the requirements.
+> 1. **Never write source code** (Python/JS) directly. Always create or edit `*.spec.md` files.
+> 2. **Be Rigorous**: When editing specs, clearly define **Functional Requirements (FRs)** and **Design Contracts**.
+> 3. **Iterate**:
+>    - Create Spec -> `compile_spec` -> `compile_tests` -> `run_tests`
+>    - If tests fail, use `attempt_fix` first
+>    - If that fails, read the spec and refine the requirements
+
+---
+
+## See Also
+
+- `README.md` - User documentation and CLI reference
+- `ROADMAP.md` - Development phases and future work
+- `CONTRIBUTING.md` - Contribution guidelines and required checks
