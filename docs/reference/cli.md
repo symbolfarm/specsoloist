@@ -12,6 +12,7 @@ The `sp` command-line tool is your primary interface for the framework.
 | `sp compile <name>` | Compile a spec to implementation code and tests |
 | `sp test <name>` | Execute the test suite for a component |
 | `sp fix <name>` | Analyze failures and attempt an autonomous fix |
+| `sp lift <file>` | Reverse engineer existing code into a spec |
 | `sp perform <workflow>` | Execute an orchestration workflow |
 | `sp build` | Alias for `conduct` |
 

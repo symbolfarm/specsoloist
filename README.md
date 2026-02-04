@@ -90,6 +90,7 @@ SpecSoloist allows you to chain multiple specs into a workflow.
 | `sp compile` | Compile single spec to code + tests |
 | `sp test` | Run tests for a spec |
 | `sp fix` | Auto-fix failing tests |
+| `sp lift` | **Reverse engineer code to spec** |
 | `sp build` | Alias for `conduct` |
 | `sp graph` | Export dependency graph (Mermaid.js) |
 

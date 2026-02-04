@@ -77,9 +77,9 @@
 The goal is to achieve full "Quine" status: `sp conduct self_hosting/` should be able to regenerate the entire `src/` directory with high fidelity.
 
 ### 5a: Spec Lifter (`sp lift`)
-- [ ] **Reverse Engineering**: `sp lift <file>` - Generate a spec from existing source code.
-- [ ] **Test Awareness**: ingest existing `tests/test_*.py` to populate spec "Test Scenarios".
-- [ ] **Decomposition**: Intelligent refactoring - suggest breaking monolithic files into granular specs.
+- [x] **Reverse Engineering**: `sp lift <file>` - Generate a spec from existing source code.
+- [x] **Test Awareness**: ingest existing `tests/test_*.py` to populate spec "Test Scenarios".
+- [x] **Decomposition**: Intelligent refactoring - suggest breaking monolithic files into granular specs.
 - [ ] **Fidelity Checking**: Compare generated code against original to verify spec accuracy.
 
 ### 5b: Full Spec Suite

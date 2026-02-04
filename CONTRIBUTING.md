@@ -47,18 +47,23 @@ When making changes, ensure these files stay consistent:
 - Use `yaml:schema` blocks for interface definitions
 - Include test scenarios in a table format
 
-## The Self-Hosting Spec
+## The Self-Hosting Spec ("The Quine")
 
 The full SpecSoloist and Spechestra packages should be completely specificied and regeneratable from the spec files in `self_hosting`.
 
+**Preferred Workflow: "Lift & Shift"**
+Instead of writing specs manually, use the `sp lift` command to reverse-engineer the existing code into a high-fidelity spec.
+
+```bash
+uv run sp lift src/specsoloist/some_module.py --test tests/test_some_module.py
 ```
-self_hosting/          # The Quine - SpecSoloist's own spec
-  specsoloist.spec.md  # Core package spec
-  spechestra.spec.md   # Orchestration package spec
-  speccomposer.spec.md # Composer component spec
-  specconductor.spec.md# Conductor component spec
-  spec_format.spec.md  # The spec format itself
-  examples/            # Example specs in new format
+
+This ensures the spec accurately reflects the implementation (Behavior, Contracts, Examples).
+
+```
+self_hosting/
+  specsoloist.spec.md  # Core package overview
+  ...
 ```
 
 When you add or modify:

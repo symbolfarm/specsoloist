@@ -97,17 +97,28 @@ self_hosting/          # The Quine - SpecSoloist's own spec
 
 `self_hosting/specsoloist.spec.md` is SpecSoloist's own specification - it describes itself. Keep this updated when making architectural changes.
 
-### Current State (Phase 4)
+### Current State (Phase 5: Self-Hosting)
 
 **Completed:**
-- New language-agnostic spec format (parser handles all types)
-- SpecComposer: `compose()`, `draft_architecture()`, `generate_specs()`
-- SpecConductor: `build()`, `perform()`, `verify()`, `build_and_perform()`
+- CLI: `sp compose` (interactive), `sp conduct` (parallel build), `sp perform` (workflows)
+- Spechestra: Full separation of Composer and Conductor
+- Cleanup: Removed legacy modules (`agent.py`, `orchestrator.py`, `state.py`)
+- Self-Hosting Specs: Updated to match new architecture
+- Spec Lifter: `sp lift` implemented (reverse engineering)
 
 **Next up (see ROADMAP.md):**
-- CLI commands: `sp compose`, `sp conduct`, `sp perform`
-- Interactive review mode for architecture/specs
-- Deprecate old orchestration modules
+- Full "Quine" regeneration: `sp lift` all core modules to `self_hosting/`
+- Fidelity checking: Ensure generated code matches source
+
+### The Lift Workflow
+
+To update self-hosting specs, use the `sp lift` command to reverse-engineer the current code.
+
+```bash
+uv run sp lift src/specsoloist/parser.py --out self_hosting/parser.spec.md
+```
+
+**Quirk Note:** The LLM may "decompose" a monolithic file by appending sub-specs as Markdown code blocks within the main spec. If you see this, you must split them into separate files manually or via a script.
 
 ### Before Committing
 
