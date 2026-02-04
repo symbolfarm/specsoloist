@@ -49,8 +49,19 @@ When making changes, ensure these files stay consistent:
 
 ## The Self-Hosting Spec
 
-`self_hosting/specular_core.spec.md` is SpecSoloist describing itself. When you add or modify:
+The full SpecSoloist and Spechestra packages should be completely specificied and regeneratable from the spec files in `self_hosting`.
 
+```
+self_hosting/          # The Quine - SpecSoloist's own spec
+  specsoloist.spec.md  # Core package spec
+  spechestra.spec.md   # Orchestration package spec
+  speccomposer.spec.md # Composer component spec
+  specconductor.spec.md# Conductor component spec
+  spec_format.spec.md  # The spec format itself
+  examples/            # Example specs in new format
+```
+
+When you add or modify:
 - New modules or classes
 - New public methods
 - New functional requirements
