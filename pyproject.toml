@@ -44,7 +44,7 @@ sp = "specsoloist.cli:main"
 specsoloist-mcp = "specsoloist.server:main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/specsoloist"]
+packages = ["src/specsoloist", "src/spechestra"]
 
 [build-system]
 requires = ["hatchling"]
