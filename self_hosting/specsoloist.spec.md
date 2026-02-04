@@ -1,19 +1,22 @@
 ---
-name: specular_core
+name: specsoloist
 type: module
 language_target: python
 status: stable
 ---
 
 # 1. Overview
-The `specular` module is the core of the Specular framework—a "Spec-as-Source" AI coding system that treats rigorous SRS-style Markdown specifications as the single source of truth and uses LLMs to compile them into executable code.
+
+**SpecSoloist** is the core package of the spec-driven development framework. It compiles individual SRS-style Markdown specifications into executable code using LLMs.
+
+SpecSoloist is the "soloist" - it focuses on one spec at a time. For orchestrating multiple specs and high-level workflows, see **Spechestra** (which depends on this package).
 
 The module is organized into specialized components:
-- **SpecularCore**: The main orchestrator that coordinates all operations
+- **SpecSoloistCore**: The main orchestrator that coordinates all operations
 - **SpecParser**: Handles spec file discovery, parsing, and validation
 - **SpecCompiler**: Manages prompt construction and LLM code generation
 - **TestRunner**: Executes tests and manages build artifacts
-- **SpecularConfig**: Configuration management with environment-based loading
+- **SpecSoloistConfig**: Configuration management with environment-based loading
 - **LLMProvider**: Protocol for pluggable LLM backends (Gemini, Anthropic)
 - **DependencyResolver**: Resolves spec dependencies and computes build order
 - **BuildManifest**: Tracks file hashes for incremental builds
@@ -21,9 +24,9 @@ The module is organized into specialized components:
 
 # 2. Interface Specification
 
-## 2.1 SpecularCore (Orchestrator)
+## 2.1 SpecSoloistCore (Orchestrator)
 
-### `__init__(root_dir: str = ".", api_key: Optional[str] = None, config: Optional[SpecularConfig] = None)`
+### `__init__(root_dir: str = ".", api_key: Optional[str] = None, config: Optional[SpecSoloistConfig] = None)`
 *   Initializes the framework with a project root directory.
 *   If `config` is provided, uses it directly; otherwise loads from environment.
 *   Sets up `src/` and `build/` directories if they don't exist.
@@ -115,7 +118,7 @@ The module is organized into specialized components:
 
 ## 2.4 TestRunner
 
-### `__init__(build_dir: str, config: Optional[SpecularConfig] = None)`
+### `__init__(build_dir: str, config: Optional[SpecSoloistConfig] = None)`
 *   Initializes with build directory and optional configuration.
 
 ### `run_tests(module_name: str, language: str = "python") -> TestResult`
@@ -131,12 +134,12 @@ The module is organized into specialized components:
 ### `write_file(filename: str, content: str) -> str`
 *   Writes a file securely (basename only, no path traversal).
 
-## 2.5 SpecularConfig
+## 2.5 SpecSoloistConfig
 
 ### `__init__(llm_provider: str = "gemini", llm_model: Optional[str] = None, api_key: Optional[str] = None, root_dir: str = ".", ...)`
 *   Configuration dataclass with all framework settings.
 
-### `from_env(root_dir: str = ".") -> SpecularConfig`
+### `from_env(root_dir: str = ".") -> SpecSoloistConfig`
 *   Class method to load config from environment variables:
     - `SPECULAR_LLM_PROVIDER`: "gemini" or "anthropic"
     - `SPECULAR_LLM_MODEL`: Model identifier
@@ -224,7 +227,7 @@ The module is organized into specialized components:
 # 3. Functional Requirements (Behavior)
 
 ## Module Organization
-*   **FR-01**: The system shall be organized into specialized modules (parser, compiler, runner, config, providers, ui) with SpecularCore as the thin orchestrator.
+*   **FR-01**: The system shall be organized into specialized modules (parser, compiler, runner, config, providers, ui) with SpecSoloistCore as the thin orchestrator.
 *   **FR-02**: Each module shall have a single responsibility and be independently testable.
 
 ## File Management
