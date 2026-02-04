@@ -549,7 +549,7 @@ dependencies:
 
         # Check required sections based on type
         if spec_type in ("function", "class"):
-            errors.extend(self._validate_function_sections(parsed.body))
+            errors.extend(self._validate_function_sections(parsed))
         elif spec_type == "type":
             errors.extend(self._validate_type_sections(parsed.body))
         elif spec_type == "bundle":
@@ -557,7 +557,7 @@ dependencies:
         elif spec_type in ("workflow", "orchestrator"):
             errors.extend(self._validate_workflow_sections(parsed))
         elif spec_type == "module":
-            errors.extend(self._validate_module_sections(parsed.body))
+            errors.extend(self._validate_module_sections(parsed))
         else:
             # Legacy validation for unknown types
             errors.extend(self._validate_legacy_sections(parsed.body))
@@ -567,24 +567,24 @@ dependencies:
             "errors": errors
         }
 
-    def _validate_function_sections(self, body: str) -> List[str]:
+    def _validate_function_sections(self, parsed: ParsedSpec) -> List[str]:
         """Validates required sections for function specs."""
         errors = []
-        # New format uses simpler headers
-        required = ["# Overview", "# Interface", "# Behavior"]
-        alternative_required = ["# 1. Overview", "# 2. Interface", "# 3. Functional Requirements"]
-
-        # Check if using new or old format
-        if "# 1. Overview" in body:
-            # Old format
-            for section in alternative_required:
-                if section not in body:
-                    errors.append(f"Missing required section: '{section}'")
-        else:
-            # New format
-            for section in required:
-                if section not in body:
-                    errors.append(f"Missing required section: '{section}'")
+        body = parsed.body
+        
+        # Check Overview
+        if "# Overview" not in body and "# 1. Overview" not in body:
+            errors.append("Missing required section: '# Overview'")
+            
+        # Check Interface (Header OR YAML Block)
+        has_interface = any(h in body for h in ["# Interface", "# 2. Interface Specification"])
+        has_yaml = parsed.schema is not None
+        if not (has_interface or has_yaml):
+            errors.append("Missing required section: '# Interface' or yaml:schema block")
+            
+        # Check Behavior
+        if "# Behavior" not in body and "# 3. Functional Requirements" not in body:
+            errors.append("Missing required section: '# Behavior'")
 
         return errors
 
@@ -593,6 +593,7 @@ dependencies:
         errors = []
         if "# Overview" not in body and "# 1. Overview" not in body:
             errors.append("Missing required section: '# Overview'")
+        # Already checked for yaml:schema in parse_spec, but let's be thorough
         if "# Schema" not in body and "```yaml:schema" not in body:
             errors.append("Missing required section: '# Schema' or yaml:schema block")
         return errors
@@ -615,14 +616,21 @@ dependencies:
             errors.append("Workflow must have steps defined in yaml:steps block")
         return errors
 
-    def _validate_module_sections(self, body: str) -> List[str]:
+    def _validate_module_sections(self, parsed: ParsedSpec) -> List[str]:
         """Validates required sections for module specs."""
         errors = []
+        body = parsed.body
         if "# Overview" not in body and "# 1. Overview" not in body:
             errors.append("Missing required section: '# Overview'")
-        # New format requires Exports, but legacy format uses Interface Specification
-        if "# Exports" not in body and "# 2. Interface Specification" not in body:
-            errors.append("Missing required section: '# Exports' or '# 2. Interface Specification'")
+            
+        # New format uses Exports, legacy uses Interface Specification
+        has_exports = "# Exports" in body
+        has_interface = "# 2. Interface Specification" in body
+        has_yaml = parsed.bundle_functions or parsed.bundle_types or (parsed.metadata.dependencies and len(parsed.metadata.dependencies) > 0)
+        
+        if not (has_exports or has_interface or has_yaml):
+            errors.append("Module must have '# Exports', legacy interface, or dependencies")
+            
         return errors
 
     def _validate_legacy_sections(self, body: str) -> List[str]:
