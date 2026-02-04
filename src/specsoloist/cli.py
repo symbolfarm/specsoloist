@@ -17,6 +17,8 @@ import os
 
 from .core import SpecSoloistCore
 from .resolver import CircularDependencyError, MissingDependencyError
+from spechestra.composer import SpecComposer, Architecture
+from spechestra.conductor import SpecConductor
 from . import ui
 
 
@@ -56,11 +58,6 @@ def main():
     test_parser = subparsers.add_parser("test", help="Run tests for a spec")
     test_parser.add_argument("name", help="Spec name to test")
 
-    # run (orchestrator)
-    run_parser = subparsers.add_parser("run", help="Run an orchestration workflow")
-    run_parser.add_argument("name", help="Orchestrator spec name")
-    run_parser.add_argument("inputs", help="JSON inputs for the workflow")
-
     # fix
     fix_parser = subparsers.add_parser("fix", help="Auto-fix failing tests")
     fix_parser.add_argument("name", help="Spec name to fix")
@@ -73,6 +70,24 @@ def main():
     build_parser.add_argument("--workers", type=int, default=4, help="Max parallel workers (default: 4)")
     build_parser.add_argument("--model", help="Override LLM model")
     build_parser.add_argument("--no-tests", action="store_true", help="Skip test generation")
+
+    # compose
+    compose_parser = subparsers.add_parser("compose", help="Draft architecture and specs from natural language")
+    compose_parser.add_argument("request", help="Description of the system you want to build")
+    compose_parser.add_argument("--auto-accept", action="store_true", help="Skip interactive review")
+    compose_parser.add_argument("--model", help="Override LLM model")
+
+    # conduct
+    conduct_parser = subparsers.add_parser("conduct", help="Orchestrate project build")
+    conduct_parser.add_argument("--incremental", action="store_true", help="Only recompile changed specs")
+    conduct_parser.add_argument("--parallel", action="store_true", help="Compile independent specs concurrently")
+    conduct_parser.add_argument("--workers", type=int, default=4, help="Max parallel workers (default: 4)")
+    conduct_parser.add_argument("--model", help="Override LLM model")
+
+    # perform
+    perform_parser = subparsers.add_parser("perform", help="Execute an orchestration workflow")
+    perform_parser.add_argument("workflow", help="Workflow spec name")
+    perform_parser.add_argument("inputs", help="JSON inputs for the workflow")
 
     # mcp (hidden, for backwards compatibility)
     subparsers.add_parser("mcp", help="Start MCP server (for AI agents)")
@@ -105,12 +120,16 @@ def main():
             cmd_compile(core, args.name, args.model, not args.no_tests)
         elif args.command == "test":
             cmd_test(core, args.name)
-        elif args.command == "run":
-            cmd_run(core, args.name, args.inputs)
         elif args.command == "fix":
             cmd_fix(core, args.name, args.model)
         elif args.command == "build":
             cmd_build(core, args.incremental, args.parallel, args.workers, args.model, not args.no_tests)
+        elif args.command == "compose":
+            cmd_compose(core, args.request, args.auto_accept)
+        elif args.command == "conduct":
+            cmd_conduct(core, args.incremental, args.parallel, args.workers)
+        elif args.command == "perform":
+            cmd_perform(core, args.workflow, args.inputs)
         elif args.command == "mcp":
             cmd_mcp()
     except KeyboardInterrupt:
@@ -283,41 +302,6 @@ def cmd_test(core: SpecSoloistCore, name: str):
         sys.exit(1)
 
 
-def cmd_run(core: SpecSoloistCore, name: str, inputs_json: str):
-    import json
-    from rich.prompt import Confirm
-    
-    ui.print_header("Running Orchestration", name)
-    
-    try:
-        inputs = json.loads(inputs_json)
-    except json.JSONDecodeError:
-        ui.print_error("Invalid JSON inputs")
-        sys.exit(1)
-        
-    def checkpoint_callback(step_name: str) -> bool:
-        return Confirm.ask(f"[bold yellow]Checkpoint:[/] Proceed with step '{step_name}'?")
-
-    try:
-        results = core.run_orchestration(
-            name, 
-            inputs, 
-            checkpoint_callback=checkpoint_callback
-        )
-        
-        ui.print_success("Orchestration complete")
-        
-        # Display results
-        table = ui.create_table(["Step", "Result"], title="Workflow Summary")
-        for step_name, result in results.items():
-            table.add_row(step_name, str(result))
-        ui.console.print(table)
-        
-    except Exception as e:
-        ui.print_error(f"Orchestration failed: {e}")
-        sys.exit(1)
-
-
 def cmd_fix(core: SpecSoloistCore, name: str, model: str):
     _check_api_key()
 
@@ -377,6 +361,192 @@ def cmd_build(core: SpecSoloistCore, incremental: bool, parallel: bool, workers:
         ui.print_success("Build complete.")
     else:
         ui.print_error("Build failed.")
+        sys.exit(1)
+
+
+def cmd_compose(core: SpecSoloistCore, request: str, auto_accept: bool):
+    _check_api_key()
+    
+    ui.print_header("Composing System", "Using SpecComposer")
+    
+    # Initialize Composer
+    composer = SpecComposer(core.project_dir)
+    
+    with ui.spinner("Drafting architecture..."):
+        architecture = composer.draft_architecture(request)
+        
+    # Interactive loop
+    while True:
+        # Display Architecture
+        ui.print_header("Architecture Draft", architecture.description)
+        
+        arch_table = ui.create_table(["Component", "Type", "Dependencies", "Description"])
+        for comp in architecture.components:
+            deps = ", ".join(comp.dependencies) if comp.dependencies else "-"
+            arch_table.add_row(
+                f"[bold]{comp.name}[/]",
+                comp.type,
+                deps,
+                comp.description
+            )
+        ui.console.print(arch_table)
+        ui.console.print()
+
+        if auto_accept:
+            break
+            
+        from rich.prompt import Prompt, Confirm
+        choice = Prompt.ask(
+            "[bold]Action[/]", 
+            choices=["proceed", "edit", "cancel"], 
+            default="proceed"
+        )
+        
+        if choice == "cancel":
+            ui.print_warning("Composition cancelled.")
+            return
+            
+        if choice == "edit":
+            # Edit in external editor
+            import tempfile
+            import subprocess
+            import shlex
+            
+            with tempfile.NamedTemporaryFile(suffix=".yaml", mode='w', delete=False) as tf:
+                tf.write(architecture.to_yaml())
+                tf_path = tf.name
+                
+            editor = os.environ.get("EDITOR", "vim")
+            
+            try:
+                subprocess.call(shlex.split(editor) + [tf_path])
+                
+                # Read back
+                with open(tf_path, 'r') as f:
+                    new_yaml = f.read()
+                    
+                # Parse
+                try:
+                    architecture = Architecture.from_yaml(new_yaml)
+                    ui.print_success("Architecture updated from editor.")
+                except Exception as e:
+                    ui.print_error(f"Failed to parse updated architecture: {e}")
+                    if not Confirm.ask("Retry editing?", default=True):
+                        return
+                    continue # Loop back to display and prompt
+                    
+            finally:
+                if os.path.exists(tf_path):
+                    os.remove(tf_path)
+            continue # Show updated architecture
+            
+        if choice == "proceed":
+            break
+
+    with ui.spinner("Generating specs..."):
+        spec_paths = composer.generate_specs(architecture)
+        
+    ui.print_success(f"Generated {len(spec_paths)} specs:")
+    for path in spec_paths:
+        rel_path = os.path.relpath(path, os.getcwd())
+        ui.console.print(f"  - [bold]{rel_path}[/]")
+        
+    ui.print_info("Review specs, then run 'sp conduct' to build.")
+
+
+def cmd_conduct(core: SpecSoloistCore, incremental: bool, parallel: bool, workers: int):
+    _check_api_key()
+    
+    ui.print_header("Conducting Build", "Using SpecConductor")
+    
+    conductor = SpecConductor(core.project_dir)
+    
+    with ui.spinner("Orchestrating build..."):
+        result = conductor.build(
+            incremental=incremental,
+            parallel=parallel,
+            max_workers=workers
+        )
+        
+    # Reuse the summary display from build? Or create new one.
+    # For now, let's create a similar summary.
+    
+    table = ui.create_table(["Result", "Spec", "Details"], title="Conductor Report")
+    
+    for spec in result.specs_compiled:
+        table.add_row("[green]Compiled[/]", spec, "Success")
+    
+    for spec in result.specs_skipped:
+        table.add_row("[dim]Skipped[/]", spec, "Unchanged")
+        
+    for spec in result.specs_failed:
+        error = result.errors.get(spec, "Unknown error")
+        if len(error) > 50:
+            error = error[:47] + "..."
+        table.add_row("[red]Failed[/]", spec, error)
+
+    ui.console.print(table)
+
+    if result.success:
+        ui.print_success("Conductor finished successfully.")
+    else:
+        ui.print_error("Conductor reported failures.")
+        sys.exit(1)
+
+
+def cmd_perform(core: SpecSoloistCore, workflow: str, inputs_json: str):
+    import json
+    from rich.prompt import Confirm
+    
+    ui.print_header("Performing Workflow", workflow)
+    
+    try:
+        inputs = json.loads(inputs_json)
+    except json.JSONDecodeError:
+        ui.print_error("Invalid JSON inputs")
+        sys.exit(1)
+        
+    conductor = SpecConductor(core.project_dir)
+    
+    def checkpoint_callback(step_name: str) -> bool:
+        return Confirm.ask(f"[bold yellow]Checkpoint:[/] Proceed with step '{step_name}'?")
+
+    try:
+        result = conductor.perform(
+            workflow, 
+            inputs, 
+            checkpoint_callback=checkpoint_callback
+        )
+        
+        # Display results
+        table = ui.create_table(["Step", "Status", "Duration", "Result"], title="Performance Summary")
+        for step in result.steps:
+            status = "[green]Success[/]" if step.success else "[red]Failed[/]"
+            duration = f"{step.duration:.2f}s"
+            
+            # Format output briefly
+            output_str = str(step.outputs)[:50] + "..." if len(str(step.outputs)) > 50 else str(step.outputs)
+            if step.error:
+                output_str = f"[red]{step.error}[/]"
+                
+            table.add_row(step.name, status, duration, output_str)
+            
+        ui.console.print(table)
+        
+        if result.success:
+            ui.print_success("Performance complete")
+            ui.print_info(f"Trace saved to: {result.trace_path}")
+            # Show final outputs
+            ui.console.print(ui.Panel(str(result.outputs), title="Final Outputs"))
+        else:
+            ui.print_error("Performance failed")
+            sys.exit(1)
+            
+    except Exception as e:
+        ui.print_error(f"Performance error: {e}")
+        # Print traceback for debugging
+        import traceback
+        traceback.print_exc()
         sys.exit(1)
 
 

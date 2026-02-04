@@ -740,25 +740,5 @@ class SpecSoloistCore:
 
         return f"Applied fixes to: {', '.join(changes_made)}. Run tests again to verify."
 
-    # =========================================================================
-    # Public API - Orchestration
-    # =========================================================================
-
-    def run_orchestration(
-        self, 
-        name: str, 
-        inputs: Dict[str, Any], 
-        checkpoint_callback=None
-    ) -> Dict[str, Any]:
-        """
-        Run an orchestration workflow.
-        """
-        from .orchestrator import Orchestrator
-        conductor = Orchestrator(
-            self.parser, 
-            self.config.build_path, 
-            checkpoint_callback=checkpoint_callback
-        )
-        return conductor.run(name, inputs)
 
     

@@ -86,39 +86,39 @@
 The following tasks are ready for the next contributor:
 
 ### CLI Integration (Priority: High)
-1. **Add `sp compose` command** in `cli.py`:
+- [x] **Add `sp compose` command** in `cli.py`:
    - Accept natural language request as argument
    - Call `SpecComposer.compose()`
    - Display generated architecture and spec paths
    - Add `--auto-accept` flag to skip prompts
 
-2. **Add `sp conduct` command** (or integrate into `sp build`):
+- [x] **Add `sp conduct` command** (or integrate into `sp build`):
    - Use `SpecConductor.build()` instead of `SpecSoloistCore.compile_project()`
    - Show parallel build progress
 
-3. **Add `sp perform` command**:
+- [x] **Add `sp perform` command**:
    - Execute workflow with `SpecConductor.perform()`
    - Display step-by-step execution
    - Show trace path on completion
 
 ### Interactive Review (Priority: Medium)
-4. **Architecture Review UI**:
+- [x] **Architecture Review UI**:
    - Use Rich to display component table
    - Prompt for approval/modifications
-   - Allow adding/removing components
+   - Allow adding/removing components (via YAML editor)
 
-5. **Spec Review UI**:
+- [ ] **Spec Review UI**:
    - Display generated spec content
    - Open in $EDITOR if user wants to modify
    - Confirm before proceeding
 
 ### Cleanup (Priority: Low)
-6. **Deprecate old orchestration modules**:
+- [x] **Deprecate old orchestration modules**:
    - `src/specsoloist/agent.py` → replaced by `SpecConductor.perform()`
    - `src/specsoloist/orchestrator.py` → replaced by `SpecConductor`
    - `src/specsoloist/state.py` → Blackboard logic in conductor
 
-7. **Update self-hosting specs**:
+- [ ] **Update self-hosting specs**:
    - Ensure `self_hosting/specsoloist.spec.md` reflects current implementation
    - Add tests that verify specs match implementation
 

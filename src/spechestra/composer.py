@@ -33,6 +33,39 @@ class Architecture:
     build_order: List[str]
     description: str = ""
 
+    def to_yaml(self) -> str:
+        """Serialize to YAML string."""
+        import yaml
+        from dataclasses import asdict
+        return yaml.dump(asdict(self), sort_keys=False)
+
+    @classmethod
+    def from_yaml(cls, yaml_str: str) -> "Architecture":
+        """Parse from YAML string."""
+        import yaml
+        data = yaml.safe_load(yaml_str)
+        
+        components = []
+        deps = {}
+        for comp_data in data.get("components", []):
+            comp = ComponentDef(
+                name=comp_data.get("name", ""),
+                type=comp_data.get("type", "function"),
+                description=comp_data.get("description", ""),
+                inputs=comp_data.get("inputs", {}),
+                outputs=comp_data.get("outputs", {}),
+                dependencies=comp_data.get("dependencies", [])
+            )
+            components.append(comp)
+            deps[comp.name] = comp.dependencies
+
+        return cls(
+            components=components,
+            dependencies=deps,
+            build_order=data.get("build_order", []),
+            description=data.get("description", "")
+        )
+
 
 @dataclass
 class CompositionResult:
