@@ -19,6 +19,7 @@ from .core import SpecSoloistCore
 from .resolver import CircularDependencyError, MissingDependencyError
 from spechestra.composer import SpecComposer, Architecture
 from spechestra.conductor import SpecConductor
+from .lifter import SpecLifter
 from . import ui
 
 
@@ -89,6 +90,13 @@ def main():
     perform_parser.add_argument("workflow", help="Workflow spec name")
     perform_parser.add_argument("inputs", help="JSON inputs for the workflow")
 
+    # lift
+    lift_parser = subparsers.add_parser("lift", help="Reverse engineer code to spec")
+    lift_parser.add_argument("file", help="Path to source file")
+    lift_parser.add_argument("--test", help="Path to test file (optional)")
+    lift_parser.add_argument("--out", help="Output path (optional)")
+    lift_parser.add_argument("--model", help="Override LLM model")
+
     # mcp (hidden, for backwards compatibility)
     subparsers.add_parser("mcp", help="Start MCP server (for AI agents)")
 
@@ -130,6 +138,8 @@ def main():
             cmd_conduct(core, args.incremental, args.parallel, args.workers)
         elif args.command == "perform":
             cmd_perform(core, args.workflow, args.inputs)
+        elif args.command == "lift":
+            cmd_lift(core, args.file, args.test, args.out, args.model)
         elif args.command == "mcp":
             cmd_mcp()
     except KeyboardInterrupt:
@@ -548,6 +558,29 @@ def cmd_perform(core: SpecSoloistCore, workflow: str, inputs_json: str):
         import traceback
         traceback.print_exc()
         sys.exit(1)
+
+
+def cmd_lift(core: SpecSoloistCore, file_path: str, test_path: str, out_path: str, model: str):
+    _check_api_key()
+    
+    ui.print_header("Lifting Code to Spec", file_path)
+    
+    lifter = SpecLifter(core.config)
+    
+    with ui.spinner("Analyzing code and generating spec..."):
+        try:
+            spec_content = lifter.lift(file_path, test_path, model)
+        except Exception as e:
+            ui.print_error(f"Lift failed: {e}")
+            sys.exit(1)
+            
+    if out_path:
+        with open(out_path, 'w') as f:
+            f.write(spec_content)
+        ui.print_success(f"Spec saved to: [bold]{out_path}[/]")
+    else:
+        ui.console.print(ui.Panel(spec_content, title="Generated Spec", border_style="blue"))
+        ui.print_info("Use --out <path> to save to file.")
 
 
 def cmd_mcp():

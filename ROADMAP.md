@@ -72,7 +72,22 @@
 - [ ] **Interactive Mode**: Terminal UI for reviewing/approving architecture and specs.
 - [ ] **Deprecate Old Modules**: Remove `agent.py`, `orchestrator.py`, `state.py` from specsoloist.
 
-## Phase 5: Developer Experience (Future)
+## Phase 5: Self-Hosting & Fidelity (New)
+
+The goal is to achieve full "Quine" status: `sp conduct self_hosting/` should be able to regenerate the entire `src/` directory with high fidelity.
+
+### 5a: Spec Lifter (`sp lift`)
+- [ ] **Reverse Engineering**: `sp lift <file>` - Generate a spec from existing source code.
+- [ ] **Test Awareness**: ingest existing `tests/test_*.py` to populate spec "Test Scenarios".
+- [ ] **Decomposition**: Intelligent refactoring - suggest breaking monolithic files into granular specs.
+- [ ] **Fidelity Checking**: Compare generated code against original to verify spec accuracy.
+
+### 5b: Full Spec Suite
+- [ ] **Leaf Modules**: Lift `config.py`, `ui.py`, `schema.py`.
+- [ ] **Core Logic**: Lift `parser.py`, `compiler.py`, `resolver.py`.
+- [ ] **Application**: Lift `cli.py` and entry points.
+
+## Phase 6: Developer Experience (Future)
 - [ ] **Sandboxed Execution**: Run generated code in Docker containers for safety.
 - [ ] **VS Code Extension**: Live preview of generated code/tests while editing specs.
 - [ ] **Visual Spec Editor**: A GUI for defining Functional Requirements and Contracts.
