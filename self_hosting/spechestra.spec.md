@@ -63,8 +63,6 @@ spechestra/
   __init__.py           # Exports SpecComposer, SpecConductor
   composer.py           # SpecComposer implementation
   conductor.py          # SpecConductor implementation
-  blackboard.py         # Shared state for workflows
-  schema.py             # Interface validation (Pydantic models)
 ```
 
 ## 2.2 SpecComposer
@@ -74,22 +72,6 @@ See `speccomposer.spec.md` for detailed specification.
 ## 2.3 SpecConductor
 
 See `specconductor.spec.md` for detailed specification.
-
-## 2.4 Blackboard
-
-A shared state store for workflow execution. Allows steps to share data without direct coupling.
-
-### `Blackboard(storage_path: str)`
-*   Initializes with a path for persistence.
-
-### `set(key: str, value: Any, scope: str = "shared")`
-*   Stores a value under a scoped key.
-
-### `get(key: str, scope: str = "shared") -> Optional[Any]`
-*   Retrieves a value by key and scope.
-
-### `clear()`
-*   Removes all data.
 
 # 3. Functional Requirements
 

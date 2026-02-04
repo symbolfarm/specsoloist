@@ -1,16 +1,19 @@
 # CLI Reference
 
-The `specular` command-line tool is your primary interface for the framework.
+The `sp` command-line tool is your primary interface for the framework.
 
 | Command | Description |
 | --- | --- |
-| `specular list` | List all specifications in `src/` |
-| `specular create <name> <desc>` | Create a new spec from the template |
-| `specular validate <name>` | Check a spec for SRS compliance |
-| `specular compile <name>` | Compile a spec to implementation code and tests |
-| `specular test <name>` | Execute the test suite for a component |
-| `specular fix <name>` | Analyze failures and attempt an autonomous fix |
-| `specular build` | Compile all specs in dependency order |
+| `sp list` | List all specifications in `src/` |
+| `sp create <name> <desc>` | Create a new spec from the template |
+| `sp compose <request>` | Draft architecture and specs from natural language |
+| `sp validate <name>` | Check a spec for SRS compliance |
+| `sp conduct` | Orchestrate a project build (parallel & incremental) |
+| `sp compile <name>` | Compile a spec to implementation code and tests |
+| `sp test <name>` | Execute the test suite for a component |
+| `sp fix <name>` | Analyze failures and attempt an autonomous fix |
+| `sp perform <workflow>` | Execute an orchestration workflow |
+| `sp build` | Alias for `conduct` |
 
 ## Build Options
 

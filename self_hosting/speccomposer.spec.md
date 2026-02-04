@@ -57,27 +57,16 @@ outputs:
     - `build_order`: Suggested compilation order
 *   Does NOT create files yet.
 
-### `review_architecture(architecture: Architecture) -> Architecture`
-*   Presents the architecture for user review in interactive mode.
-*   Returns potentially modified architecture.
-*   In auto-accept mode, returns unchanged.
-
 ### `generate_specs(architecture: Architecture) -> List[str]`
 *   Creates `*.spec.md` files in `src/` for each component.
 *   Returns list of created file paths.
 *   Uses the spec template and fills in based on architecture.
 
-### `review_specs(spec_paths: List[str]) -> List[str]`
-*   Presents generated specs for user review.
-*   User can edit specs directly.
-*   Returns final list of spec paths.
-
-### `compose(request: str, auto_accept: bool = False) -> CompositionResult`
+### `compose(request: str, auto_accept: bool = False, context: Optional[Dict] = None) -> CompositionResult`
 *   High-level method that runs the full workflow:
     1. `draft_architecture(request)`
-    2. `review_architecture()` (if not auto_accept)
-    3. `generate_specs()`
-    4. `review_specs()` (if not auto_accept)
+    2. (Client handles review)
+    3. `generate_specs(architecture)`
 *   Returns `CompositionResult(architecture, spec_paths, ready_for_build)`.
 
 ## 2.3 Data Classes
@@ -87,8 +76,12 @@ outputs:
 @dataclass
 class Architecture:
     components: List[ComponentDef]
-    dependencies: Dict[str, List[str]]  # component -> [dependencies]
+    dependencies: Dict[str, List[str]]
     build_order: List[str]
+
+    def to_yaml(self) -> str: ...
+    @classmethod
+    def from_yaml(cls, yaml_str: str) -> "Architecture": ...
 
 @dataclass
 class ComponentDef:

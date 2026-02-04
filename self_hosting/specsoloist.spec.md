@@ -9,74 +9,57 @@ status: stable
 
 **SpecSoloist** is the core package of the spec-driven development framework. It compiles individual SRS-style Markdown specifications into executable code using LLMs.
 
-SpecSoloist is the "soloist" - it focuses on one spec at a time. For orchestrating multiple specs and high-level workflows, see **Spechestra** (which depends on this package).
+SpecSoloist is the "soloist" - it focuses on one spec at a time. For high-level orchestration, see **Spechestra** (which uses SpecSoloist).
 
 The module is organized into specialized components:
-- **SpecSoloistCore**: The main orchestrator that coordinates all operations
-- **SpecParser**: Handles spec file discovery, parsing, and validation
-- **SpecCompiler**: Manages prompt construction and LLM code generation
-- **TestRunner**: Executes tests and manages build artifacts
-- **SpecSoloistConfig**: Configuration management with environment-based loading
-- **LLMProvider**: Protocol for pluggable LLM backends (Gemini, Anthropic)
-- **DependencyResolver**: Resolves spec dependencies and computes build order
-- **BuildManifest**: Tracks file hashes for incremental builds
-- **UI**: Provides rich terminal output and progress indicators
+- **SpecSoloistCore**: The main interface for spec operations and project builds.
+- **SpecParser**: Handles spec file discovery, parsing, and validation.
+- **SpecCompiler**: Manages prompt construction and LLM code generation.
+- **TestRunner**: Executes tests and manages build artifacts.
+- **SpecSoloistConfig**: Configuration management.
+- **LLMProvider**: Protocol for pluggable LLM backends (Gemini, Anthropic).
+- **DependencyResolver**: Resolves spec dependencies and computes build order.
+- **BuildManifest**: Tracks file hashes for incremental builds.
+- **UI**: Provides rich terminal output.
 
 # 2. Interface Specification
 
-## 2.1 SpecSoloistCore (Orchestrator)
+## 2.1 SpecSoloistCore
 
 ### `__init__(root_dir: str = ".", api_key: Optional[str] = None, config: Optional[SpecSoloistConfig] = None)`
 *   Initializes the framework with a project root directory.
-*   If `config` is provided, uses it directly; otherwise loads from environment.
-*   Sets up `src/` and `build/` directories if they don't exist.
-*   Lazily initializes the LLM provider and compiler on first use.
 
 ### `list_specs() -> List[str]`
 *   Returns a list of all `*.spec.md` files in the source directory.
 
-### `read_spec(name: str) -> str`
-*   Returns the raw content of a specification file.
-
 ### `create_spec(name: str, description: str, type: str = "function") -> str`
 *   Creates a new `*.spec.md` file from the internal template.
-*   **Returns**: Success message with path.
 
 ### `validate_spec(name: str) -> Dict[str, Any]`
 *   Validates spec structure for SRS compliance.
-*   **Returns**: Dict with `valid` (bool) and `errors` (list).
 
 ### `compile_spec(name: str, model: Optional[str] = None) -> str`
-*   Compiles a spec to implementation code via the LLM.
-*   **Returns**: Success message with output path.
+*   Compiles a single spec to implementation code via the LLM.
 
 ### `compile_tests(name: str, model: Optional[str] = None) -> str`
 *   Generates a pytest suite based on the spec's test scenarios.
-*   **Returns**: Success message with output path.
 
 ### `run_tests(name: str) -> Dict[str, Any]`
 *   Executes the generated test suite using `pytest`.
-*   **Returns**: Dict with `success` (bool) and `output` (str).
 
 ### `attempt_fix(name: str, model: Optional[str] = None) -> str`
 *   The "Self-Healing" loop. Analyzes test failures and patches code/tests.
-*   **Returns**: Status message describing applied fixes.
 
 ### `compile_project(specs: List[str] = None, model: Optional[str] = None, generate_tests: bool = True, incremental: bool = False, parallel: bool = False, max_workers: int = 4) -> BuildResult`
 *   Compiles multiple specs in dependency order.
-*   If `incremental=True`, only recompiles specs that have changed.
-*   If `parallel=True`, compiles independent specs concurrently.
-*   **Returns**: `BuildResult(success, specs_compiled, specs_skipped, specs_failed, build_order, errors)`.
+*   Supports incremental and parallel builds.
+*   **Returns**: `BuildResult` object.
 
-### `get_build_order(specs: List[str] = None) -> List[str]`
-*   Returns specs in topological order (dependencies before dependents).
+### `verify_project() -> Dict[str, Any]`
+*   Verifies schemas and interface compatibility across the project.
 
 ### `get_dependency_graph(specs: List[str] = None) -> DependencyGraph`
-*   Returns the dependency graph for inspection.
-
-### `run_all_tests() -> Dict[str, Any]`
-*   Runs tests for all compiled specs.
-*   **Returns**: Dict with overall `success` and per-spec results.
+*   Returns the dependency graph.
 
 ## 2.2 SpecParser
 

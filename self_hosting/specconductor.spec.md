@@ -123,14 +123,7 @@ class StepResult:
 @dataclass
 class VerifyResult:
     success: bool
-    results: Dict[str, SpecVerification]
-
-@dataclass
-class SpecVerification:
-    status: str  # "valid", "warning", "invalid", "error"
-    schema_defined: bool
-    errors: List[str]
-    message: str
+    results: Dict[str, Dict[str, Any]]  # spec_name -> verification details
 ```
 
 # 3. Functional Requirements
@@ -152,7 +145,7 @@ class SpecVerification:
 *   **FR-10**: `perform()` shall load compiled modules dynamically.
 *   **FR-11**: `perform()` shall execute steps in the order defined by the workflow spec.
 *   **FR-12**: Inputs shall be resolved from previous step outputs or initial inputs.
-*   **FR-13**: Step results shall be stored in a Blackboard for subsequent steps.
+*   **FR-13**: Step results shall be stored in memory for subsequent steps.
 *   **FR-14**: With `checkpoint_callback`, execution shall pause at checkpoint steps.
 *   **FR-15**: Execution traces shall be saved to `.spechestra/traces/`.
 

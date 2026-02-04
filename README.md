@@ -60,32 +60,20 @@ pip install specsoloist
 
 SpecSoloist allows you to chain multiple specs into a workflow.
 
-1.  **Define Interfaces**: Add a `yaml:schema` block to your component specs.
-    ```markdown
-    ```yaml:schema
-    inputs:
-      n: {type: integer}
-    outputs:
-      result: {type: integer}
-    ```
-    ```
-
-2.  **Create an Orchestrator**: Create a spec with `type: orchestrator`.
-    ```markdown
-    # 2. Interface Specification
-    ```yaml:schema
-    steps:
-      - name: step1
-        spec: calculator
-        inputs: {n: inputs.start_val}
-    ```
-    ```
-
-3.  **Verify & Run**:
+1.  **Draft Architecture**: Use `sp compose` to vibe-code your system.
     ```bash
-    sp verify                   # Check for interface mismatches
-    sp compile my_orchestrator  # Generate the workflow code
-    sp run my_orchestrator '{"start_val": 10}'
+    sp compose "A data pipeline that fetches stocks and calculates SMA"
+    ```
+    This generates a component architecture and draft specs.
+
+2.  **Conduct Build**: Compile all components in parallel.
+    ```bash
+    sp conduct
+    ```
+
+3.  **Perform Workflow**: Execute a workflow spec.
+    ```bash
+    sp perform my_workflow '{"symbol": "AAPL"}'
     ```
 
 ## CLI Reference
@@ -93,14 +81,16 @@ SpecSoloist allows you to chain multiple specs into a workflow.
 | Command | Description |
 | :--- | :--- |
 | `sp list` | List all specs in `src/` |
-| `sp create <name> <desc>` | Create a new spec from template |
-| `sp validate <name>` | Check spec structure |
+| `sp create` | Create a new spec manually |
+| `sp compose` | **Draft architecture & specs from natural language** |
+| `sp conduct` | **Build/Compile project (parallel & incremental)** |
+| `sp perform` | **Execute an orchestration workflow** |
+| `sp validate` | Check spec structure |
 | `sp verify` | Verify schemas and interface compatibility |
-| `sp compile <name>` | Compile spec to code + tests |
-| `sp test <name>` | Run tests for a spec |
-| `sp fix <name>` | Auto-fix failing tests |
-| `sp build` | Compile all specs in dependency order |
-| `sp run <name> <json>` | Run an orchestration workflow |
+| `sp compile` | Compile single spec to code + tests |
+| `sp test` | Run tests for a spec |
+| `sp fix` | Auto-fix failing tests |
+| `sp build` | Alias for `conduct` |
 | `sp graph` | Export dependency graph (Mermaid.js) |
 
 ## Configuration
