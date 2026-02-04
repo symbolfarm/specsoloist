@@ -11,8 +11,8 @@
 ## Phase 1.5: Foundation Hardening (Completed)
 - [x] **Code Separation**: Extract specialized modules (parser, compiler, runner, config).
 - [x] **LLM Provider Abstraction**: `LLMProvider` protocol with Gemini and Anthropic implementations.
-- [x] **Configuration System**: `SpecularConfig` with environment-based loading.
-- [x] **Thin Orchestrator**: Refactor `SpecularCore` to delegate to specialized modules.
+- [x] **Configuration System**: `SpecSoloistConfig` with environment-based loading.
+- [x] **Thin Orchestrator**: Refactor `SpecSoloistCore` to delegate to specialized modules.
 - [x] **Updated Self-Hosting Spec**: The Quine updated to reflect new architecture.
 
 ## Phase 2a: Multi-Spec Architecture (Completed)
@@ -37,15 +37,47 @@
 - [x] **Documentation Site**: MkDocs Material site with "Leaves-Up" workflow guide.
 - [x] **Error Handling**: Friendly messages for circular dependencies and missing API keys.
 
-## Phase 4: Spechestra Orchestration (Completed)
-- [x] **Strict Validation**: Pydantic-based `sp verify` to ensure interface compatibility.
-- [x] **Orchestration Runtime**: `Orchestrator`, `Agent`, and `Blackboard` (shared state) modules.
-- [x] **Orchestrator Specs**: New `type: orchestrator` for defining multi-agent workflows in Markdown.
-- [x] **Human-in-the-Loop**: `checkpoint: true` support for pausing workflows for user approval.
-- [x] **Observability**: `sp run` execution tracing and `sp graph` Mermaid.js export.
+## Phase 4: Spechestra Architecture (In Progress)
+
+### 4a: Spec Format Revision (In Progress)
+- [x] **Language-Agnostic Specs**: Remove `language_target` from specs; move to build config.
+- [x] **Granular Specs**: One function = one spec for better modularity and parallelism.
+- [x] **Bundle Type**: Compact format for grouping trivial functions/types.
+- [x] **Schema-First Interface**: `yaml:schema` blocks as primary interface definition.
+- [x] **Spec Format Spec**: Self-hosting spec defining the format itself.
+- [ ] **New Parser**: Update parser to handle revised spec format.
+
+### 4b: Package Separation (Planned)
+- [ ] **Monorepo Structure**: Reorganize into `packages/specsoloist` and `packages/spechestra`.
+- [ ] **SpecSoloist Core**: Individual spec compilation (current functionality).
+- [ ] **Spechestra Package**: Orchestration layer depending on SpecSoloist.
+
+### 4c: SpecComposer (Planned)
+- [ ] **Architecture Drafting**: Plain English → component architecture with dependencies.
+- [ ] **Spec Generation**: Auto-generate `*.spec.md` files from architecture.
+- [ ] **Interactive Review**: Present architecture and specs for user approval/editing.
+- [ ] **Auto-Accept Mode**: Skip reviews for automated pipelines.
+- [ ] **Context Awareness**: Incorporate existing specs when drafting new architecture.
+
+### 4d: SpecConductor (Planned)
+- [ ] **Parallel Build**: Orchestrate multiple SpecSoloist instances for parallel compilation.
+- [ ] **Build Verification**: `verify()` for schema compliance and interface compatibility.
+- [ ] **Workflow Execution**: `perform()` to run compiled workflows with checkpoints.
+- [ ] **Execution Tracing**: Save traces to `.spechestra/traces/` for debugging.
+
+### 4e: Integration (Planned)
+- [ ] **End-to-End Flow**: `compose() → build() → perform()` pipeline.
+- [ ] **CLI Commands**: `sp compose`, `sp conduct`, `sp perform`.
+- [ ] **Vibe-Coding Demo**: Plain English to working code demonstration.
 
 ## Phase 5: Developer Experience (Future)
 - [ ] **Sandboxed Execution**: Run generated code in Docker containers for safety.
 - [ ] **VS Code Extension**: Live preview of generated code/tests while editing specs.
 - [ ] **Visual Spec Editor**: A GUI for defining Functional Requirements and Contracts.
-- [ ] **Advanced Orchestration**: Router agents, fan-out/fan-in parallelism, and loop constructs.
+- [ ] **Advanced Workflows**: Conditional branching, loops, fan-out/fan-in parallelism.
+- [ ] **Streaming Compilation**: Real-time feedback as specs are compiled.
+
+## Maintenance
+- [ ] Fix any ruff lint errors as they arise.
+- [ ] Keep self-hosting specs in sync with implementation.
+- [ ] Add tests for new components (SpecComposer, SpecConductor).
