@@ -26,7 +26,7 @@ uv run ruff check src/           # Lint (must pass with 0 errors)
 ### Project Structure
 
 ```
-src/specsoloist/       # Main package
+src/specsoloist/       # Core package - individual spec compilation
   core.py              # SpecSoloistCore orchestrator
   parser.py            # Spec parsing and validation
   compiler.py          # LLM prompt construction
@@ -34,14 +34,14 @@ src/specsoloist/       # Main package
   resolver.py          # Dependency graph
   config.py            # Configuration
   cli.py               # CLI (sp command)
+  schema.py            # Interface validation (Pydantic models)
   providers/           # LLM backends (Gemini, Anthropic)
-  agent.py             # Spechestra: Agent wrapper
-  orchestrator.py      # Spechestra: Workflow execution
-  state.py             # Spechestra: Blackboard (shared state)
-  schema.py            # Spechestra: Interface validation
+src/spechestra/        # Orchestration package - high-level workflows
+  composer.py          # SpecComposer: Plain English → specs
+  conductor.py         # SpecConductor: Parallel builds + perform
 tests/                 # pytest tests
 self_hosting/          # The Quine - SpecSoloist's own spec
-src/*.spec.md          # Example specs
+  examples/            # Example specs in new format
 ```
 
 ### Self-Hosting Spec ("The Quine")
