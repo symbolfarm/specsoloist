@@ -4,13 +4,54 @@ This file provides context for AI agents working with SpecSoloist, whether devel
 
 > **Note**: `CLAUDE.md` and `GEMINI.md` are symlinks to this file. This ensures all AI agents receive the same context regardless of which file their tooling reads.
 
-## What is SpecSoloist?
+---
 
-SpecSoloist is a "Spec-as-Source" AI coding framework. Users write rigorous Markdown specifications (SRS-style), and SpecSoloist uses LLMs to compile them into executable Python code with tests.
+## Core Concepts
 
-**Key insight**: Code is a build artifact. Specs are the source of truth.
+### The Vision: Vibe-Coding
 
-Now with **Spechestra** features: define and run multi-agent orchestration workflows directly from specs.
+SpecSoloist enables "vibe-coding" - describe what you want in plain English, and the system generates working code:
+
+```
+User: "Build me a todo app with auth"
+         │
+         ▼
+   SpecComposer          → Drafts architecture + specs
+         │
+   [Optional Review]     → User can edit specs
+         │
+         ▼
+   SpecConductor         → Compiles specs in parallel
+         │
+         ▼
+   Working Code + Tests  → Ready to run
+```
+
+### The Orchestra Metaphor
+
+The project uses an orchestra metaphor:
+
+| Role | Component | Responsibility |
+|------|-----------|----------------|
+| **Composer** | `SpecComposer` | Writes the music (drafts specs from plain English) |
+| **Conductor** | `SpecConductor` | Leads the orchestra (manages parallel builds, executes workflows) |
+| **Soloist** | `SpecSoloistCore` | Individual performer (compiles one spec at a time) |
+
+### Spec Types
+
+Specs are language-agnostic Markdown files. The `type` field determines structure:
+
+| Type | Purpose | Key Sections |
+|------|---------|--------------|
+| `function` | Single function (full format) | Interface, Behavior, Contract, Examples |
+| `type` | Data structure | Schema, Constraints, Examples |
+| `bundle` | Multiple trivial functions/types | `yaml:functions`, `yaml:types` blocks |
+| `module` | Aggregates for export | Exports list |
+| `workflow` | Multi-step execution | `yaml:steps` block |
+
+### Key Insight
+
+> **Code is a build artifact. Specs are the source of truth.**
 
 ---
 
@@ -19,7 +60,7 @@ Now with **Spechestra** features: define and run multi-agent orchestration workf
 ### Key Commands
 
 ```bash
-uv run python -m pytest tests/   # Run tests (30 tests)
+uv run python -m pytest tests/   # Run tests (52 tests)
 uv run ruff check src/           # Lint (must pass with 0 errors)
 ```
 
@@ -28,7 +69,7 @@ uv run ruff check src/           # Lint (must pass with 0 errors)
 ```
 src/specsoloist/       # Core package - individual spec compilation
   core.py              # SpecSoloistCore orchestrator
-  parser.py            # Spec parsing and validation
+  parser.py            # Spec parsing (function, type, bundle, workflow)
   compiler.py          # LLM prompt construction
   runner.py            # Test execution
   resolver.py          # Dependency graph
@@ -36,17 +77,37 @@ src/specsoloist/       # Core package - individual spec compilation
   cli.py               # CLI (sp command)
   schema.py            # Interface validation (Pydantic models)
   providers/           # LLM backends (Gemini, Anthropic)
+
 src/spechestra/        # Orchestration package - high-level workflows
   composer.py          # SpecComposer: Plain English → specs
   conductor.py         # SpecConductor: Parallel builds + perform
-tests/                 # pytest tests
+
+tests/                 # pytest tests (52 tests)
+
 self_hosting/          # The Quine - SpecSoloist's own spec
+  specsoloist.spec.md  # Core package spec
+  spechestra.spec.md   # Orchestration package spec
+  speccomposer.spec.md # Composer component spec
+  specconductor.spec.md# Conductor component spec
+  spec_format.spec.md  # The spec format itself
   examples/            # Example specs in new format
 ```
 
 ### Self-Hosting Spec ("The Quine")
 
-`self_hosting/specular_core.spec.md` is SpecSoloist's own specification - it describes itself. Keep this updated when making architectural changes.
+`self_hosting/specsoloist.spec.md` is SpecSoloist's own specification - it describes itself. Keep this updated when making architectural changes.
+
+### Current State (Phase 4)
+
+**Completed:**
+- New language-agnostic spec format (parser handles all types)
+- SpecComposer: `compose()`, `draft_architecture()`, `generate_specs()`
+- SpecConductor: `build()`, `perform()`, `verify()`, `build_and_perform()`
+
+**Next up (see ROADMAP.md):**
+- CLI commands: `sp compose`, `sp conduct`, `sp perform`
+- Interactive review mode for architecture/specs
+- Deprecate old orchestration modules
 
 ### Before Committing
 
@@ -92,5 +153,6 @@ When using SpecSoloist, the agent's role shifts from "Writing Code" to **"Defini
 ## See Also
 
 - `README.md` - User documentation and CLI reference
-- `ROADMAP.md` - Development phases and future work
+- `ROADMAP.md` - Development phases and next steps (detailed task breakdown)
 - `CONTRIBUTING.md` - Contribution guidelines and required checks
+- `self_hosting/spec_format.spec.md` - The spec format specification

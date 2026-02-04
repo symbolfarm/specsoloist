@@ -39,36 +39,38 @@
 
 ## Phase 4: Spechestra Architecture (In Progress)
 
-### 4a: Spec Format Revision (In Progress)
+### 4a: Spec Format Revision (Completed)
 - [x] **Language-Agnostic Specs**: Remove `language_target` from specs; move to build config.
 - [x] **Granular Specs**: One function = one spec for better modularity and parallelism.
 - [x] **Bundle Type**: Compact format for grouping trivial functions/types.
 - [x] **Schema-First Interface**: `yaml:schema` blocks as primary interface definition.
 - [x] **Spec Format Spec**: Self-hosting spec defining the format itself.
-- [ ] **New Parser**: Update parser to handle revised spec format.
+- [x] **New Parser**: Parser handles function, type, bundle, module, workflow spec types.
 
-### 4b: Package Separation (Planned)
-- [ ] **Monorepo Structure**: Reorganize into `packages/specsoloist` and `packages/spechestra`.
-- [ ] **SpecSoloist Core**: Individual spec compilation (current functionality).
-- [ ] **Spechestra Package**: Orchestration layer depending on SpecSoloist.
+### 4b: Package Separation (Completed)
+- [x] **Spechestra Package**: Created `src/spechestra/` alongside `src/specsoloist/`.
+- [x] **SpecSoloist Core**: Individual spec compilation (existing functionality preserved).
+- [ ] **Optional**: Full monorepo structure with separate pyproject.toml files (deferred).
 
-### 4c: SpecComposer (Planned)
-- [ ] **Architecture Drafting**: Plain English → component architecture with dependencies.
-- [ ] **Spec Generation**: Auto-generate `*.spec.md` files from architecture.
+### 4c: SpecComposer (Implemented)
+- [x] **Architecture Drafting**: `draft_architecture()` - Plain English → component graph.
+- [x] **Spec Generation**: `generate_specs()` - Auto-generate `*.spec.md` files.
+- [x] **Compose Workflow**: `compose()` - Full pipeline with auto-accept option.
 - [ ] **Interactive Review**: Present architecture and specs for user approval/editing.
-- [ ] **Auto-Accept Mode**: Skip reviews for automated pipelines.
-- [ ] **Context Awareness**: Incorporate existing specs when drafting new architecture.
+- [x] **Context Awareness**: Incorporate existing specs when drafting new architecture.
 
-### 4d: SpecConductor (Planned)
-- [ ] **Parallel Build**: Orchestrate multiple SpecSoloist instances for parallel compilation.
-- [ ] **Build Verification**: `verify()` for schema compliance and interface compatibility.
-- [ ] **Workflow Execution**: `perform()` to run compiled workflows with checkpoints.
-- [ ] **Execution Tracing**: Save traces to `.spechestra/traces/` for debugging.
+### 4d: SpecConductor (Implemented)
+- [x] **Parallel Build**: `build()` - Orchestrate SpecSoloistCore for parallel compilation.
+- [x] **Build Verification**: `verify()` - Schema compliance and interface compatibility.
+- [x] **Workflow Execution**: `perform()` - Run compiled workflows with checkpoints.
+- [x] **Execution Tracing**: Save traces to `.spechestra/traces/`.
+- [x] **Combined Flow**: `build_and_perform()` - Build then execute.
 
-### 4e: Integration (Planned)
-- [ ] **End-to-End Flow**: `compose() → build() → perform()` pipeline.
-- [ ] **CLI Commands**: `sp compose`, `sp conduct`, `sp perform`.
-- [ ] **Vibe-Coding Demo**: Plain English to working code demonstration.
+### 4e: Integration (Next Up)
+- [ ] **CLI Commands**: Add `sp compose`, `sp conduct`, `sp perform` commands.
+- [ ] **Vibe-Coding Demo**: End-to-end demo from plain English to working code.
+- [ ] **Interactive Mode**: Terminal UI for reviewing/approving architecture and specs.
+- [ ] **Deprecate Old Modules**: Remove `agent.py`, `orchestrator.py`, `state.py` from specsoloist.
 
 ## Phase 5: Developer Experience (Future)
 - [ ] **Sandboxed Execution**: Run generated code in Docker containers for safety.
@@ -77,7 +79,50 @@
 - [ ] **Advanced Workflows**: Conditional branching, loops, fan-out/fan-in parallelism.
 - [ ] **Streaming Compilation**: Real-time feedback as specs are compiled.
 
+---
+
+## Next Steps (Detailed)
+
+The following tasks are ready for the next contributor:
+
+### CLI Integration (Priority: High)
+1. **Add `sp compose` command** in `cli.py`:
+   - Accept natural language request as argument
+   - Call `SpecComposer.compose()`
+   - Display generated architecture and spec paths
+   - Add `--auto-accept` flag to skip prompts
+
+2. **Add `sp conduct` command** (or integrate into `sp build`):
+   - Use `SpecConductor.build()` instead of `SpecSoloistCore.compile_project()`
+   - Show parallel build progress
+
+3. **Add `sp perform` command**:
+   - Execute workflow with `SpecConductor.perform()`
+   - Display step-by-step execution
+   - Show trace path on completion
+
+### Interactive Review (Priority: Medium)
+4. **Architecture Review UI**:
+   - Use Rich to display component table
+   - Prompt for approval/modifications
+   - Allow adding/removing components
+
+5. **Spec Review UI**:
+   - Display generated spec content
+   - Open in $EDITOR if user wants to modify
+   - Confirm before proceeding
+
+### Cleanup (Priority: Low)
+6. **Deprecate old orchestration modules**:
+   - `src/specsoloist/agent.py` → replaced by `SpecConductor.perform()`
+   - `src/specsoloist/orchestrator.py` → replaced by `SpecConductor`
+   - `src/specsoloist/state.py` → Blackboard logic in conductor
+
+7. **Update self-hosting specs**:
+   - Ensure `self_hosting/specsoloist.spec.md` reflects current implementation
+   - Add tests that verify specs match implementation
+
 ## Maintenance
-- [ ] Fix any ruff lint errors as they arise.
-- [ ] Keep self-hosting specs in sync with implementation.
-- [ ] Add tests for new components (SpecComposer, SpecConductor).
+- [x] Fix ruff lint errors as they arise.
+- [x] Keep self-hosting specs in sync with implementation.
+- [x] Add tests for new components (52 tests total).
