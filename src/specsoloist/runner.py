@@ -34,10 +34,15 @@ class TestRunner:
         self.build_dir = os.path.abspath(build_dir)
         self.config = config
 
-    def _get_lang_config(self, language: str) -> LanguageConfig:
+    def _get_lang_config(self, language: Optional[str]) -> LanguageConfig:
         """Helper to get language config from SpecSoloistConfig."""
+        # Default to python if no language specified
+        if language is None:
+            language = "python"
         if self.config and language in self.config.languages:
             return self.config.languages[language]
+        # Fallback to default Python config
+        return LanguageConfig()
 
     def get_test_path(self, module_name: str, language: str = "python") -> str:
         """Returns the path to the test file for a module."""

@@ -1,5 +1,9 @@
 """
 Spec parsing, validation, creation, and frontmatter extraction.
+
+Supports the language-agnostic spec format with:
+- function, type, bundle, module, workflow spec types
+- yaml:schema, yaml:functions, yaml:types, yaml:steps blocks
 """
 
 import importlib.resources
@@ -9,7 +13,20 @@ from typing import Any, Dict, List, Optional
 
 import yaml
 
-from .schema import InterfaceSchema, parse_schema_block
+from .schema import (
+    InterfaceSchema,
+    BundleFunction,
+    BundleType,
+    WorkflowStep,
+    parse_schema_block,
+    parse_bundle_functions,
+    parse_bundle_types,
+    parse_steps_block,
+)
+
+
+# Valid spec types
+SPEC_TYPES = {"function", "type", "bundle", "module", "workflow", "typedef", "class", "orchestrator"}
 
 
 @dataclass
@@ -17,10 +34,13 @@ class SpecMetadata:
     """Parsed frontmatter from a spec file."""
     name: str = ""
     description: str = ""
-    type: str = "function"  # function | class | module | typedef
-    language_target: str = "python"
-    status: str = "draft"
-    dependencies: List[Dict[str, str]] = field(default_factory=list)
+    type: str = "function"  # function | type | bundle | module | workflow
+    status: str = "draft"   # draft | review | stable
+    version: str = ""
+    tags: List[str] = field(default_factory=list)
+    dependencies: List[Any] = field(default_factory=list)  # Can be strings or dicts
+    # Language target is now optional (build config, not spec)
+    language_target: Optional[str] = None
     raw: Dict[str, Any] = field(default_factory=dict)
 
 
@@ -32,7 +52,11 @@ class ParsedSpec:
     body: str     # Content without frontmatter
     path: str
     schema: Optional[InterfaceSchema] = None
-
+    # For bundle specs
+    bundle_functions: Dict[str, BundleFunction] = field(default_factory=dict)
+    bundle_types: Dict[str, BundleType] = field(default_factory=dict)
+    # For workflow specs
+    steps: List[WorkflowStep] = field(default_factory=list)
 
 
 class SpecParser:
@@ -60,9 +84,11 @@ class SpecParser:
         specs = []
         if os.path.exists(self.src_dir):
             for root, _, files in os.walk(self.src_dir):
-                for file in files:
-                    if file.endswith(".spec.md"):
-                        specs.append(file)
+                for f in files:
+                    if f.endswith(".spec.md"):
+                        # Return relative path from src_dir
+                        rel_path = os.path.relpath(os.path.join(root, f), self.src_dir)
+                        specs.append(rel_path)
         return specs
 
     def read_spec(self, name: str) -> str:
@@ -90,7 +116,7 @@ class SpecParser:
         Args:
             name: Component name (e.g., "auth" creates "auth.spec.md").
             description: Brief description of the component.
-            spec_type: Component type ("function", "class", "module", "typedef").
+            spec_type: Component type ("function", "type", "bundle", "module", "workflow").
 
         Returns:
             Path to the created spec file.
@@ -105,24 +131,201 @@ class SpecParser:
         # Ensure directory exists
         os.makedirs(os.path.dirname(path), exist_ok=True)
 
-        content = self._load_template("spec_template.md")
-        if not content:
-            # Emergency fallback
-            content = f"---\nname: {name}\ntype: {spec_type}\n---\n# 1. Overview\n{description}\n"
-        else:
-            # Fill in template placeholders
-            content = content.replace("[Component Name]", name)
-            content = content.replace(
-                "[Brief summary of the component's purpose.]", description
-            )
-            content = content.replace(
-                "type: [function | class | module]", f"type: {spec_type}"
-            )
+        # Generate appropriate template based on type
+        content = self._generate_template(name, description, spec_type)
 
         with open(path, 'w') as f:
             f.write(content)
 
         return path
+
+    def _generate_template(self, name: str, description: str, spec_type: str) -> str:
+        """Generates a spec template based on type."""
+        if spec_type == "bundle":
+            return self._generate_bundle_template(name, description)
+        elif spec_type == "workflow":
+            return self._generate_workflow_template(name, description)
+        elif spec_type == "type":
+            return self._generate_type_template(name, description)
+        elif spec_type == "module":
+            return self._generate_module_template(name, description)
+        else:
+            return self._generate_function_template(name, description)
+
+    def _generate_function_template(self, name: str, description: str) -> str:
+        """Generates a function spec template."""
+        return f"""---
+name: {name}
+type: function
+status: draft
+---
+
+# Overview
+
+{description}
+
+# Interface
+
+```yaml:schema
+inputs:
+  # param_name:
+  #   type: integer
+  #   description: Description of parameter
+outputs:
+  result:
+    type: string
+```
+
+# Behavior
+
+- **[FR-01]**: [Describe the primary behavior]
+
+# Constraints
+
+- **[NFR-01]**: Must be pure (no side effects)
+
+# Contract
+
+- **Pre**: [Precondition]
+- **Post**: [Postcondition]
+
+# Examples
+
+| Input | Output | Notes |
+|-------|--------|-------|
+| | | |
+"""
+
+    def _generate_type_template(self, name: str, description: str) -> str:
+        """Generates a type spec template."""
+        return f"""---
+name: {name}
+type: type
+status: draft
+---
+
+# Overview
+
+{description}
+
+# Schema
+
+```yaml:schema
+properties:
+  id:
+    type: string
+    format: uuid
+required:
+  - id
+```
+
+# Constraints
+
+- **[NFR-01]**: [Describe constraints]
+
+# Examples
+
+| Valid | Invalid | Why |
+|-------|---------|-----|
+| | | |
+"""
+
+    def _generate_bundle_template(self, name: str, description: str) -> str:
+        """Generates a bundle spec template."""
+        return f"""---
+name: {name}
+type: bundle
+status: draft
+---
+
+# Overview
+
+{description}
+
+# Functions
+
+```yaml:functions
+example_function:
+  inputs: {{a: integer, b: integer}}
+  outputs: {{result: integer}}
+  behavior: Return a + b
+```
+
+# Types
+
+```yaml:types
+example_type:
+  properties:
+    id: {{type: string}}
+  required: [id]
+```
+"""
+
+    def _generate_workflow_template(self, name: str, description: str) -> str:
+        """Generates a workflow spec template."""
+        return f"""---
+name: {name}
+type: workflow
+status: draft
+dependencies:
+  - step1_spec
+  - step2_spec
+---
+
+# Overview
+
+{description}
+
+# Interface
+
+```yaml:schema
+inputs:
+  input_param:
+    type: string
+outputs:
+  result:
+    type: string
+```
+
+# Steps
+
+```yaml:steps
+- name: step1
+  spec: step1_spec
+  inputs:
+    param: inputs.input_param
+
+- name: step2
+  spec: step2_spec
+  inputs:
+    param: step1.outputs.result
+```
+
+# Error Handling
+
+- If step1 fails: [describe handling]
+"""
+
+    def _generate_module_template(self, name: str, description: str) -> str:
+        """Generates a module spec template."""
+        return f"""---
+name: {name}
+type: module
+status: draft
+dependencies:
+  - function1
+  - function2
+---
+
+# Overview
+
+{description}
+
+# Exports
+
+- `function1`: [Description]
+- `function2`: [Description]
+"""
 
     def parse_spec(self, name: str) -> ParsedSpec:
         """Parses a spec file into structured data."""
@@ -131,66 +334,139 @@ class SpecParser:
 
         metadata = self._parse_frontmatter(content)
         body = self._strip_frontmatter(content)
-        schema = self._extract_schema(body)
+
+        # Parse based on spec type
+        schema = None
+        bundle_functions = {}
+        bundle_types = {}
+        steps = []
+
+        spec_type = metadata.type
+
+        if spec_type == "bundle":
+            # Parse yaml:functions and yaml:types blocks
+            bundle_functions = self._extract_bundle_functions(body)
+            bundle_types = self._extract_bundle_types(body)
+        elif spec_type in ("workflow", "orchestrator"):
+            # Parse yaml:schema and yaml:steps blocks
+            schema = self._extract_schema(body)
+            steps = self._extract_steps(body)
+            # Also add steps to schema if present
+            if schema and steps:
+                schema.steps = steps
+        else:
+            # Parse yaml:schema block
+            schema = self._extract_schema(body)
 
         # Fallback: Extract description from Overview if missing
-        if not metadata.description and "# 1. Overview" in body:
-            try:
-                # Find content between "1. Overview" and the next section header
-                parts = body.split("# 1. Overview", 1)[1]
-                # Split by next header (start with #)
-                overview_text = ""
-                for line in parts.splitlines():
-                    line = line.strip()
-                    if not line:
-                        continue
-                    if line.startswith("#"):
-                        break
-                    overview_text = line
-                    break # Take first non-empty line
-                
-                if overview_text:
-                    metadata.description = overview_text
-            except Exception:
-                pass  # Keep empty if extraction fails
+        if not metadata.description:
+            metadata.description = self._extract_overview_description(body)
 
         return ParsedSpec(
             metadata=metadata,
             content=content,
             body=body,
             path=path,
-            schema=schema
+            schema=schema,
+            bundle_functions=bundle_functions,
+            bundle_types=bundle_types,
+            steps=steps,
         )
+
+    def _extract_overview_description(self, body: str) -> str:
+        """Extracts description from the Overview section."""
+        # Try both "# 1. Overview" and "# Overview" formats
+        for marker in ["# 1. Overview", "# Overview"]:
+            if marker in body:
+                try:
+                    parts = body.split(marker, 1)[1]
+                    for line in parts.splitlines():
+                        line = line.strip()
+                        if not line:
+                            continue
+                        if line.startswith("#"):
+                            break
+                        return line
+                except Exception:
+                    pass
+        return ""
 
     def _extract_schema(self, content: str) -> Optional[InterfaceSchema]:
         """Extracts and parses the ```yaml:schema block."""
-        if "```yaml:schema" not in content:
+        yaml_text = self._extract_yaml_block(content, "yaml:schema")
+        if not yaml_text:
             return None
-            
+
         try:
-            # Find the block
-            start_marker = "```yaml:schema"
-            end_marker = "```"
-            
+            raw_data = yaml.safe_load(yaml_text)
+            if not isinstance(raw_data, dict):
+                return None
+            return parse_schema_block(raw_data)
+        except Exception:
+            return None
+
+    def _extract_bundle_functions(self, content: str) -> Dict[str, BundleFunction]:
+        """Extracts and parses the ```yaml:functions block."""
+        yaml_text = self._extract_yaml_block(content, "yaml:functions")
+        if not yaml_text:
+            return {}
+
+        try:
+            raw_data = yaml.safe_load(yaml_text)
+            if not isinstance(raw_data, dict):
+                return {}
+            return parse_bundle_functions(raw_data)
+        except Exception:
+            return {}
+
+    def _extract_bundle_types(self, content: str) -> Dict[str, BundleType]:
+        """Extracts and parses the ```yaml:types block."""
+        yaml_text = self._extract_yaml_block(content, "yaml:types")
+        if not yaml_text:
+            return {}
+
+        try:
+            raw_data = yaml.safe_load(yaml_text)
+            if not isinstance(raw_data, dict):
+                return {}
+            return parse_bundle_types(raw_data)
+        except Exception:
+            return {}
+
+    def _extract_steps(self, content: str) -> List[WorkflowStep]:
+        """Extracts and parses the ```yaml:steps block."""
+        yaml_text = self._extract_yaml_block(content, "yaml:steps")
+        if not yaml_text:
+            return []
+
+        try:
+            raw_data = yaml.safe_load(yaml_text)
+            if not isinstance(raw_data, list):
+                return []
+            return parse_steps_block(raw_data)
+        except Exception:
+            return []
+
+    def _extract_yaml_block(self, content: str, block_type: str) -> Optional[str]:
+        """Extracts content from a ```<block_type> ... ``` block."""
+        start_marker = f"```{block_type}"
+        if start_marker not in content:
+            return None
+
+        try:
             start_idx = content.find(start_marker)
             if start_idx == -1:
                 return None
-                
+
             start_content = start_idx + len(start_marker)
-            end_idx = content.find(end_marker, start_content)
-            
+            # Find the closing ```
+            end_idx = content.find("```", start_content)
+
             if end_idx == -1:
                 return None
-                
-            yaml_text = content[start_content:end_idx].strip()
-            raw_data = yaml.safe_load(yaml_text)
-            
-            if not isinstance(raw_data, dict):
-                return None
-                
-            return parse_schema_block(raw_data)
+
+            return content[start_content:end_idx].strip()
         except Exception:
-            # For now, return None on error (validator will catch it later)
             return None
 
     def _parse_frontmatter(self, content: str) -> SpecMetadata:
@@ -209,7 +485,6 @@ class SpecParser:
         try:
             raw = yaml.safe_load(frontmatter_text) or {}
         except yaml.YAMLError:
-            # Fall back to empty if YAML is malformed
             raw = {}
 
         if not isinstance(raw, dict):
@@ -218,19 +493,23 @@ class SpecParser:
         metadata.name = raw.get("name", "")
         metadata.description = raw.get("description", "")
         metadata.type = raw.get("type", "function")
-        
-        target = raw.get("language_target", "python")
-        if isinstance(target, list) and target:
-            metadata.language_target = str(target[0])
-        else:
-            metadata.language_target = str(target)
-            
         metadata.status = raw.get("status", "draft")
+        metadata.version = raw.get("version", "")
 
-        # Parse dependencies (Phase 2a format)
-        # Format: dependencies:
-        #           - name: User
-        #             from: types.spec.md
+        # Tags can be a list
+        tags = raw.get("tags", [])
+        if isinstance(tags, list):
+            metadata.tags = [str(t) for t in tags]
+
+        # Language target is optional (for backwards compatibility)
+        target = raw.get("language_target")
+        if target:
+            if isinstance(target, list) and target:
+                metadata.language_target = str(target[0])
+            else:
+                metadata.language_target = str(target)
+
+        # Parse dependencies (can be strings or dicts)
         deps = raw.get("dependencies", [])
         if isinstance(deps, list):
             metadata.dependencies = deps
@@ -251,21 +530,104 @@ class SpecParser:
 
     def validate_spec(self, name: str) -> Dict[str, Any]:
         """
-        Validates a spec for basic structure and SRS compliance.
+        Validates a spec for basic structure based on its type.
         Returns a dict with 'valid' bool and 'errors' list.
         """
         try:
-            content = self.read_spec(name)
+            parsed = self.parse_spec(name)
         except FileNotFoundError:
             return {"valid": False, "errors": ["Spec file not found."]}
+        except Exception as e:
+            return {"valid": False, "errors": [f"Parse error: {e}"]}
 
         errors = []
+        spec_type = parsed.metadata.type
 
-        # 1. Check Frontmatter
-        if not content.strip().startswith("---"):
+        # Check frontmatter
+        if not parsed.content.strip().startswith("---"):
             errors.append("Missing YAML frontmatter.")
 
-        # 2. Check Required Sections
+        # Check required sections based on type
+        if spec_type in ("function", "class"):
+            errors.extend(self._validate_function_sections(parsed.body))
+        elif spec_type == "type":
+            errors.extend(self._validate_type_sections(parsed.body))
+        elif spec_type == "bundle":
+            errors.extend(self._validate_bundle_sections(parsed))
+        elif spec_type in ("workflow", "orchestrator"):
+            errors.extend(self._validate_workflow_sections(parsed))
+        elif spec_type == "module":
+            errors.extend(self._validate_module_sections(parsed.body))
+        else:
+            # Legacy validation for unknown types
+            errors.extend(self._validate_legacy_sections(parsed.body))
+
+        return {
+            "valid": len(errors) == 0,
+            "errors": errors
+        }
+
+    def _validate_function_sections(self, body: str) -> List[str]:
+        """Validates required sections for function specs."""
+        errors = []
+        # New format uses simpler headers
+        required = ["# Overview", "# Interface", "# Behavior"]
+        alternative_required = ["# 1. Overview", "# 2. Interface", "# 3. Functional Requirements"]
+
+        # Check if using new or old format
+        if "# 1. Overview" in body:
+            # Old format
+            for section in alternative_required:
+                if section not in body:
+                    errors.append(f"Missing required section: '{section}'")
+        else:
+            # New format
+            for section in required:
+                if section not in body:
+                    errors.append(f"Missing required section: '{section}'")
+
+        return errors
+
+    def _validate_type_sections(self, body: str) -> List[str]:
+        """Validates required sections for type specs."""
+        errors = []
+        if "# Overview" not in body and "# 1. Overview" not in body:
+            errors.append("Missing required section: '# Overview'")
+        if "# Schema" not in body and "```yaml:schema" not in body:
+            errors.append("Missing required section: '# Schema' or yaml:schema block")
+        return errors
+
+    def _validate_bundle_sections(self, parsed: ParsedSpec) -> List[str]:
+        """Validates required sections for bundle specs."""
+        errors = []
+        if "# Overview" not in parsed.body and "# 1. Overview" not in parsed.body:
+            errors.append("Missing required section: '# Overview'")
+        if not parsed.bundle_functions and not parsed.bundle_types:
+            errors.append("Bundle must have at least one function or type defined")
+        return errors
+
+    def _validate_workflow_sections(self, parsed: ParsedSpec) -> List[str]:
+        """Validates required sections for workflow specs."""
+        errors = []
+        if "# Overview" not in parsed.body and "# 1. Overview" not in parsed.body:
+            errors.append("Missing required section: '# Overview'")
+        if not parsed.steps:
+            errors.append("Workflow must have steps defined in yaml:steps block")
+        return errors
+
+    def _validate_module_sections(self, body: str) -> List[str]:
+        """Validates required sections for module specs."""
+        errors = []
+        if "# Overview" not in body and "# 1. Overview" not in body:
+            errors.append("Missing required section: '# Overview'")
+        # New format requires Exports, but legacy format uses Interface Specification
+        if "# Exports" not in body and "# 2. Interface Specification" not in body:
+            errors.append("Missing required section: '# Exports' or '# 2. Interface Specification'")
+        return errors
+
+    def _validate_legacy_sections(self, body: str) -> List[str]:
+        """Validates required sections for legacy specs."""
+        errors = []
         required_sections = [
             "# 1. Overview",
             "# 2. Interface Specification",
@@ -274,13 +636,9 @@ class SpecParser:
             "# 5. Design Contract"
         ]
         for section in required_sections:
-            if section not in content:
+            if section not in body:
                 errors.append(f"Missing required section: '{section}'")
-
-        return {
-            "valid": len(errors) == 0,
-            "errors": errors
-        }
+        return errors
 
     def get_module_name(self, name: str) -> str:
         """Extracts the module name from a spec filename."""

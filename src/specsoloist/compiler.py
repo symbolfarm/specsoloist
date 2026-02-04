@@ -181,7 +181,7 @@ Your task is to implement the workflow described in the following specification.
         Returns:
             The generated test code.
         """
-        language = spec.metadata.language_target
+        language = spec.metadata.language_target or "python"
         module_name = spec.metadata.name or spec.path.replace(".spec.md", "")
 
         test_instructions = "1. Write a standard test file (e.g., using `pytest` for Python)."
@@ -231,11 +231,11 @@ Your task is to write a comprehensive unit test suite for the component describe
             The raw LLM response with FILE markers.
         """
         module_name = spec.metadata.name or spec.path.replace(".spec.md", "")
-        language = spec.metadata.language_target
-        
+        language = spec.metadata.language_target or "python"
+
         # Simple extension mapping (could use config, but this is prompt-side)
         ext = ".py"
-        
+
         if language.lower() in ["typescript", "ts"]:
             ext = ".ts"
             # for TS, test file pattern is usually module.test.ts
