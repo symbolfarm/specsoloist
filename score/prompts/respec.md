@@ -7,7 +7,7 @@ You are a Senior Software Architect performing **reverse engineering** of source
 Generate high-fidelity specs from existing source code. The specs must:
 1. Pass `sp validate`
 2. Be compilable back to functionally equivalent code
-3. Follow the spec format defined in `self_hosting/spec_format.spec.md`
+3. Follow the spec format defined in `score/spec_format.spec.md`
 
 ## Inputs
 
@@ -82,7 +82,7 @@ Re-run validation until it passes.
 Write the spec file(s) to the output path.
 
 If the source should be decomposed into multiple specs:
-- Create a directory (e.g., `self_hosting/parser/`)
+- Create a directory (e.g., `score/parser/`)
 - Write each spec as a separate file
 - Consider creating a `mod.spec.md` that aggregates them
 
@@ -101,13 +101,13 @@ If the source should be decomposed into multiple specs:
 
 **Validation**: First attempt failed - `{message}` in behavior strings parsed as YAML. Fixed by quoting behavior strings.
 
-**Output**: `self_hosting/ui.spec.md`
+**Output**: `score/ui.spec.md`
 
 ## Reference
 
 The complete spec format rules are in:
 ```
-self_hosting/spec_format.spec.md
+score/spec_format.spec.md
 ```
 
 Read this file for:

@@ -37,9 +37,9 @@
 - [x] **Documentation Site**: MkDocs Material site with "Leaves-Up" workflow guide.
 - [x] **Error Handling**: Friendly messages for circular dependencies and missing API keys.
 
-## Phase 4: Spechestra Architecture (In Progress)
+## Phase 4: Spechestra Architecture (Completed)
 
-### 4a: Spec Format Revision (Completed)
+### 4a: Spec Format Revision
 - [x] **Language-Agnostic Specs**: Remove `language_target` from specs; move to build config.
 - [x] **Granular Specs**: One function = one spec for better modularity and parallelism.
 - [x] **Bundle Type**: Compact format for grouping trivial functions/types.
@@ -47,97 +47,127 @@
 - [x] **Spec Format Spec**: Self-hosting spec defining the format itself.
 - [x] **New Parser**: Parser handles function, type, bundle, module, workflow spec types.
 
-### 4b: Package Separation (Completed)
+### 4b: Package Separation
 - [x] **Spechestra Package**: Created `src/spechestra/` alongside `src/specsoloist/`.
 - [x] **SpecSoloist Core**: Individual spec compilation (existing functionality preserved).
-- [ ] **Optional**: Full monorepo structure with separate pyproject.toml files (deferred).
 
-### 4c: SpecComposer (Implemented)
+### 4c: SpecComposer
 - [x] **Architecture Drafting**: `draft_architecture()` - Plain English → component graph.
 - [x] **Spec Generation**: `generate_specs()` - Auto-generate `*.spec.md` files.
 - [x] **Compose Workflow**: `compose()` - Full pipeline with auto-accept option.
-- [ ] **Interactive Review**: Present architecture and specs for user approval/editing.
 - [x] **Context Awareness**: Incorporate existing specs when drafting new architecture.
 
-### 4d: SpecConductor (Implemented)
+### 4d: SpecConductor
 - [x] **Parallel Build**: `build()` - Orchestrate SpecSoloistCore for parallel compilation.
 - [x] **Build Verification**: `verify()` - Schema compliance and interface compatibility.
 - [x] **Workflow Execution**: `perform()` - Run compiled workflows with checkpoints.
 - [x] **Execution Tracing**: Save traces to `.spechestra/traces/`.
 - [x] **Combined Flow**: `build_and_perform()` - Build then execute.
 
-### 4e: Integration (Next Up)
-- [ ] **CLI Commands**: Add `sp compose`, `sp conduct`, `sp perform` commands.
-- [ ] **Vibe-Coding Demo**: End-to-end demo from plain English to working code.
-- [ ] **Interactive Mode**: Terminal UI for reviewing/approving architecture and specs.
-- [ ] **Deprecate Old Modules**: Remove `agent.py`, `orchestrator.py`, `state.py` from specsoloist.
-
-## Phase 5: Self-Hosting & Fidelity (New)
-
-The goal is to achieve full "Quine" status: `sp conduct self_hosting/` should be able to regenerate the entire `src/` directory with high fidelity.
-
-### 5a: Spec Lifter (`sp lift`)
-- [x] **Reverse Engineering**: `sp lift <file>` - Generate a spec from existing source code.
-- [x] **Test Awareness**: ingest existing `tests/test_*.py` to populate spec "Test Scenarios".
-- [x] **Decomposition**: Intelligent refactoring - suggest breaking monolithic files into granular specs.
-- [ ] **Fidelity Checking**: Compare generated code against original to verify spec accuracy.
-
-### 5b: Full Spec Suite
-- [ ] **Leaf Modules**: Lift `config.py`, `ui.py`, `schema.py`.
-- [ ] **Core Logic**: Lift `parser.py`, `compiler.py`, `resolver.py`.
-- [ ] **Application**: Lift `cli.py` and entry points.
-
-## Phase 6: Developer Experience (Future)
-- [ ] **Sandboxed Execution**: Run generated code in Docker containers for safety.
-- [ ] **VS Code Extension**: Live preview of generated code/tests while editing specs.
-- [ ] **Visual Spec Editor**: A GUI for defining Functional Requirements and Contracts.
-- [ ] **Advanced Workflows**: Conditional branching, loops, fan-out/fan-in parallelism.
-- [ ] **Streaming Compilation**: Real-time feedback as specs are compiled.
+### 4e: CLI Integration
+- [x] **`sp compose`**: Draft architecture and specs from natural language.
+- [x] **`sp conduct`**: Orchestrate parallel builds.
+- [x] **`sp perform`**: Execute workflow specs.
+- [x] **`sp respec`**: Reverse engineer code to specs (formerly `lift`).
 
 ---
 
-## Next Steps (Detailed)
+## Phase 5: Agent-First Architecture (In Progress)
 
-The following tasks are ready for the next contributor:
+The core insight: **complex operations should delegate to AI agents** (Claude, Gemini) rather than single-shot LLM API calls. Agents can read files, validate, iterate on errors, and make multi-step decisions.
 
-### CLI Integration (Priority: High)
-- [x] **Add `sp compose` command** in `cli.py`:
-   - Accept natural language request as argument
-   - Call `SpecComposer.compose()`
-   - Display generated architecture and spec paths
-   - Add `--auto-accept` flag to skip prompts
+### 5a: Agent-First Commands (Priority: High)
 
-- [x] **Add `sp conduct` command** (or integrate into `sp build`):
-   - Use `SpecConductor.build()` instead of `SpecSoloistCore.compile_project()`
-   - Show parallel build progress
+| Command | Status | Description |
+|---------|--------|-------------|
+| `sp respec` | ✅ Done | Reverse engineer code → specs with validation loop |
+| `sp compose` | 🔲 Todo | Architecture drafting with iterative refinement |
+| `sp fix` | 🔲 Todo | Self-healing with error analysis and re-testing |
 
-- [x] **Add `sp perform` command**:
-   - Execute workflow with `SpecConductor.perform()`
-   - Display step-by-step execution
-   - Show trace path on completion
+**Implementation pattern:**
+- Commands default to `--agent auto` (detect claude/gemini CLI)
+- Agent receives task prompt + context from `score/prompts/`
+- Agent handles file I/O, validation, iteration
+- `--no-agent` flag for direct LLM API fallback
 
-### Interactive Review (Priority: Medium)
-- [x] **Architecture Review UI**:
-   - Use Rich to display component table
-   - Prompt for approval/modifications
-   - Allow adding/removing components (via YAML editor)
+### 5b: Agent Prompts
+- [x] `respec.md` - Reverse engineering prompt
+- [ ] `compose.md` - Architecture drafting prompt
+- [ ] `fix.md` - Self-healing prompt
 
-- [ ] **Spec Review UI**:
-   - Display generated spec content
-   - Open in $EDITOR if user wants to modify
-   - Confirm before proceeding
+---
 
-### Cleanup (Priority: Low)
-- [x] **Deprecate old orchestration modules**:
-   - `src/specsoloist/agent.py` → replaced by `SpecConductor.perform()`
-   - `src/specsoloist/orchestrator.py` → replaced by `SpecConductor`
-   - `src/specsoloist/state.py` → Blackboard logic in conductor
+## Phase 6: The Quine (Self-Hosting)
 
-- [ ] **Update self-hosting specs**:
-   - Ensure `self_hosting/specsoloist.spec.md` reflects current implementation
-   - Add tests that verify specs match implementation
+Goal: `sp conduct score/` regenerates `src/` with high fidelity.
+
+### 6a: Granular Spec Strategy
+
+Each source module gets granular specs (one class/function per spec file):
+
+```
+score/
+  specsoloist/
+    ui/                    # Bundle: trivial helpers
+    config/                # Bundle: config types + functions
+    schema/                # Types: Pydantic models
+    parser/                # Multiple function specs
+    compiler/              # Multiple function specs
+    ...
+  spechestra/
+    composer/
+    conductor/
+  providers/
+    base/
+    gemini/
+    anthropic/
+```
+
+### 6b: Module Status
+
+| Module | Lines | Status | Notes |
+|--------|-------|--------|-------|
+| **specsoloist/** | | | |
+| `ui.py` | 70 | ✅ Done | Bundle |
+| `config.py` | 130 | ✅ Done | Bundle |
+| `schema.py` | 200 | 🔲 Todo | Types (Pydantic models) |
+| `lifter.py` | 93 | 🔲 Todo | Small, single function |
+| `server.py` | 88 | 🔲 Todo | Small, MCP entry point |
+| `runner.py` | 155 | 🔲 Todo | Test execution |
+| `manifest.py` | 200 | 🔲 Todo | Build tracking |
+| `resolver.py` | 314 | 🔲 Todo | Dependency resolution |
+| `compiler.py` | 312 | 🔲 Todo | LLM prompt construction |
+| `parser.py` | 684 | 🔲 Todo | Complex - split into multiple specs |
+| `cli.py` | 605 | 🔲 Todo | Complex - split into multiple specs |
+| `core.py` | 743 | 🔲 Todo | Complex - split into multiple specs |
+| **spechestra/** | | | |
+| `composer.py` | 382 | ⚠️ Review | Has spec, needs granular split |
+| `conductor.py` | 447 | ⚠️ Review | Has spec, needs granular split |
+| **providers/** | | | |
+| `base.py` | 30 | 🔲 Todo | Protocol definition |
+| `gemini.py` | 95 | 🔲 Todo | Gemini implementation |
+| `anthropic.py` | 120 | 🔲 Todo | Anthropic implementation |
+
+### 6c: Fidelity Verification
+- [ ] **Compile specs**: Generate code from specs
+- [ ] **Diff check**: Compare generated vs original
+- [ ] **Test suite**: Verify generated code passes all tests
+
+---
+
+## Phase 7: Developer Experience (Future)
+
+- [ ] **Interactive Mode**: Terminal UI for reviewing/approving specs and architecture
+- [ ] **Sandboxed Execution**: Run generated code in Docker containers
+- [ ] **VS Code Extension**: Live preview while editing specs
+- [ ] **Visual Spec Editor**: GUI for defining requirements
+- [ ] **Advanced Workflows**: Conditional branching, loops, fan-out/fan-in
+- [ ] **Streaming Compilation**: Real-time feedback during compilation
+
+---
 
 ## Maintenance
-- [x] Fix ruff lint errors as they arise.
-- [x] Keep self-hosting specs in sync with implementation.
-- [x] Add tests for new components (52 tests total).
+
+- [x] Fix ruff lint errors as they arise
+- [x] Keep self-hosting specs in sync with implementation
+- [x] 52 tests passing

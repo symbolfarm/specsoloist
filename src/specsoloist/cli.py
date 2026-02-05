@@ -599,13 +599,13 @@ def _respec_with_agent(file_path: str, test_path: str, out_path: str, agent: str
         sys.exit(1)
 
     # Load the respec prompt
-    prompt_path = os.path.join(os.path.dirname(__file__), "..", "..", "self_hosting", "prompts", "respec.md")
+    prompt_path = os.path.join(os.path.dirname(__file__), "..", "..", "score", "prompts", "respec.md")
     if not os.path.exists(prompt_path):
         # Try relative to cwd
-        prompt_path = os.path.join(os.getcwd(), "self_hosting", "prompts", "respec.md")
+        prompt_path = os.path.join(os.getcwd(), "score", "prompts", "respec.md")
 
     if not os.path.exists(prompt_path):
-        ui.print_error("Respec prompt not found at self_hosting/prompts/respec.md")
+        ui.print_error("Respec prompt not found at score/prompts/respec.md")
         sys.exit(1)
 
     with open(prompt_path, 'r') as f:

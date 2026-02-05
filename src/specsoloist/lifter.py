@@ -38,7 +38,7 @@ class SpecLifter:
             source_code = f.read()
 
         # Load the Spec Format definition to give the LLM the "Gold Standard"
-        spec_format_path = os.path.join(self.config.root_dir, "self_hosting/spec_format.spec.md")
+        spec_format_path = os.path.join(self.config.root_dir, "score/spec_format.spec.md")
         spec_rules = ""
         if os.path.exists(spec_format_path):
             with open(spec_format_path, 'r') as f:

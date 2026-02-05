@@ -36,6 +36,7 @@ The project uses an orchestra metaphor:
 | **Composer** | `SpecComposer` | Writes the music (drafts specs from plain English) |
 | **Conductor** | `SpecConductor` | Leads the orchestra (manages parallel builds, executes workflows) |
 | **Soloist** | `SpecSoloistCore` | Individual performer (compiles one spec at a time) |
+| **Score** | `score/` directory | The sheet music (specs that define the system itself) |
 
 ### Spec Types
 
@@ -84,41 +85,47 @@ src/spechestra/        # Orchestration package - high-level workflows
 
 tests/                 # pytest tests (52 tests)
 
-self_hosting/          # The Quine - SpecSoloist's own spec
+score/                 # The Score - SpecSoloist's own specs (The Quine)
+  prompts/             # Agent prompts for sp commands
+    respec.md          # Prompt for sp respec
   specsoloist.spec.md  # Core package spec
   spechestra.spec.md   # Orchestration package spec
-  speccomposer.spec.md # Composer component spec
-  specconductor.spec.md# Conductor component spec
   spec_format.spec.md  # The spec format itself
-  examples/            # Example specs in new format
+  ui.spec.md           # UI module spec
+  config.spec.md       # Config module spec
+  examples/            # Example specs
 ```
 
-### Self-Hosting Spec ("The Quine")
+### The Score ("The Quine")
 
-`self_hosting/specsoloist.spec.md` is SpecSoloist's own specification - it describes itself. Keep this updated when making architectural changes.
+`score/` contains SpecSoloist's own specifications - it describes itself. The goal is for `sp conduct score/` to regenerate the entire `src/` directory.
 
-### Current State (Phase 5: Self-Hosting)
+### Current State (Phase 5: Agent-First Architecture)
 
 **Completed:**
-- CLI: `sp compose` (interactive), `sp conduct` (parallel build), `sp perform` (workflows)
-- Spechestra: Full separation of Composer and Conductor
-- Cleanup: Removed legacy modules (`agent.py`, `orchestrator.py`, `state.py`)
-- Self-Hosting Specs: Updated to match new architecture
-- Spec Lifter: `sp lift` implemented (reverse engineering)
+- CLI: `sp compose`, `sp conduct`, `sp perform`, `sp respec`
+- Agent-first: `sp respec` uses AI agents (claude/gemini) by default
+- Score: `ui.spec.md`, `config.spec.md` lifted
 
 **Next up (see ROADMAP.md):**
-- Full "Quine" regeneration: `sp lift` all core modules to `self_hosting/`
-- Fidelity checking: Ensure generated code matches source
+- Agent-first: Convert `sp compose` and `sp fix` to use agents
+- Quine completion: Lift remaining modules to `score/`
 
-### The Lift Workflow
+### The Respec Workflow
 
-To update self-hosting specs, use the `sp lift` command to reverse-engineer the current code.
+To update specs in the score, use `sp respec` to reverse-engineer the current code:
 
 ```bash
-uv run sp lift src/specsoloist/parser.py --out self_hosting/parser.spec.md
+uv run sp respec src/specsoloist/parser.py --out score/parser.spec.md
 ```
 
-**Quirk Note:** The LLM may "decompose" a monolithic file by appending sub-specs as Markdown code blocks within the main spec. If you see this, you must split them into separate files manually or via a script.
+This invokes an AI agent (claude or gemini) that:
+1. Analyzes the source code
+2. Chooses appropriate spec type (bundle, function, etc.)
+3. Generates the spec
+4. Validates with `sp validate`
+5. Fixes any errors
+6. Writes the output
 
 ### Before Committing
 
@@ -166,4 +173,4 @@ When using SpecSoloist, the agent's role shifts from "Writing Code" to **"Defini
 - `README.md` - User documentation and CLI reference
 - `ROADMAP.md` - Development phases and next steps (detailed task breakdown)
 - `CONTRIBUTING.md` - Contribution guidelines and required checks
-- `self_hosting/spec_format.spec.md` - The spec format specification
+- `score/spec_format.spec.md` - The spec format specification

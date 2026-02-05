@@ -23,7 +23,7 @@ When making changes, ensure these files stay consistent:
 | When you change... | Also update... |
 |--------------------|----------------|
 | CLI commands | `README.md` (CLI Reference table) |
-| Architecture/modules | `self_hosting/specular_core.spec.md` |
+| Architecture/modules | `score/specsoloist.spec.md` |
 | Complete a roadmap phase | `ROADMAP.md` |
 | Project structure | `AGENTS.md` (Project Structure section) |
 
@@ -47,22 +47,25 @@ When making changes, ensure these files stay consistent:
 - Use `yaml:schema` blocks for interface definitions
 - Include test scenarios in a table format
 
-## The Self-Hosting Spec ("The Quine")
+## The Score ("The Quine")
 
-The full SpecSoloist and Spechestra packages should be completely specificied and regeneratable from the spec files in `self_hosting`.
+The full SpecSoloist and Spechestra packages should be completely specified and regeneratable from the spec files in `score/`.
 
-**Preferred Workflow: "Lift & Shift"**
-Instead of writing specs manually, use the `sp lift` command to reverse-engineer the existing code into a high-fidelity spec.
+**Preferred Workflow: Respec**
+Instead of writing specs manually, use `sp respec` to reverse-engineer existing code into a high-fidelity spec:
 
 ```bash
-uv run sp lift src/specsoloist/some_module.py --test tests/test_some_module.py
+uv run sp respec src/specsoloist/some_module.py --out score/some_module.spec.md
 ```
 
-This ensures the spec accurately reflects the implementation (Behavior, Contracts, Examples).
+This invokes an AI agent that analyzes the code, generates the spec, validates it, and fixes any errors.
 
 ```
-self_hosting/
+score/
+  prompts/             # Agent prompts
   specsoloist.spec.md  # Core package overview
+  ui.spec.md           # UI module (bundle)
+  config.spec.md       # Config module (bundle)
   ...
 ```
 
@@ -72,7 +75,7 @@ When you add or modify:
 - New functional requirements
 - New CLI commands
 
-...the self-hosting spec should be updated to reflect these changes. This is "the quine" - the project's specification of itself.
+...the score should be updated to reflect these changes.
 
 ## See Also
 
