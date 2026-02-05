@@ -104,11 +104,12 @@ score/                 # The Score - SpecSoloist's own specs (The Quine)
 
 **Completed:**
 - CLI: `sp compose`, `sp conduct`, `sp perform`, `sp respec`
-- Agent-first: `sp respec` uses AI agents (claude/gemini) by default
+- Agent-first: `sp respec` and `sp compose` use AI agents (claude/gemini) by default
 - Score: `ui.spec.md`, `config.spec.md` lifted
+- Renamed: `self_hosting/` → `score/`, `lifter.py` → `respec.py`
 
 **Next up (see ROADMAP.md):**
-- Agent-first: Convert `sp compose` and `sp fix` to use agents
+- Agent-first: Convert `sp fix` to use agents (create `score/prompts/fix.md`)
 - Quine completion: Lift remaining modules to `score/`
 
 ### The Respec Workflow
