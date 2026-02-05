@@ -1,5 +1,5 @@
 """
-SpecLifter - Reverse engineering source code into specs.
+Respec - Reverse engineering source code into specs.
 """
 
 import os
@@ -9,9 +9,12 @@ from .config import SpecSoloistConfig
 from .providers import LLMProvider
 
 
-class SpecLifter:
+class Respecer:
     """
     Reverse engineers Python source code into SpecSoloist specifications.
+
+    This is the fallback implementation used when --no-agent is specified.
+    The preferred approach is agent-first (see score/prompts/respec.md).
     """
 
     def __init__(
@@ -22,14 +25,14 @@ class SpecLifter:
         self.config = config or SpecSoloistConfig.from_env()
         self.provider = provider or self.config.create_provider()
 
-    def lift(
+    def respec(
         self,
         source_path: str,
         test_path: Optional[str] = None,
         model: Optional[str] = None
     ) -> str:
         """
-        Generate a spec from source code.
+        Generate a spec from source code (single-shot LLM call).
         """
         if not os.path.exists(source_path):
             raise FileNotFoundError(f"Source file not found: {source_path}")

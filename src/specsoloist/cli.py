@@ -19,7 +19,7 @@ from .core import SpecSoloistCore
 from .resolver import CircularDependencyError, MissingDependencyError
 from spechestra.composer import SpecComposer, Architecture
 from spechestra.conductor import SpecConductor
-from .lifter import SpecLifter
+from .respec import Respecer
 from . import ui
 
 
@@ -766,11 +766,11 @@ def _respec_with_llm(core: SpecSoloistCore, file_path: str, test_path: str, out_
     """Classic single-shot LLM respec (no validation loop)."""
     _check_api_key()
 
-    lifter = SpecLifter(core.config)
+    respecer = Respecer(core.config)
 
     with ui.spinner("Analyzing code and generating spec..."):
         try:
-            spec_content = lifter.lift(file_path, test_path, model)
+            spec_content = respecer.respec(file_path, test_path, model)
         except Exception as e:
             ui.print_error(f"Respec failed: {e}")
             sys.exit(1)
