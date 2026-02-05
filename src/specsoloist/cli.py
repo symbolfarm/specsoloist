@@ -73,10 +73,13 @@ def main():
     build_parser.add_argument("--no-tests", action="store_true", help="Skip test generation")
 
     # compose
-    compose_parser = subparsers.add_parser("compose", help="Draft architecture and specs from natural language")
+    compose_parser = subparsers.add_parser("compose", help="Draft architecture and specs from natural language (uses AI agent)")
     compose_parser.add_argument("request", help="Description of the system you want to build")
-    compose_parser.add_argument("--auto-accept", action="store_true", help="Skip interactive review")
-    compose_parser.add_argument("--model", help="Override LLM model")
+    compose_parser.add_argument("--agent", choices=["claude", "gemini", "auto"], default="auto",
+                                help="AI agent to use (default: auto-detect)")
+    compose_parser.add_argument("--no-agent", action="store_true",
+                                help="Use direct LLM API instead of agent CLI")
+    compose_parser.add_argument("--auto-accept", action="store_true", help="Skip interactive review (only with --no-agent)")
 
     # conduct
     conduct_parser = subparsers.add_parser("conduct", help="Orchestrate project build")
@@ -137,7 +140,8 @@ def main():
         elif args.command == "build":
             cmd_build(core, args.incremental, args.parallel, args.workers, args.model, not args.no_tests)
         elif args.command == "compose":
-            cmd_compose(core, args.request, args.auto_accept)
+            agent = None if args.no_agent else args.agent
+            cmd_compose(core, args.request, agent, args.auto_accept)
         elif args.command == "conduct":
             cmd_conduct(core, args.incremental, args.parallel, args.workers)
         elif args.command == "perform":
@@ -379,22 +383,118 @@ def cmd_build(core: SpecSoloistCore, incremental: bool, parallel: bool, workers:
         sys.exit(1)
 
 
-def cmd_compose(core: SpecSoloistCore, request: str, auto_accept: bool):
+def cmd_compose(core: SpecSoloistCore, request: str, agent: str, auto_accept: bool):
+    """Draft architecture and specs from natural language, optionally using an AI agent."""
+
+    ui.print_header("Composing System", request[:50] + "..." if len(request) > 50 else request)
+
+    if agent:
+        # Agent mode: invoke external AI agent CLI
+        _compose_with_agent(request, agent)
+    else:
+        # Classic mode: direct LLM API calls
+        _compose_with_llm(core, request, auto_accept)
+
+
+def _compose_with_agent(request: str, agent: str):
+    """Use an AI agent CLI (claude, gemini) for multi-step composition."""
+    import shutil
+    import subprocess
+
+    # Auto-detect agent if requested
+    if agent == "auto":
+        if shutil.which("claude"):
+            agent = "claude"
+        elif shutil.which("gemini"):
+            agent = "gemini"
+        else:
+            ui.print_error("No AI agent CLI found. Install 'claude' or 'gemini' CLI, or use --no-agent flag.")
+            sys.exit(1)
+
+    # Check agent is available
+    if not shutil.which(agent):
+        ui.print_error(f"Agent CLI '{agent}' not found in PATH.")
+        sys.exit(1)
+
+    # Load the compose prompt
+    prompt_path = os.path.join(os.path.dirname(__file__), "..", "..", "score", "prompts", "compose.md")
+    if not os.path.exists(prompt_path):
+        # Try relative to cwd
+        prompt_path = os.path.join(os.getcwd(), "score", "prompts", "compose.md")
+
+    if not os.path.exists(prompt_path):
+        ui.print_error("Compose prompt not found at score/prompts/compose.md")
+        sys.exit(1)
+
+    with open(prompt_path, 'r') as f:
+        base_prompt = f.read()
+
+    # Build the task prompt
+    task_prompt = f"""{base_prompt}
+
+---
+
+## Your Task
+
+Design and implement specs for the following request:
+
+**Request**: {request}
+
+**Project directory**: {os.getcwd()}
+
+After creating each spec, validate it with `sp validate <spec_path>` and fix any errors before proceeding.
+When all specs are created, show the user what was created.
+"""
+
+    ui.print_info(f"Invoking {agent} agent...")
+    ui.print_step(f"Request: {request}")
+
+    # Invoke the agent
+    try:
+        if agent == "claude":
+            # Claude Code CLI: claude --print "prompt"
+            result = subprocess.run(
+                ["claude", "--print", task_prompt],
+                capture_output=False,
+                text=True
+            )
+        elif agent == "gemini":
+            # Gemini CLI
+            result = subprocess.run(
+                ["gemini", task_prompt],
+                capture_output=False,
+                text=True
+            )
+
+        if result.returncode != 0:
+            ui.print_error(f"Agent exited with code {result.returncode}")
+            sys.exit(1)
+
+    except FileNotFoundError:
+        ui.print_error(f"Failed to invoke {agent} CLI")
+        sys.exit(1)
+    except Exception as e:
+        ui.print_error(f"Agent error: {e}")
+        sys.exit(1)
+
+
+def _compose_with_llm(core: SpecSoloistCore, request: str, auto_accept: bool):
+    """Classic direct LLM composition (single-shot, no agent iteration)."""
     _check_api_key()
-    
-    ui.print_header("Composing System", "Using SpecComposer")
-    
+
+    ui.print_warning("Classic mode: using direct LLM calls. Use --agent for multi-step composition.")
+
     # Initialize Composer
     composer = SpecComposer(core.project_dir)
-    
+
     with ui.spinner("Drafting architecture..."):
         architecture = composer.draft_architecture(request)
-        
+
     # Interactive loop
     while True:
         # Display Architecture
         ui.print_header("Architecture Draft", architecture.description)
-        
+
         arch_table = ui.create_table(["Component", "Type", "Dependencies", "Description"])
         for comp in architecture.components:
             deps = ", ".join(comp.dependencies) if comp.dependencies else "-"
@@ -409,37 +509,37 @@ def cmd_compose(core: SpecSoloistCore, request: str, auto_accept: bool):
 
         if auto_accept:
             break
-            
+
         from rich.prompt import Prompt, Confirm
         choice = Prompt.ask(
-            "[bold]Action[/]", 
-            choices=["proceed", "edit", "cancel"], 
+            "[bold]Action[/]",
+            choices=["proceed", "edit", "cancel"],
             default="proceed"
         )
-        
+
         if choice == "cancel":
             ui.print_warning("Composition cancelled.")
             return
-            
+
         if choice == "edit":
             # Edit in external editor
             import tempfile
             import subprocess
             import shlex
-            
+
             with tempfile.NamedTemporaryFile(suffix=".yaml", mode='w', delete=False) as tf:
                 tf.write(architecture.to_yaml())
                 tf_path = tf.name
-                
+
             editor = os.environ.get("EDITOR", "vim")
-            
+
             try:
                 subprocess.call(shlex.split(editor) + [tf_path])
-                
+
                 # Read back
                 with open(tf_path, 'r') as f:
                     new_yaml = f.read()
-                    
+
                 # Parse
                 try:
                     architecture = Architecture.from_yaml(new_yaml)
@@ -448,24 +548,24 @@ def cmd_compose(core: SpecSoloistCore, request: str, auto_accept: bool):
                     ui.print_error(f"Failed to parse updated architecture: {e}")
                     if not Confirm.ask("Retry editing?", default=True):
                         return
-                    continue # Loop back to display and prompt
-                    
+                    continue  # Loop back to display and prompt
+
             finally:
                 if os.path.exists(tf_path):
                     os.remove(tf_path)
-            continue # Show updated architecture
-            
+            continue  # Show updated architecture
+
         if choice == "proceed":
             break
 
     with ui.spinner("Generating specs..."):
         spec_paths = composer.generate_specs(architecture)
-        
+
     ui.print_success(f"Generated {len(spec_paths)} specs:")
     for path in spec_paths:
         rel_path = os.path.relpath(path, os.getcwd())
         ui.console.print(f"  - [bold]{rel_path}[/]")
-        
+
     ui.print_info("Review specs, then run 'sp conduct' to build.")
 
 

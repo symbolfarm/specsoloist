@@ -81,7 +81,7 @@ The core insight: **complex operations should delegate to AI agents** (Claude, G
 | Command | Status | Description |
 |---------|--------|-------------|
 | `sp respec` | ✅ Done | Reverse engineer code → specs with validation loop |
-| `sp compose` | 🔲 Todo | Architecture drafting with iterative refinement |
+| `sp compose` | ✅ Done | Architecture drafting with iterative refinement |
 | `sp fix` | 🔲 Todo | Self-healing with error analysis and re-testing |
 
 **Implementation pattern:**
@@ -92,7 +92,7 @@ The core insight: **complex operations should delegate to AI agents** (Claude, G
 
 ### 5b: Agent Prompts
 - [x] `respec.md` - Reverse engineering prompt
-- [ ] `compose.md` - Architecture drafting prompt
+- [x] `compose.md` - Architecture drafting prompt
 - [ ] `fix.md` - Self-healing prompt
 
 ---
