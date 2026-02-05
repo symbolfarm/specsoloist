@@ -90,12 +90,16 @@ def main():
     perform_parser.add_argument("workflow", help="Workflow spec name")
     perform_parser.add_argument("inputs", help="JSON inputs for the workflow")
 
-    # lift
-    lift_parser = subparsers.add_parser("lift", help="Reverse engineer code to spec")
-    lift_parser.add_argument("file", help="Path to source file")
-    lift_parser.add_argument("--test", help="Path to test file (optional)")
-    lift_parser.add_argument("--out", help="Output path (optional)")
-    lift_parser.add_argument("--model", help="Override LLM model")
+    # respec
+    respec_parser = subparsers.add_parser("respec", help="Reverse engineer code to spec (uses AI agent)")
+    respec_parser.add_argument("file", help="Path to source file")
+    respec_parser.add_argument("--test", help="Path to test file (optional)")
+    respec_parser.add_argument("--out", help="Output path (optional)")
+    respec_parser.add_argument("--agent", choices=["claude", "gemini", "auto"], default="auto",
+                               help="AI agent to use (default: auto-detect)")
+    respec_parser.add_argument("--no-agent", action="store_true",
+                               help="Use direct LLM API instead of agent CLI")
+    respec_parser.add_argument("--model", help="LLM model override (only with --no-agent)")
 
     # mcp (hidden, for backwards compatibility)
     subparsers.add_parser("mcp", help="Start MCP server (for AI agents)")
@@ -138,8 +142,9 @@ def main():
             cmd_conduct(core, args.incremental, args.parallel, args.workers)
         elif args.command == "perform":
             cmd_perform(core, args.workflow, args.inputs)
-        elif args.command == "lift":
-            cmd_lift(core, args.file, args.test, args.out, args.model)
+        elif args.command == "respec":
+            agent = None if args.no_agent else args.agent
+            cmd_respec(core, args.file, args.test, args.out, args.model, agent)
         elif args.command == "mcp":
             cmd_mcp()
     except KeyboardInterrupt:
@@ -560,20 +565,118 @@ def cmd_perform(core: SpecSoloistCore, workflow: str, inputs_json: str):
         sys.exit(1)
 
 
-def cmd_lift(core: SpecSoloistCore, file_path: str, test_path: str, out_path: str, model: str):
+def cmd_respec(core: SpecSoloistCore, file_path: str, test_path: str, out_path: str, model: str, agent: str):
+    """Reverse engineer code to spec, optionally using an AI agent."""
+
+    ui.print_header("Respec: Code → Spec", file_path)
+
+    if agent:
+        # Agent mode: invoke external AI agent CLI
+        _respec_with_agent(file_path, test_path, out_path, agent)
+    else:
+        # Classic mode: single LLM API call
+        _respec_with_llm(core, file_path, test_path, out_path, model)
+
+
+def _respec_with_agent(file_path: str, test_path: str, out_path: str, agent: str):
+    """Use an AI agent CLI (claude, gemini) for multi-step respec."""
+    import shutil
+    import subprocess
+
+    # Auto-detect agent if requested
+    if agent == "auto":
+        if shutil.which("claude"):
+            agent = "claude"
+        elif shutil.which("gemini"):
+            agent = "gemini"
+        else:
+            ui.print_error("No AI agent CLI found. Install 'claude' or 'gemini' CLI, or omit --agent flag.")
+            sys.exit(1)
+
+    # Check agent is available
+    if not shutil.which(agent):
+        ui.print_error(f"Agent CLI '{agent}' not found in PATH.")
+        sys.exit(1)
+
+    # Load the respec prompt
+    prompt_path = os.path.join(os.path.dirname(__file__), "..", "..", "self_hosting", "prompts", "respec.md")
+    if not os.path.exists(prompt_path):
+        # Try relative to cwd
+        prompt_path = os.path.join(os.getcwd(), "self_hosting", "prompts", "respec.md")
+
+    if not os.path.exists(prompt_path):
+        ui.print_error("Respec prompt not found at self_hosting/prompts/respec.md")
+        sys.exit(1)
+
+    with open(prompt_path, 'r') as f:
+        base_prompt = f.read()
+
+    # Build the task prompt
+    out_instruction = f"Write the spec to: {out_path}" if out_path else "Print the spec to stdout"
+    test_instruction = f"Test file for examples: {test_path}" if test_path else "No test file provided"
+
+    task_prompt = f"""{base_prompt}
+
+---
+
+## Your Task
+
+Respec this file: `{file_path}`
+{test_instruction}
+{out_instruction}
+
+After generating the spec, validate it with `sp validate <spec_path>` and fix any errors.
+"""
+
+    ui.print_info(f"Invoking {agent} agent...")
+    ui.print_step(f"Source: {file_path}")
+    if out_path:
+        ui.print_step(f"Output: {out_path}")
+
+    # Invoke the agent
+    try:
+        if agent == "claude":
+            # Claude Code CLI: claude --print "prompt"
+            result = subprocess.run(
+                ["claude", "--print", task_prompt],
+                capture_output=False,
+                text=True
+            )
+        elif agent == "gemini":
+            # Gemini CLI: gemini "prompt" (adjust based on actual CLI)
+            result = subprocess.run(
+                ["gemini", task_prompt],
+                capture_output=False,
+                text=True
+            )
+
+        if result.returncode != 0:
+            ui.print_error(f"Agent exited with code {result.returncode}")
+            sys.exit(1)
+
+    except FileNotFoundError:
+        ui.print_error(f"Failed to invoke {agent} CLI")
+        sys.exit(1)
+    except Exception as e:
+        ui.print_error(f"Agent error: {e}")
+        sys.exit(1)
+
+
+def _respec_with_llm(core: SpecSoloistCore, file_path: str, test_path: str, out_path: str, model: str):
+    """Classic single-shot LLM respec (no validation loop)."""
     _check_api_key()
-    
-    ui.print_header("Lifting Code to Spec", file_path)
-    
+
     lifter = SpecLifter(core.config)
-    
+
     with ui.spinner("Analyzing code and generating spec..."):
         try:
             spec_content = lifter.lift(file_path, test_path, model)
         except Exception as e:
-            ui.print_error(f"Lift failed: {e}")
+            ui.print_error(f"Respec failed: {e}")
             sys.exit(1)
-            
+
+    ui.print_warning("Classic mode: spec not validated. Use --agent for multi-step respec with validation.")
+
     if out_path:
         with open(out_path, 'w') as f:
             f.write(spec_content)

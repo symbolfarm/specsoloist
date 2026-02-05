@@ -51,7 +51,6 @@ class SpecLifter:
                 test_code = f"\n\n# Existing Tests\n{content}"
 
         filename = os.path.basename(source_path)
-        name = os.path.splitext(filename)[0]
 
         prompt = f"""You are a Senior Software Architect and Reverse Engineering Specialist.
 
