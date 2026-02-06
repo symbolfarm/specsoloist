@@ -75,7 +75,9 @@ def main():
     # compose
     compose_parser = subparsers.add_parser("compose", help="Draft architecture and specs from natural language")
     compose_parser.add_argument("request", help="Description of the system you want to build")
-    compose_parser.add_argument("--auto-accept", action="store_true", help="Skip interactive review")
+    compose_parser.add_argument("--no-agent", action="store_true",
+                                help="Use direct LLM API instead of agent CLI")
+    compose_parser.add_argument("--auto-accept", action="store_true", help="Skip interactive review (with --no-agent)")
 
     # conduct
     conduct_parser = subparsers.add_parser("conduct", help="Orchestrate project build")
@@ -94,7 +96,9 @@ def main():
     respec_parser.add_argument("file", help="Path to source file")
     respec_parser.add_argument("--test", help="Path to test file (optional)")
     respec_parser.add_argument("--out", help="Output path (optional)")
-    respec_parser.add_argument("--model", help="LLM model override")
+    respec_parser.add_argument("--no-agent", action="store_true",
+                               help="Use direct LLM API instead of agent CLI")
+    respec_parser.add_argument("--model", help="LLM model override (with --no-agent)")
 
     # mcp (hidden, for backwards compatibility)
     subparsers.add_parser("mcp", help="Start MCP server (for AI agents)")
@@ -132,13 +136,13 @@ def main():
         elif args.command == "build":
             cmd_build(core, args.incremental, args.parallel, args.workers, args.model, not args.no_tests)
         elif args.command == "compose":
-            cmd_compose(core, args.request, args.auto_accept)
+            cmd_compose(core, args.request, args.no_agent, args.auto_accept)
         elif args.command == "conduct":
             cmd_conduct(core, args.incremental, args.parallel, args.workers)
         elif args.command == "perform":
             cmd_perform(core, args.workflow, args.inputs)
         elif args.command == "respec":
-            cmd_respec(core, args.file, args.test, args.out, args.model)
+            cmd_respec(core, args.file, args.test, args.out, args.no_agent, args.model)
         elif args.command == "mcp":
             cmd_mcp()
     except KeyboardInterrupt:
@@ -373,11 +377,41 @@ def cmd_build(core: SpecSoloistCore, incremental: bool, parallel: bool, workers:
         sys.exit(1)
 
 
-def cmd_compose(core: SpecSoloistCore, request: str, auto_accept: bool):
+def cmd_compose(core: SpecSoloistCore, request: str, no_agent: bool, auto_accept: bool):
     """Draft architecture and specs from natural language."""
 
     ui.print_header("Composing System", request[:50] + "..." if len(request) > 50 else request)
+
+    if no_agent:
+        _compose_with_llm(core, request, auto_accept)
+    else:
+        _compose_with_agent(request)
+
+
+def _compose_with_agent(request: str):
+    """Use an AI agent CLI for multi-step composition."""
+    agent = _detect_agent_cli()
+    if not agent:
+        ui.print_error("No agent CLI found (claude or gemini). Install one or use --no-agent.")
+        sys.exit(1)
+
+    ui.print_info(f"Using {agent} agent with native subagent...")
+
+    # Simple natural language prompt - the native subagent handles the rest
+    prompt = f"compose: {request}"
+
+    try:
+        _run_agent_oneshot(agent, prompt)
+    except Exception as e:
+        ui.print_error(f"Agent error: {e}")
+        sys.exit(1)
+
+
+def _compose_with_llm(core: SpecSoloistCore, request: str, auto_accept: bool):
+    """Direct LLM composition (single-shot, no agent iteration)."""
     _check_api_key()
+
+    ui.print_info("Using direct LLM call (no agent)...")
 
     # Initialize Composer
     composer = SpecComposer(core.project_dir)
@@ -560,11 +594,46 @@ def cmd_perform(core: SpecSoloistCore, workflow: str, inputs_json: str):
         sys.exit(1)
 
 
-def cmd_respec(core: SpecSoloistCore, file_path: str, test_path: str, out_path: str, model: str):
-    """Reverse engineer code to spec using direct LLM call."""
+def cmd_respec(core: SpecSoloistCore, file_path: str, test_path: str, out_path: str, no_agent: bool, model: str):
+    """Reverse engineer code to spec."""
 
     ui.print_header("Respec: Code → Spec", file_path)
+
+    if no_agent:
+        _respec_with_llm(core, file_path, test_path, out_path, model)
+    else:
+        _respec_with_agent(file_path, test_path, out_path)
+
+
+def _respec_with_agent(file_path: str, test_path: str, out_path: str):
+    """Use an AI agent CLI for multi-step respec with validation."""
+    agent = _detect_agent_cli()
+    if not agent:
+        ui.print_error("No agent CLI found (claude or gemini). Install one or use --no-agent.")
+        sys.exit(1)
+
+    ui.print_info(f"Using {agent} agent with native subagent...")
+
+    # Build natural language prompt
+    prompt_parts = [f"respec {file_path}"]
+    if test_path:
+        prompt_parts.append(f"using tests from {test_path}")
+    if out_path:
+        prompt_parts.append(f"to {out_path}")
+    prompt = " ".join(prompt_parts)
+
+    try:
+        _run_agent_oneshot(agent, prompt)
+    except Exception as e:
+        ui.print_error(f"Agent error: {e}")
+        sys.exit(1)
+
+
+def _respec_with_llm(core: SpecSoloistCore, file_path: str, test_path: str, out_path: str, model: str):
+    """Direct LLM respec (single-shot, no validation loop)."""
     _check_api_key()
+
+    ui.print_info("Using direct LLM call (no agent)...")
 
     respecer = Respecer(core.config)
 
@@ -589,6 +658,41 @@ def cmd_mcp():
     """Start the MCP server."""
     from .server import main as mcp_main
     mcp_main()
+
+
+def _detect_agent_cli() -> str | None:
+    """Detect which agent CLI is available (claude or gemini)."""
+    import shutil
+    if shutil.which("claude"):
+        return "claude"
+    if shutil.which("gemini"):
+        return "gemini"
+    return None
+
+
+def _run_agent_oneshot(agent: str, prompt: str):
+    """Run an agent CLI in one-shot mode."""
+    import subprocess
+
+    if agent == "claude":
+        # Claude Code: claude -p "prompt"
+        result = subprocess.run(
+            ["claude", "-p", prompt],
+            capture_output=False,
+            text=True
+        )
+    elif agent == "gemini":
+        # Gemini CLI: gemini -p "prompt" (assuming similar flag)
+        result = subprocess.run(
+            ["gemini", "-p", prompt],
+            capture_output=False,
+            text=True
+        )
+    else:
+        raise ValueError(f"Unknown agent: {agent}")
+
+    if result.returncode != 0:
+        raise RuntimeError(f"Agent exited with code {result.returncode}")
 
 
 def _check_api_key():
