@@ -86,14 +86,25 @@ src/spechestra/        # Orchestration package - high-level workflows
 tests/                 # pytest tests (52 tests)
 
 score/                 # The Score - SpecSoloist's own specs (The Quine)
-  prompts/             # Agent prompts for sp commands
-    respec.md          # Prompt for sp respec
+  prompts/             # Agent prompts (reference/documentation)
   specsoloist.spec.md  # Core package spec
   spechestra.spec.md   # Orchestration package spec
   spec_format.spec.md  # The spec format itself
   ui.spec.md           # UI module spec
   config.spec.md       # Config module spec
   examples/            # Example specs
+
+.claude/agents/        # Native subagents for Claude Code
+  compose.md           # Draft architecture from natural language
+  conductor.md         # Orchestrate parallel builds
+  respec.md            # Reverse-engineer code to specs
+  soloist.md           # Compile a single spec
+
+.gemini/agents/        # Native subagents for Gemini CLI
+  compose.md           # (same as Claude, different tool names)
+  conductor.md
+  respec.md
+  soloist.md
 ```
 
 ### The Score ("The Quine")
@@ -104,29 +115,48 @@ score/                 # The Score - SpecSoloist's own specs (The Quine)
 
 **Completed:**
 - CLI: `sp compose`, `sp conduct`, `sp perform`, `sp respec`
-- Agent-first: `sp respec` and `sp compose` use AI agents (claude/gemini) by default
+- Native subagents: `.claude/agents/` and `.gemini/agents/` for agentic workflows
 - Score: `ui.spec.md`, `config.spec.md` lifted
 - Renamed: `self_hosting/` → `score/`, `lifter.py` → `respec.py`
 
 **Next up (see ROADMAP.md):**
-- Agent-first: Convert `sp fix` to use agents (create `score/prompts/fix.md`)
+- Agent-first: Convert `sp fix` to use agents
 - Quine completion: Lift remaining modules to `score/`
+
+### Native Subagent Architecture
+
+SpecSoloist uses **native subagents** for Claude Code and Gemini CLI. Instead of spawning external processes, the AI delegates to specialized subagents:
+
+```
+User: "respec src/parser.py"
+         │
+         ▼
+   Claude/Gemini (main agent)
+         │
+         └─► respec subagent
+               │
+               ├── Read source code
+               ├── Generate spec
+               ├── Run sp validate
+               ├── Fix errors
+               └── Write output
+```
+
+The subagents are defined in `.claude/agents/` and `.gemini/agents/` with agent-specific tool names.
 
 ### The Respec Workflow
 
-To update specs in the score, use `sp respec` to reverse-engineer the current code:
+**Using native subagents (recommended):**
+```
+> respec src/specsoloist/parser.py to score/parser.spec.md
+```
+The AI delegates to the `respec` subagent which handles validation and fixes.
 
+**Using CLI directly:**
 ```bash
 uv run sp respec src/specsoloist/parser.py --out score/parser.spec.md
 ```
-
-This invokes an AI agent (claude or gemini) that:
-1. Analyzes the source code
-2. Chooses appropriate spec type (bundle, function, etc.)
-3. Generates the spec
-4. Validates with `sp validate`
-5. Fixes any errors
-6. Writes the output
+This uses a single LLM call without the validation loop.
 
 ### Before Committing
 

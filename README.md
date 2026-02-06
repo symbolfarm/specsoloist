@@ -90,7 +90,7 @@ SpecSoloist allows you to chain multiple specs into a workflow.
 | `sp compile` | Compile single spec to code + tests |
 | `sp test` | Run tests for a spec |
 | `sp fix` | Auto-fix failing tests |
-| `sp lift` | **Reverse engineer code to spec** |
+| `sp respec` | **Reverse engineer code to spec** |
 | `sp build` | Alias for `conduct` |
 | `sp graph` | Export dependency graph (Mermaid.js) |
 
@@ -132,3 +132,28 @@ Add to your `claude_desktop_config.json`:
 ```
 
 Or use the CLI: `sp mcp`
+
+## Native Subagents (Claude & Gemini)
+
+For the full agentic experience, SpecSoloist provides native subagent definitions for Claude Code and Gemini CLI. These allow the AI to delegate tasks to specialized agents:
+
+| Agent | Purpose |
+|-------|---------|
+| `compose` | Draft architecture and specs from natural language |
+| `conductor` | Orchestrate parallel builds |
+| `soloist` | Compile a single spec |
+| `respec` | Reverse-engineer code to specs |
+
+**Usage with Claude Code:**
+```
+> respec src/specsoloist/parser.py to score/parser.spec.md
+```
+Claude will delegate to the `respec` subagent, which handles validation and error fixing.
+
+**Usage with Gemini CLI:**
+```
+> compose a todo app with user auth
+```
+Gemini will delegate to the `compose` subagent.
+
+The subagent definitions are in `.claude/agents/` and `.gemini/agents/`.

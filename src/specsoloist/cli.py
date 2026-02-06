@@ -73,13 +73,9 @@ def main():
     build_parser.add_argument("--no-tests", action="store_true", help="Skip test generation")
 
     # compose
-    compose_parser = subparsers.add_parser("compose", help="Draft architecture and specs from natural language (uses AI agent)")
+    compose_parser = subparsers.add_parser("compose", help="Draft architecture and specs from natural language")
     compose_parser.add_argument("request", help="Description of the system you want to build")
-    compose_parser.add_argument("--agent", choices=["claude", "gemini", "auto"], default="auto",
-                                help="AI agent to use (default: auto-detect)")
-    compose_parser.add_argument("--no-agent", action="store_true",
-                                help="Use direct LLM API instead of agent CLI")
-    compose_parser.add_argument("--auto-accept", action="store_true", help="Skip interactive review (only with --no-agent)")
+    compose_parser.add_argument("--auto-accept", action="store_true", help="Skip interactive review")
 
     # conduct
     conduct_parser = subparsers.add_parser("conduct", help="Orchestrate project build")
@@ -94,15 +90,11 @@ def main():
     perform_parser.add_argument("inputs", help="JSON inputs for the workflow")
 
     # respec
-    respec_parser = subparsers.add_parser("respec", help="Reverse engineer code to spec (uses AI agent)")
+    respec_parser = subparsers.add_parser("respec", help="Reverse engineer code to spec")
     respec_parser.add_argument("file", help="Path to source file")
     respec_parser.add_argument("--test", help="Path to test file (optional)")
     respec_parser.add_argument("--out", help="Output path (optional)")
-    respec_parser.add_argument("--agent", choices=["claude", "gemini", "auto"], default="auto",
-                               help="AI agent to use (default: auto-detect)")
-    respec_parser.add_argument("--no-agent", action="store_true",
-                               help="Use direct LLM API instead of agent CLI")
-    respec_parser.add_argument("--model", help="LLM model override (only with --no-agent)")
+    respec_parser.add_argument("--model", help="LLM model override")
 
     # mcp (hidden, for backwards compatibility)
     subparsers.add_parser("mcp", help="Start MCP server (for AI agents)")
@@ -140,15 +132,13 @@ def main():
         elif args.command == "build":
             cmd_build(core, args.incremental, args.parallel, args.workers, args.model, not args.no_tests)
         elif args.command == "compose":
-            agent = None if args.no_agent else args.agent
-            cmd_compose(core, args.request, agent, args.auto_accept)
+            cmd_compose(core, args.request, args.auto_accept)
         elif args.command == "conduct":
             cmd_conduct(core, args.incremental, args.parallel, args.workers)
         elif args.command == "perform":
             cmd_perform(core, args.workflow, args.inputs)
         elif args.command == "respec":
-            agent = None if args.no_agent else args.agent
-            cmd_respec(core, args.file, args.test, args.out, args.model, agent)
+            cmd_respec(core, args.file, args.test, args.out, args.model)
         elif args.command == "mcp":
             cmd_mcp()
     except KeyboardInterrupt:
@@ -383,106 +373,11 @@ def cmd_build(core: SpecSoloistCore, incremental: bool, parallel: bool, workers:
         sys.exit(1)
 
 
-def cmd_compose(core: SpecSoloistCore, request: str, agent: str, auto_accept: bool):
-    """Draft architecture and specs from natural language, optionally using an AI agent."""
+def cmd_compose(core: SpecSoloistCore, request: str, auto_accept: bool):
+    """Draft architecture and specs from natural language."""
 
     ui.print_header("Composing System", request[:50] + "..." if len(request) > 50 else request)
-
-    if agent:
-        # Agent mode: invoke external AI agent CLI
-        _compose_with_agent(request, agent)
-    else:
-        # Classic mode: direct LLM API calls
-        _compose_with_llm(core, request, auto_accept)
-
-
-def _compose_with_agent(request: str, agent: str):
-    """Use an AI agent CLI (claude, gemini) for multi-step composition."""
-    import shutil
-    import subprocess
-
-    # Auto-detect agent if requested
-    if agent == "auto":
-        if shutil.which("claude"):
-            agent = "claude"
-        elif shutil.which("gemini"):
-            agent = "gemini"
-        else:
-            ui.print_error("No AI agent CLI found. Install 'claude' or 'gemini' CLI, or use --no-agent flag.")
-            sys.exit(1)
-
-    # Check agent is available
-    if not shutil.which(agent):
-        ui.print_error(f"Agent CLI '{agent}' not found in PATH.")
-        sys.exit(1)
-
-    # Load the compose prompt
-    prompt_path = os.path.join(os.path.dirname(__file__), "..", "..", "score", "prompts", "compose.md")
-    if not os.path.exists(prompt_path):
-        # Try relative to cwd
-        prompt_path = os.path.join(os.getcwd(), "score", "prompts", "compose.md")
-
-    if not os.path.exists(prompt_path):
-        ui.print_error("Compose prompt not found at score/prompts/compose.md")
-        sys.exit(1)
-
-    with open(prompt_path, 'r') as f:
-        base_prompt = f.read()
-
-    # Build the task prompt
-    task_prompt = f"""{base_prompt}
-
----
-
-## Your Task
-
-Design and implement specs for the following request:
-
-**Request**: {request}
-
-**Project directory**: {os.getcwd()}
-
-After creating each spec, validate it with `sp validate <spec_path>` and fix any errors before proceeding.
-When all specs are created, show the user what was created.
-"""
-
-    ui.print_info(f"Invoking {agent} agent...")
-    ui.print_step(f"Request: {request}")
-
-    # Invoke the agent
-    try:
-        if agent == "claude":
-            # Claude Code CLI: claude --print "prompt"
-            result = subprocess.run(
-                ["claude", "--print", task_prompt],
-                capture_output=False,
-                text=True
-            )
-        elif agent == "gemini":
-            # Gemini CLI
-            result = subprocess.run(
-                ["gemini", task_prompt],
-                capture_output=False,
-                text=True
-            )
-
-        if result.returncode != 0:
-            ui.print_error(f"Agent exited with code {result.returncode}")
-            sys.exit(1)
-
-    except FileNotFoundError:
-        ui.print_error(f"Failed to invoke {agent} CLI")
-        sys.exit(1)
-    except Exception as e:
-        ui.print_error(f"Agent error: {e}")
-        sys.exit(1)
-
-
-def _compose_with_llm(core: SpecSoloistCore, request: str, auto_accept: bool):
-    """Classic direct LLM composition (single-shot, no agent iteration)."""
     _check_api_key()
-
-    ui.print_warning("Classic mode: using direct LLM calls. Use --agent for multi-step composition.")
 
     # Initialize Composer
     composer = SpecComposer(core.project_dir)
@@ -665,105 +560,10 @@ def cmd_perform(core: SpecSoloistCore, workflow: str, inputs_json: str):
         sys.exit(1)
 
 
-def cmd_respec(core: SpecSoloistCore, file_path: str, test_path: str, out_path: str, model: str, agent: str):
-    """Reverse engineer code to spec, optionally using an AI agent."""
+def cmd_respec(core: SpecSoloistCore, file_path: str, test_path: str, out_path: str, model: str):
+    """Reverse engineer code to spec using direct LLM call."""
 
     ui.print_header("Respec: Code → Spec", file_path)
-
-    if agent:
-        # Agent mode: invoke external AI agent CLI
-        _respec_with_agent(file_path, test_path, out_path, agent)
-    else:
-        # Classic mode: single LLM API call
-        _respec_with_llm(core, file_path, test_path, out_path, model)
-
-
-def _respec_with_agent(file_path: str, test_path: str, out_path: str, agent: str):
-    """Use an AI agent CLI (claude, gemini) for multi-step respec."""
-    import shutil
-    import subprocess
-
-    # Auto-detect agent if requested
-    if agent == "auto":
-        if shutil.which("claude"):
-            agent = "claude"
-        elif shutil.which("gemini"):
-            agent = "gemini"
-        else:
-            ui.print_error("No AI agent CLI found. Install 'claude' or 'gemini' CLI, or omit --agent flag.")
-            sys.exit(1)
-
-    # Check agent is available
-    if not shutil.which(agent):
-        ui.print_error(f"Agent CLI '{agent}' not found in PATH.")
-        sys.exit(1)
-
-    # Load the respec prompt
-    prompt_path = os.path.join(os.path.dirname(__file__), "..", "..", "score", "prompts", "respec.md")
-    if not os.path.exists(prompt_path):
-        # Try relative to cwd
-        prompt_path = os.path.join(os.getcwd(), "score", "prompts", "respec.md")
-
-    if not os.path.exists(prompt_path):
-        ui.print_error("Respec prompt not found at score/prompts/respec.md")
-        sys.exit(1)
-
-    with open(prompt_path, 'r') as f:
-        base_prompt = f.read()
-
-    # Build the task prompt
-    out_instruction = f"Write the spec to: {out_path}" if out_path else "Print the spec to stdout"
-    test_instruction = f"Test file for examples: {test_path}" if test_path else "No test file provided"
-
-    task_prompt = f"""{base_prompt}
-
----
-
-## Your Task
-
-Respec this file: `{file_path}`
-{test_instruction}
-{out_instruction}
-
-After generating the spec, validate it with `sp validate <spec_path>` and fix any errors.
-"""
-
-    ui.print_info(f"Invoking {agent} agent...")
-    ui.print_step(f"Source: {file_path}")
-    if out_path:
-        ui.print_step(f"Output: {out_path}")
-
-    # Invoke the agent
-    try:
-        if agent == "claude":
-            # Claude Code CLI: claude --print "prompt"
-            result = subprocess.run(
-                ["claude", "--print", task_prompt],
-                capture_output=False,
-                text=True
-            )
-        elif agent == "gemini":
-            # Gemini CLI: gemini "prompt" (adjust based on actual CLI)
-            result = subprocess.run(
-                ["gemini", task_prompt],
-                capture_output=False,
-                text=True
-            )
-
-        if result.returncode != 0:
-            ui.print_error(f"Agent exited with code {result.returncode}")
-            sys.exit(1)
-
-    except FileNotFoundError:
-        ui.print_error(f"Failed to invoke {agent} CLI")
-        sys.exit(1)
-    except Exception as e:
-        ui.print_error(f"Agent error: {e}")
-        sys.exit(1)
-
-
-def _respec_with_llm(core: SpecSoloistCore, file_path: str, test_path: str, out_path: str, model: str):
-    """Classic single-shot LLM respec (no validation loop)."""
     _check_api_key()
 
     respecer = Respecer(core.config)
@@ -775,12 +575,11 @@ def _respec_with_llm(core: SpecSoloistCore, file_path: str, test_path: str, out_
             ui.print_error(f"Respec failed: {e}")
             sys.exit(1)
 
-    ui.print_warning("Classic mode: spec not validated. Use --agent for multi-step respec with validation.")
-
     if out_path:
         with open(out_path, 'w') as f:
             f.write(spec_content)
         ui.print_success(f"Spec saved to: [bold]{out_path}[/]")
+        ui.print_info("Run 'sp validate' to check the generated spec.")
     else:
         ui.console.print(ui.Panel(spec_content, title="Generated Spec", border_style="blue"))
         ui.print_info("Use --out <path> to save to file.")
