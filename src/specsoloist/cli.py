@@ -525,10 +525,13 @@ def _conduct_with_agent(src_dir: str | None, auto_accept: bool):
 
     ui.print_info(f"Using {agent} agent with native subagent...")
 
-    prompt_parts = ["conduct"]
-    if src_dir:
-        prompt_parts.append(src_dir)
-    prompt = " ".join(prompt_parts)
+    spec_dir = src_dir or "src/"
+    prompt = (
+        f"conduct: Read all *.spec.md files in {spec_dir}, resolve their dependency order, "
+        f"then compile each spec into working code by spawning soloist subagents. "
+        f"Write implementations to the appropriate src/ paths and tests to tests/. "
+        f"Run the full test suite when done."
+    )
 
     try:
         _run_agent_oneshot(agent, prompt, auto_accept)
@@ -698,12 +701,12 @@ def cmd_mcp():
 
 
 def _detect_agent_cli() -> str | None:
-    """Detect which agent CLI is available (gemini or claude)."""
+    """Detect which agent CLI is available (claude preferred over gemini)."""
     import shutil
-    if shutil.which("gemini"):
-        return "gemini"
     if shutil.which("claude"):
         return "claude"
+    if shutil.which("gemini"):
+        return "gemini"
     return None
 
 
@@ -712,19 +715,17 @@ def _run_agent_oneshot(agent: str, prompt: str, auto_accept: bool):
     import subprocess
 
     if agent == "claude":
-        # Claude Code: claude -p "prompt"
-        result = subprocess.run(
-            ["claude", "-p", prompt] + (["-y"] if auto_accept else []),
-            capture_output=False,
-            text=True
-        )
+        # Claude Code: claude -p "prompt" --verbose for progress visibility
+        cmd = ["claude", "-p", prompt, "--verbose"]
+        if auto_accept:
+            cmd.append("-y")
+        result = subprocess.run(cmd, capture_output=False, text=True)
     elif agent == "gemini":
-        # Gemini CLI: gemini -p "prompt" (assuming similar flag)
-        result = subprocess.run(
-            ["gemini", "-p", prompt] + (["-y"] if auto_accept else []),
-            capture_output=False,
-            text=True
-        )
+        # Gemini CLI: gemini -p "prompt"
+        cmd = ["gemini", "-p", prompt]
+        if auto_accept:
+            cmd.append("-y")
+        result = subprocess.run(cmd, capture_output=False, text=True)
     else:
         raise ValueError(f"Unknown agent: {agent}")
 
