@@ -459,13 +459,21 @@ dependencies:
                 return None
 
             start_content = start_idx + len(start_marker)
-            # Find the closing ```
-            end_idx = content.find("```", start_content)
-
-            if end_idx == -1:
-                return None
-
-            return content[start_content:end_idx].strip()
+            
+            # Find the closing ``` at the start of a line
+            # We look for \n``` or just ``` if it's the very end of the string
+            # But more robustly, we look for \n```
+            search_pos = start_content
+            while True:
+                end_idx = content.find("```", search_pos)
+                if end_idx == -1:
+                    return None
+                
+                # Check if it's at the start of a line (preceded by \n or it's the start of content)
+                if end_idx == 0 or content[end_idx-1] == '\n':
+                    return content[start_content:end_idx].strip()
+                
+                search_pos = end_idx + 3
         except Exception:
             return None
 
@@ -558,6 +566,8 @@ dependencies:
             errors.extend(self._validate_workflow_sections(parsed))
         elif spec_type == "module":
             errors.extend(self._validate_module_sections(parsed))
+        elif spec_type == "specification":
+            pass
         else:
             # Legacy validation for unknown types
             errors.extend(self._validate_legacy_sections(parsed.body))
