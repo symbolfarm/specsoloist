@@ -99,6 +99,7 @@ def main():
     respec_parser.add_argument("--no-agent", action="store_true",
                                help="Use direct LLM API instead of agent CLI")
     respec_parser.add_argument("--model", help="LLM model override (with --no-agent)")
+    respec_parser.add_argument("--auto-accept", action="store_true", help="Skip interactive review")
 
     # mcp (hidden, for backwards compatibility)
     subparsers.add_parser("mcp", help="Start MCP server (for AI agents)")
@@ -142,7 +143,7 @@ def main():
         elif args.command == "perform":
             cmd_perform(core, args.workflow, args.inputs)
         elif args.command == "respec":
-            cmd_respec(core, args.file, args.test, args.out, args.no_agent, args.model)
+            cmd_respec(core, args.file, args.test, args.out, args.no_agent, args.model, args.auto_accept)
         elif args.command == "mcp":
             cmd_mcp()
     except KeyboardInterrupt:
@@ -385,10 +386,10 @@ def cmd_compose(core: SpecSoloistCore, request: str, no_agent: bool, auto_accept
     if no_agent:
         _compose_with_llm(core, request, auto_accept)
     else:
-        _compose_with_agent(request)
+        _compose_with_agent(request, auto_accept)
 
 
-def _compose_with_agent(request: str):
+def _compose_with_agent(request: str, auto_accept: bool):
     """Use an AI agent CLI for multi-step composition."""
     agent = _detect_agent_cli()
     if not agent:
@@ -401,7 +402,7 @@ def _compose_with_agent(request: str):
     prompt = f"compose: {request}"
 
     try:
-        _run_agent_oneshot(agent, prompt)
+        _run_agent_oneshot(agent, prompt, auto_accept)
     except Exception as e:
         ui.print_error(f"Agent error: {e}")
         sys.exit(1)
@@ -594,7 +595,7 @@ def cmd_perform(core: SpecSoloistCore, workflow: str, inputs_json: str):
         sys.exit(1)
 
 
-def cmd_respec(core: SpecSoloistCore, file_path: str, test_path: str, out_path: str, no_agent: bool, model: str):
+def cmd_respec(core: SpecSoloistCore, file_path: str, test_path: str, out_path: str, no_agent: bool, model: str, auto_accept: bool):
     """Reverse engineer code to spec."""
 
     ui.print_header("Respec: Code → Spec", file_path)
@@ -602,10 +603,10 @@ def cmd_respec(core: SpecSoloistCore, file_path: str, test_path: str, out_path: 
     if no_agent:
         _respec_with_llm(core, file_path, test_path, out_path, model)
     else:
-        _respec_with_agent(file_path, test_path, out_path)
+        _respec_with_agent(file_path, test_path, out_path, auto_accept)
 
 
-def _respec_with_agent(file_path: str, test_path: str, out_path: str):
+def _respec_with_agent(file_path: str, test_path: str, out_path: str, auto_accept: bool):
     """Use an AI agent CLI for multi-step respec with validation."""
     agent = _detect_agent_cli()
     if not agent:
@@ -623,7 +624,7 @@ def _respec_with_agent(file_path: str, test_path: str, out_path: str):
     prompt = " ".join(prompt_parts)
 
     try:
-        _run_agent_oneshot(agent, prompt)
+        _run_agent_oneshot(agent, prompt, auto_accept)
     except Exception as e:
         ui.print_error(f"Agent error: {e}")
         sys.exit(1)
@@ -661,30 +662,30 @@ def cmd_mcp():
 
 
 def _detect_agent_cli() -> str | None:
-    """Detect which agent CLI is available (claude or gemini)."""
+    """Detect which agent CLI is available (gemini or claude)."""
     import shutil
-    if shutil.which("claude"):
-        return "claude"
     if shutil.which("gemini"):
         return "gemini"
+    if shutil.which("claude"):
+        return "claude"
     return None
 
 
-def _run_agent_oneshot(agent: str, prompt: str):
+def _run_agent_oneshot(agent: str, prompt: str, auto_accept: bool):
     """Run an agent CLI in one-shot mode."""
     import subprocess
 
     if agent == "claude":
         # Claude Code: claude -p "prompt"
         result = subprocess.run(
-            ["claude", "-p", prompt],
+            ["claude", "-p", prompt] + (["-y"] if auto_accept else []),
             capture_output=False,
             text=True
         )
     elif agent == "gemini":
         # Gemini CLI: gemini -p "prompt" (assuming similar flag)
         result = subprocess.run(
-            ["gemini", "-p", prompt],
+            ["gemini", "-p", prompt] + (["-y"] if auto_accept else []),
             capture_output=False,
             text=True
         )

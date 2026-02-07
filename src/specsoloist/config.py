@@ -81,6 +81,7 @@ class SpecSoloistConfig:
         """
         provider = os.environ.get("SPECSOLOIST_LLM_PROVIDER", "gemini")
         model = os.environ.get("SPECSOLOIST_LLM_MODEL")
+        src_dir = os.environ.get("SPECSOLOIST_SRC_DIR", "src")
 
         # Determine API key based on provider
         if provider == "anthropic":
@@ -92,6 +93,7 @@ class SpecSoloistConfig:
             root_dir=root_dir,
             llm_provider=provider,
             llm_model=model,
+            src_dir=src_dir,
             api_key=api_key
         )
 
