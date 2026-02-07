@@ -129,11 +129,11 @@ score/
 |--------|-------|--------|-------|
 | **specsoloist/** | | | |
 | `ui.py` | 70 | ✅ Done | Bundle |
-| `config.py` | 130 | ✅ Done | Bundle |
-| `schema.py` | 200 | 🔲 Todo | Types (Pydantic models) |
+| `config.py` | 130 | ✅ Done | Bundle (with env src_dir fix) |
+| `schema.py` | 200 | ✅ Done | Bundle |
 | `lifter.py` | 93 | 🔲 Todo | Small, single function |
 | `server.py` | 88 | 🔲 Todo | Small, MCP entry point |
-| `runner.py` | 155 | 🔲 Todo | Test execution |
+| `runner.py` | 155 | 🔲 In Progress | Test execution |
 | `manifest.py` | 200 | 🔲 Todo | Build tracking |
 | `resolver.py` | 314 | 🔲 Todo | Dependency resolution |
 | `compiler.py` | 312 | 🔲 Todo | LLM prompt construction |

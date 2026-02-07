@@ -10,18 +10,18 @@ tags:
 
 # Overview
 
-Test execution and result handling for SpecSoloist. Provides functionality to run tests, manage code and test files in a build directory, and return structured results.
+Test execution and result handling for SpecSoloist. Provides functionality to manage implementation and test files within a build directory and execute tests according to language-specific configurations.
 
 # Types
 
 ```yaml:types
 test_result:
-  description: Result of a test run
+  description: Result of a test execution.
   properties:
-    success: {type: boolean, description: Whether the test passed}
-    output: {type: string, description: Combined stdout and stderr from test run}
-    return_code: {type: integer, description: Process exit code (0 for success, -1 for errors)}
-  required: [success, output]
+    success: {type: boolean, description: "True if the test passed (exit code 0)"}
+    output: {type: string, description: "Combined stdout and stderr from the test execution"}
+    return_code: {type: integer, description: "Process exit code, or -1 for execution errors"}
+  required: [success, output, return_code]
 ```
 
 # Functions
@@ -29,19 +29,11 @@ test_result:
 ```yaml:functions
 test_runner_init:
   inputs:
-    build_dir: {type: string, description: Directory where code and tests are built}
-    config: {type: optional, of: {type: ref, ref: config/specsoloist_config}, description: SpecSoloist configuration}
+    build_dir: {type: string, description: "Path to the build directory"}
+    config: {type: optional, of: {type: ref, ref: config/specsoloist_config}, description: "Framework configuration"}
   outputs:
-    runner: {type: object, description: Initialized TestRunner instance}
-  behavior: "Initialize runner with absolute build_dir path and optional config"
-
-get_lang_config:
-  inputs:
-    runner: {type: object}
-    language: {type: optional, of: {type: string}}
-  outputs:
-    config: {type: ref, ref: config/language_config}
-  behavior: "Return language config from runner config, defaulting to python if not specified"
+    runner: {type: object, description: "An initialized TestRunner instance"}
+  behavior: "Initialize a TestRunner with an absolute build_dir path and optional config"
 
 get_test_path:
   inputs:
@@ -50,7 +42,7 @@ get_test_path:
     language: {type: string, default: python}
   outputs:
     path: {type: string}
-  behavior: "Return path to test file using language config's test_filename_pattern and test_extension"
+  behavior: "Compute the absolute path to the test file for a module using the language configuration's test_filename_pattern and test_extension"
 
 get_code_path:
   inputs:
@@ -59,7 +51,7 @@ get_code_path:
     language: {type: string, default: python}
   outputs:
     path: {type: string}
-  behavior: "Return path to implementation file using language config's extension"
+  behavior: "Compute the absolute path to the implementation file for a module using the language configuration's extension"
 
 test_exists:
   inputs:
@@ -68,7 +60,7 @@ test_exists:
     language: {type: string, default: python}
   outputs:
     exists: {type: boolean}
-  behavior: "Check if test file exists at the computed path"
+  behavior: "Return True if the test file for the module exists in the build directory"
 
 code_exists:
   inputs:
@@ -77,7 +69,7 @@ code_exists:
     language: {type: string, default: python}
   outputs:
     exists: {type: boolean}
-  behavior: "Check if implementation file exists at the computed path"
+  behavior: "Return True if the implementation file for the module exists in the build directory"
 
 read_code:
   inputs:
@@ -86,7 +78,7 @@ read_code:
     language: {type: string, default: python}
   outputs:
     content: {type: optional, of: {type: string}}
-  behavior: "Read and return implementation file content, or None if file does not exist"
+  behavior: "Read and return the content of the implementation file, or null if it does not exist"
 
 read_tests:
   inputs:
@@ -95,7 +87,7 @@ read_tests:
     language: {type: string, default: python}
   outputs:
     content: {type: optional, of: {type: string}}
-  behavior: "Read and return test file content, or None if file does not exist"
+  behavior: "Read and return the content of the test file, or null if it does not exist"
 
 write_code:
   inputs:
@@ -105,7 +97,7 @@ write_code:
     language: {type: string, default: python}
   outputs:
     path: {type: string}
-  behavior: "Write implementation code to build directory and return the file path"
+  behavior: "Write implementation content to the build directory and return the resulting file path"
 
 write_tests:
   inputs:
@@ -115,7 +107,7 @@ write_tests:
     language: {type: string, default: python}
   outputs:
     path: {type: string}
-  behavior: "Write test code to build directory and return the file path"
+  behavior: "Write test content to the build directory and return the resulting file path"
 
 write_file:
   inputs:
@@ -124,10 +116,7 @@ write_file:
     content: {type: string}
   outputs:
     path: {type: string}
-  behavior: "Write file to build directory using basename only (prevents path traversal)"
-  contract:
-    pre: filename is not empty
-    post: file exists at build_dir/basename(filename)
+  behavior: "Write content to a file in the build directory using only the filename's basename to prevent path traversal"
 
 run_tests:
   inputs:
@@ -135,15 +124,13 @@ run_tests:
     module_name: {type: string}
     language: {type: string, default: python}
   outputs:
-    result: {type: ref, ref: runner/test_result}
-  behavior: "Execute test command for module using language config, return TestResult with success, output, and return_code"
-  contract:
-    pre: build_dir exists
-  examples:
-    - input: {module_name: factorial, language: python}
-      output: {success: true, output: "...", return_code: 0}
-      notes: Successful test run
-    - input: {module_name: missing_module, language: python}
-      output: {success: false, output: "Test file not found...", return_code: -1}
-      notes: Test file does not exist
+    result: {type: ref, ref: test_result}
+  behavior: |
+    Execute tests for a module:
+    1. Resolve language configuration (defaulting to Python if not configured).
+    2. Verify test file existence; return failure if missing.
+    3. Prepare environment: copy current env and prepend cfg.env_vars (formatting {build_dir}) to existing values using path separator.
+    4. Prepare command: format cfg.test_command parts with {file} placeholder.
+    5. Execute command, capture output, and return TestResult.
+    6. Handle FileNotFoundError or other exceptions by returning a failure TestResult.
 ```
