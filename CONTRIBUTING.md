@@ -23,7 +23,7 @@ When making changes, ensure these files stay consistent:
 | When you change... | Also update... |
 |--------------------|----------------|
 | CLI commands | `README.md` (CLI Reference table) |
-| Architecture/modules | `score/specsoloist.spec.md` |
+| Specs in `score/` | Verify round-trip: regenerate code, run tests |
 | Complete a roadmap phase | `ROADMAP.md` |
 | Project structure | `AGENTS.md` (Project Structure section) |
 
@@ -41,41 +41,37 @@ When making changes, ensure these files stay consistent:
 - Use type hints for function signatures
 - Keep modules focused (single responsibility)
 
-### Specs
+### Specs: Requirements, Not Blueprints
 
-- All specs should have the standard sections (Overview, Interface, FRs, NFRs, Design Contract)
-- Use `yaml:schema` blocks for interface definitions
-- Include test scenarios in a table format
+Specs should describe **what**, not **how**:
+
+- **Do**: Public API names, behavior descriptions, edge cases, examples
+- **Don't**: Private methods, algorithm names, internal data structures
+
+The quick test: *"Could a competent developer implement this in any language without seeing the original code?"* If the spec prescribes internals, it's a blueprint. If it prescribes requirements, it's genuinely useful.
+
+See `score/spec_format.spec.md` Section 2 for the full philosophy.
 
 ## The Score ("The Quine")
 
-The full SpecSoloist and Spechestra packages should be completely specified and regeneratable from the spec files in `score/`.
+The `score/` directory contains SpecSoloist's own specifications. The goal is for `sp conduct score/` to regenerate the entire `src/` directory with passing tests.
 
 **Preferred Workflow: Respec**
-Instead of writing specs manually, use `sp respec` to reverse-engineer existing code into a high-fidelity spec:
+Use `sp respec` to extract requirements from existing code into a spec:
 
 ```bash
 uv run sp respec src/specsoloist/some_module.py --out score/some_module.spec.md
 ```
 
-This invokes an AI agent that analyzes the code, generates the spec, validates it, and fixes any errors.
+This invokes an AI agent that analyzes the code, generates a requirements-oriented spec, validates it, and fixes any errors.
 
-```
-score/
-  prompts/             # Agent prompts
-  specsoloist.spec.md  # Core package overview
-  ui.spec.md           # UI module (bundle)
-  config.spec.md       # Config module (bundle)
-  ...
-```
+**Round-trip Validation**
+After respeccing, verify the spec is sufficient by regenerating the code and running tests:
 
-When you add or modify:
-- New modules or classes
-- New public methods
-- New functional requirements
-- New CLI commands
-
-...the score should be updated to reflect these changes.
+1. Back up the original: `cp src/specsoloist/foo.py src/specsoloist/foo.py.bak`
+2. Regenerate from spec (manually or via soloist agent)
+3. Run tests: `uv run python -m pytest tests/`
+4. If tests pass, the spec captures the requirements correctly
 
 ## See Also
 

@@ -6,14 +6,46 @@ status: draft
 
 # 1. Overview
 
-This document defines the **Spec Format** - the structure for `.spec.md` files used by SpecSoloist and Spechestra. The format is designed to be:
+This document defines the **Spec Format** — the structure for `.spec.md` files used by SpecSoloist and Spechestra. Specs are the source of truth for code generation.
 
-- **Language-agnostic**: Specs describe *what*, not *how* in any particular language
-- **Granular**: One concept per spec (function, type, module)
-- **Composable**: Specs can depend on and reference other specs
-- **Human-readable**: Markdown with structured YAML blocks
+# 2. Philosophy: Requirements, Not Blueprints
 
-# 2. Spec Types
+Specs define **what** a module must do, not **how** to do it. The agent choosing the implementation is free to make its own design decisions.
+
+**A spec should include:**
+- Public API names (class names, function names, method signatures) — these are the interface contract
+- Behavior descriptions — what each public function/method does
+- Edge cases and error conditions
+- Examples with inputs and expected outputs
+- Constraints (non-functional requirements)
+
+**A spec should NOT include:**
+- Private method names or internal helpers
+- Algorithm choices (e.g., "use Kahn's algorithm", "use BFS")
+- Internal data structures or field names
+- Implementation-level decomposition
+
+**The test for a good spec:** Can a competent developer implement it in any language without seeing the original code, producing functionally equivalent behavior? If the spec prescribes internals, it's just a blueprint — a fancy copy. If it prescribes requirements, it's genuinely useful.
+
+### Example: Good vs. Over-Specified
+
+**Over-specified (avoid):**
+```markdown
+## _topological_sort(graph) -> list
+Implements Kahn's algorithm. Initialize in-degree map, use queue...
+```
+
+**Requirements-oriented (preferred):**
+```markdown
+## resolve_build_order(spec_names) -> list of strings
+Compute a linear build order. Dependencies appear before dependents.
+When multiple specs have no ordering between them, sort alphabetically
+for determinism. Raises CircularDependencyError if a cycle exists.
+```
+
+The first dictates implementation. The second defines behavior — the agent picks the algorithm.
+
+# 3. Spec Types
 
 | Type | Purpose | Granularity |
 |------|---------|-------------|
@@ -24,12 +56,12 @@ This document defines the **Spec Format** - the structure for `.spec.md` files u
 | `workflow` | Execution flow | Steps referencing specs |
 
 **When to use which:**
-- `function`/`type`: Complex specs needing full sections (Behavior, Constraints, Contract, Examples)
-- `bundle`: Related trivial helpers where a one-liner `behavior:` suffices
-- `module`: Re-exporting a public API surface
-- `workflow`: Multi-step execution with data flow
+- `bundle`: When the module is a collection of related functions/types where each can be described in a sentence. Most modules should start here.
+- `function`/`type`: Only when a single function or type is complex enough to need full Behavior, Constraints, Contract, and Examples sections.
+- `module`: When you need to re-export a public API from sub-specs.
+- `workflow`: Multi-step execution with data flow between steps.
 
-# 3. File Structure
+# 4. File Structure
 
 ```
 project/
@@ -46,12 +78,12 @@ project/
     main.spec.md             # type: workflow
 ```
 
-# 4. Frontmatter
+# 5. Frontmatter
 
 ```yaml
 ---
 name: factorial                    # Required: identifier (lowercase, snake_case)
-type: function                     # Required: function | type | module | workflow
+type: function                     # Required: function | type | bundle | module | workflow
 status: draft                      # Optional: draft | review | stable (default: draft)
 version: 1.0.0                     # Optional: semver
 dependencies:                      # Optional: list of specs this depends on
@@ -63,11 +95,92 @@ tags:                              # Optional: for organization
 ---
 ```
 
-**Note:** No `language_target` - that's build configuration, not spec content.
+**Note:** No `language_target` — that's build configuration, not spec content.
 
-# 5. Sections by Spec Type
+# 6. Sections by Spec Type
 
-## 5.1 Function Spec
+## 6.1 Bundle Spec
+
+The most common spec type. Use for a module that contains several related functions and/or types.
+
+```markdown
+---
+name: manifest
+type: bundle
+tags:
+  - core
+  - builds
+---
+
+# Overview
+
+Build manifest for tracking spec compilation state. Enables incremental
+builds by recording what was built, when, and from what inputs.
+
+# Types
+
+## SpecBuildInfo
+
+Build record for a single spec.
+
+**Fields:** `spec_hash` (string), `built_at` (ISO timestamp string),
+`dependencies` (list of strings), `output_files` (list of strings).
+
+Must support round-tripping to/from dict for JSON serialization.
+
+## BuildManifest
+
+Collection of build records, persisted as JSON.
+
+**Methods:**
+- `get_spec_info(name)` -> SpecBuildInfo or None
+- `update_spec(name, spec_hash, dependencies, output_files)` — record a build
+- `save(build_dir)` — persist to disk
+- `load(build_dir)` (classmethod) — load or return empty if missing/corrupt
+
+# Functions
+
+## compute_file_hash(path) -> string
+
+SHA-256 hash of a file. Returns empty string if file doesn't exist.
+
+## compute_content_hash(content) -> string
+
+SHA-256 hash of a string.
+
+# Behavior
+
+## Incremental rebuild logic
+
+A spec needs rebuilding if ANY of:
+1. Never been built (not in manifest)
+2. Content hash changed
+3. Dependency list changed
+4. Any dependency was rebuilt this cycle
+
+# Examples
+
+| Scenario | needs_rebuild? | Why |
+|----------|---------------|-----|
+| Spec not in manifest | Yes | Never built |
+| Hash changed | Yes | Content changed |
+| Deps changed | Yes | Dependencies changed |
+| Dep rebuilt this cycle | Yes | Cascade |
+| Nothing changed | No | Up to date |
+```
+
+**Bundle function fields:**
+- `inputs`: Required — input parameters
+- `outputs`: Required — output values
+- `behavior`: Required — one-line description
+- `contract`: Optional — pre/post conditions
+- `examples`: Optional — input/output pairs
+
+**References:** Items are referenced as `bundle_name/item_name` (e.g., `math_utils/add`).
+
+## 6.2 Function Spec
+
+For a single complex function that needs full specification.
 
 ```markdown
 ---
@@ -76,9 +189,11 @@ type: function
 ---
 
 # Overview
-[1-2 sentences: what this function does]
+
+Computes the factorial of a non-negative integer.
 
 # Interface
+
 ```yaml:schema
 inputs:
   n:
@@ -92,19 +207,22 @@ outputs:
 ```
 
 # Behavior
+
 - [FR-01]: Return 1 when n is 0
-- [FR-02]: Return n × factorial(n-1) for n > 0
+- [FR-02]: Return n * (n-1)! for n > 0
 
 # Constraints
+
 - [NFR-01]: Must be pure (no side effects)
 - [NFR-02]: Must handle n up to 20 without overflow
 
 # Contract
+
 - **Pre**: n >= 0
 - **Post**: result >= 1
-- **Invariant**: factorial(n) = n! (mathematical definition)
 
 # Examples
+
 | Input | Output | Notes |
 |-------|--------|-------|
 | 0 | 1 | Base case |
@@ -112,7 +230,7 @@ outputs:
 | -1 | Error | Negative input |
 ```
 
-## 5.2 Type Spec
+## 6.3 Type Spec
 
 ```markdown
 ---
@@ -121,9 +239,11 @@ type: type
 ---
 
 # Overview
-[1-2 sentences: what this type represents]
+
+Represents a user account in the system.
 
 # Schema
+
 ```yaml:schema
 properties:
   id:
@@ -144,99 +264,69 @@ required:
 ```
 
 # Constraints
+
 - [NFR-01]: Email must be unique across all users
-- [NFR-02]: ID must be immutable after creation
 
 # Examples
+
 | Valid | Invalid | Why |
 |-------|---------|-----|
 | {id: "abc", email: "a@b.com", name: "Jo"} | | Complete |
 | | {email: "a@b.com"} | Missing id |
 ```
 
-## 5.3 Bundle Spec
+## 6.4 Module Spec
 
-For related trivial functions and types that don't need full specifications.
-
-```markdown
----
-name: math_utils
-type: bundle
-tags:
-  - math
-  - utils
----
-
-# Overview
-Common mathematical utility functions.
-
-# Functions
-```yaml:functions
-add:
-  inputs: {a: integer, b: integer}
-  outputs: {result: integer}
-  behavior: Return a + b
-
-subtract:
-  inputs: {a: integer, b: integer}
-  outputs: {result: integer}
-  behavior: Return a - b
-
-clamp:
-  inputs:
-    value: {type: number}
-    min: {type: number}
-    max: {type: number}
-  outputs: {result: number}
-  behavior: Return value constrained to [min, max]
-  contract:
-    pre: min <= max
-```
-
-# Types
-```yaml:types
-point_2d:
-  properties:
-    x: {type: number}
-    y: {type: number}
-  required: [x, y]
-```
-```
-
-**Bundle function fields:**
-- `inputs`: Required - input parameters
-- `outputs`: Required - output values
-- `behavior`: Required - one-line description
-- `contract`: Optional - pre/post conditions
-- `examples`: Optional - input/output pairs
-
-**References:** Individual items are referenced as `bundle_name/item_name` (e.g., `math_utils/add`).
-
-## 5.4 Module Spec
+For aggregating and re-exporting sub-specs as a public API.
 
 ```markdown
 ---
-name: math
+name: resolver
 type: module
-dependencies:
-  - math/factorial
-  - math/is_prime
-  - math/fibonacci
+tags:
+  - core
+  - dependencies
 ---
 
 # Overview
-[1-2 sentences: what this module provides]
+
+Dependency resolution for multi-spec builds. Builds dependency graphs,
+computes build orders, detects cycles, and determines affected specs.
 
 # Exports
-- `factorial`: Compute factorial of n
-- `is_prime`: Check if n is prime
-- `fibonacci`: Compute nth Fibonacci number
 
-# Usage
-[Optional: example of how the module is used as a whole]
+- `CircularDependencyError`: Exception for dependency cycles.
+- `MissingDependencyError`: Exception for missing dependencies.
+- `DependencyGraph`: Graph with methods to query relationships.
+- `DependencyResolver`: Main resolver for build order computation.
+
+# DependencyResolver
+
+## Methods
+
+### resolve_build_order(spec_names=None) -> list of strings
+
+Compute a linear build order. Dependencies before dependents.
+Alphabetical when no ordering constraint exists.
+
+### get_parallel_build_order(spec_names=None) -> list of lists
+
+Group specs into parallelizable levels.
+
+### get_affected_specs(changed_spec, graph=None) -> list of strings
+
+All transitive dependents of the changed spec, in build order.
+
+# Examples
+
+| Method | Input | Expected |
+|--------|-------|----------|
+| resolve_build_order | A depends on B | [B, A] |
+| get_parallel_build_order | A,B independent; C depends on both | [[A,B], [C]] |
+| get_affected_specs("B") | A depends on B | [B, A] |
 ```
 
-## 5.5 Workflow Spec
+## 6.5 Workflow Spec
 
 ```markdown
 ---
@@ -249,9 +339,11 @@ dependencies:
 ---
 
 # Overview
-[1-2 sentences: what this workflow accomplishes]
+
+End-to-end order processing: validate, charge, confirm.
 
 # Interface
+
 ```yaml:schema
 inputs:
   order:
@@ -264,6 +356,7 @@ outputs:
 ```
 
 # Steps
+
 ```yaml:steps
 - name: validate
   spec: validate_order
@@ -275,7 +368,7 @@ outputs:
   inputs:
     amount: validate.outputs.total
     payment_method: inputs.order.payment
-  checkpoint: true    # Pause for approval
+  checkpoint: true
 
 - name: confirm
   spec: send_confirmation
@@ -285,15 +378,16 @@ outputs:
 ```
 
 # Error Handling
+
 - If `validate` fails: Return validation errors, do not proceed
 - If `charge` fails: Retry up to 3 times, then notify admin
 ```
 
-# 6. Schema Types
+# 7. Schema Types
 
 The `yaml:schema` block uses a language-agnostic type system:
 
-## 6.1 Primitive Types
+## 7.1 Primitive Types
 
 | Type | Description | Constraints |
 |------|-------------|-------------|
@@ -304,7 +398,7 @@ The `yaml:schema` block uses a language-agnostic type system:
 | `datetime` | ISO 8601 timestamp | - |
 | `date` | ISO 8601 date | - |
 
-## 6.2 Compound Types
+## 7.2 Compound Types
 
 | Type | Description | Example |
 |------|-------------|---------|
@@ -315,7 +409,7 @@ The `yaml:schema` block uses a language-agnostic type system:
 | `union` | One of multiple types | `{type: union, options: [...]}` |
 | `optional` | May be absent | `{type: optional, of: {type: string}}` |
 
-## 6.3 String Formats
+## 7.3 String Formats
 
 | Format | Description |
 |--------|-------------|
@@ -325,58 +419,49 @@ The `yaml:schema` block uses a language-agnostic type system:
 | `ipv4` | IPv4 address |
 | `ipv6` | IPv6 address |
 
-# 7. Section Reference
+# 8. Section Reference
 
 | Section | Function | Type | Bundle | Module | Workflow | Required |
 |---------|----------|------|--------|--------|----------|----------|
-| Overview | ✓ | ✓ | ✓ | ✓ | ✓ | Yes |
-| Interface/Schema | ✓ | ✓ | - | - | ✓ | Yes* |
-| Functions block | - | - | ✓ | - | - | Yes** |
-| Types block | - | - | ✓ | - | - | Yes** |
-| Behavior | ✓ | - | - | - | - | Yes |
-| Steps | - | - | - | - | ✓ | Yes |
-| Exports | - | - | - | ✓ | - | Yes |
-| Constraints | ✓ | ✓ | - | - | - | No |
-| Contract | ✓ | - | - | - | - | No |
-| Examples | ✓ | ✓ | - | - | - | No |
-| Error Handling | - | - | - | - | ✓ | No |
+| Overview | Y | Y | Y | Y | Y | Yes |
+| Interface/Schema | Y | Y | - | - | Y | Yes* |
+| Functions block | - | - | Y | - | - | Yes** |
+| Types block | - | - | Y | - | - | Yes** |
+| Behavior | Y | - | - | - | - | Yes |
+| Steps | - | - | - | - | Y | Yes |
+| Exports | - | - | - | Y | - | Yes |
+| Constraints | Y | Y | - | - | - | No |
+| Contract | Y | - | - | - | - | No |
+| Examples | Y | Y | Y | Y | - | No |
+| Error Handling | - | - | - | - | Y | No |
 
 *Interface required for function/type/workflow; **At least one of Functions or Types required for bundle.
 
-# 8. Naming Conventions
+# 9. Naming Conventions
 
 - **Spec names**: `snake_case` (e.g., `create_user`, `is_prime`)
 - **Type names**: `snake_case` (e.g., `user`, `order_item`)
 - **Paths**: Forward slash, no extension (e.g., `types/user`, `math/factorial`)
 - **Refs in schema**: Full path from src (e.g., `ref: types/user`)
 
-# 9. Compilation
+# 10. Compilation
 
 At build time, the SpecConductor:
 
 1. Reads all specs and builds dependency graph
 2. Infers or reads target language from build config
 3. Compiles each spec to target language:
-   - `function` → function/method in target language
-   - `type` → class/struct/interface in target language
-   - `module` → module/package aggregating exports
-   - `workflow` → executable script/function
+   - `function` -> function/method
+   - `type` -> class/struct/interface
+   - `bundle` -> module with all functions and types
+   - `module` -> module/package aggregating exports
+   - `workflow` -> executable script/function
 
 Build configuration (not in spec):
 ```yaml
 # specsoloist.yaml
 build:
-  language: python          # or: typescript, go, rust
+  language: python
   output_dir: build/
-  test_framework: pytest    # or: jest, go test
+  test_framework: pytest
 ```
-
-# 10. Migration from Current Format
-
-| Current | New |
-|---------|-----|
-| `language_target: python` in frontmatter | Move to `specsoloist.yaml` |
-| Multiple functions in one spec | Split into separate function specs |
-| `### function(args) -> return` | Use `yaml:schema` block |
-| `type: module` with functions | `type: module` with exports + separate function specs |
-| Test Scenarios table | Examples section |

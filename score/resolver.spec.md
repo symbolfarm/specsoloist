@@ -1,362 +1,159 @@
 ---
 name: resolver
 type: module
-status: draft
+tags:
+  - core
+  - dependencies
 ---
 
 # Overview
-This module provides functionality for resolving dependencies between specs, building a dependency graph, and computing a build order that respects those dependencies. It handles the extraction of dependencies from spec metadata and workflow steps, supports parallel build order computation, and identifies transitive dependents for incremental builds.
+
+Dependency resolution for multi-spec builds. Given a set of specs that declare dependencies on each other, this module can:
+
+- Build a dependency graph
+- Compute a valid build order (dependencies before dependents)
+- Group specs into parallelizable levels
+- Determine which specs are affected when one changes
+- Detect and report circular dependencies and missing dependencies
 
 # Exports
-- `CircularDependencyError`: Raised when a circular dependency is detected.
-- `MissingDependencyError`: Raised when a dependency references a non-existent spec.
-- `DependencyGraph`: Manages the graph of dependencies and dependents.
-- `DependencyResolver`: Main orchestrator for dependency resolution and build order computation.
 
----
-name: circular_dependency_error
-type: type
----
+- `CircularDependencyError`: Exception raised when specs form a dependency cycle.
+- `MissingDependencyError`: Exception raised when a spec depends on one that doesn't exist.
+- `DependencyGraph`: A dependency graph with methods to query relationships.
+- `DependencyResolver`: The main resolver that builds graphs and computes build orders.
 
-# Overview
-Exception raised when a circular dependency is detected between specs.
+# Error Types
 
-# Schema
+## CircularDependencyError
+
+An exception with a `cycle` attribute (list of spec names forming the cycle). The error message should describe the cycle clearly.
+
+### Examples
+
+| Scenario | cycle attribute | Message includes |
+|----------|----------------|-----------------|
+| A depends on B, B depends on A | `["a", "b"]` or similar | "a", "b", and "circular" |
+
+## MissingDependencyError
+
+An exception with `spec` and `missing` attributes. `spec` is the name of the spec that declared the dependency; `missing` is the name of the dependency that doesn't exist.
+
+### Examples
+
+| Scenario | spec | missing |
+|----------|------|---------|
+| "auth" depends on "users" but "users" doesn't exist | `"auth"` | `"users"` |
+
+# DependencyGraph
+
+A data structure representing dependency relationships between specs.
+
+## Interface
+
 ```yaml:schema
-properties:
-  cycle:
-    type: array
-    items:
-      type: string
-    description: The cycle of spec names detected (e.g., ['A', 'B', 'A']).
-required:
-  - cycle
+inputs: {}
+outputs: {}
 ```
 
----
-name: missing_dependency_error
-type: type
----
+## Methods
 
-# Overview
-Exception raised when a spec depends on another spec that does not exist.
+### add_spec(name, depends_on)
 
-# Schema
-```yaml:schema
-properties:
-  spec:
-    type: string
-    description: The name of the spec that has the missing dependency.
-  missing:
-    type: string
-    description: The name of the missing dependency spec.
-required:
-  - spec
-  - missing
-```
+Add a spec and its dependencies to the graph.
 
----
-name: dependency_graph
-type: type
----
+- `name`: string, the spec name
+- `depends_on`: optional list of strings, names of specs this one depends on
 
-# Overview
-Represents the dependency relationships between specs, tracking both forward dependencies and reverse dependents.
+**Behavior:**
+- Records that `name` exists in the graph
+- Records its dependencies
+- Updates reverse mappings so dependents can be looked up
 
-# Schema
-```yaml:schema
-properties:
-  dependencies:
-    type: object
-    additionalProperties:
-      type: array
-      items:
-        type: string
-    description: Map of spec name to list of specs it depends on.
-  dependents:
-    type: object
-    additionalProperties:
-      type: array
-      items:
-        type: string
-    description: Map of spec name to list of specs that depend on it.
-  specs:
-    type: array
-    items:
-      type: string
-    description: All spec names present in the graph.
-```
+### get_dependencies(name) -> list of strings
 
----
-name: dependency_graph/add_spec
-type: function
----
+Returns the direct dependencies of the named spec. Returns empty list if the name is not in the graph.
 
-# Overview
-Adds a spec and its dependencies to the graph.
+### get_dependents(name) -> list of strings
 
-# Interface
-```yaml:schema
-inputs:
-  name:
-    type: string
-    description: The name of the spec to add.
-  depends_on:
-    type: array
-    items:
-      type: string
-    optional: true
-    description: List of spec names that this spec depends on.
-outputs:
-  None:
-    type: null
-```
+Returns the specs that directly depend on the named spec. Returns empty list if the name is not in the graph.
 
-# Behavior
-- [FR-01]: Add `name` to the set of specs.
-- [FR-02]: Store the list of `depends_on` (defaulting to empty) for the given `name`.
-- [FR-03]: For each dependency in `depends_on`, add `name` to its list of dependents.
-- [FR-04]: Ensure all mentioned specs are added to the general `specs` list.
+# DependencyResolver
 
----
-name: dependency_graph/get_dependencies
-type: function
----
+The main resolver. Requires a `SpecParser` instance (from `specsoloist.parser`) to load and inspect specs.
 
-# Overview
-Returns the list of direct dependencies for a spec.
+## Constructor
 
-# Interface
-```yaml:schema
-inputs:
-  name:
-    type: string
-outputs:
-  result:
-    type: array
-    items:
-      type: string
-```
+Takes a `parser` argument (a `SpecParser` instance).
 
-# Behavior
-- [FR-01]: Return the list of dependencies for `name`, or an empty list if not found.
+## Methods
 
----
-name: dependency_graph/get_dependents
-type: function
----
+### build_graph(spec_names=None) -> DependencyGraph
 
-# Overview
-Returns the list of specs that directly depend on the given spec.
+Build a dependency graph from specs.
 
-# Interface
-```yaml:schema
-inputs:
-  name:
-    type: string
-outputs:
-  result:
-    type: array
-    items:
-      type: string
-```
+**Behavior:**
+- If `spec_names` is None, discover all available specs from the parser.
+- For each spec, parse it and extract its declared dependencies.
+- Dependencies come from two sources in a parsed spec:
+  - `metadata.dependencies`: a list where each entry is either a string (spec name) or a dict with a `"from"` key containing the spec filename.
+  - `schema.steps`: if present (workflow specs), each step has a `spec` attribute naming a dependency.
+- Strip `.spec.md` extensions from dependency names.
+- Validate that every referenced dependency actually exists (in the input list or in the parser's storage).
 
-# Behavior
-- [FR-01]: Return the list of dependents for `name`, or an empty list if not found.
+**Errors:**
+- Raises `MissingDependencyError` if a dependency doesn't exist.
 
----
-name: dependency_resolver
-type: type
----
+### resolve_build_order(spec_names=None) -> list of strings
 
-# Overview
-Resolves dependencies between specs and computes build order.
+Compute a linear build order for the given specs (or all specs if None).
 
-# Schema
-```yaml:schema
-properties:
-  parser:
-    type: object
-    description: An instance of SpecParser used to load and parse specs.
-required:
-  - parser
-```
+**Behavior:**
+- Dependencies appear before their dependents in the result.
+- When multiple specs have no dependency ordering between them, sort alphabetically for determinism.
+- Detects cycles.
 
----
-name: dependency_resolver/build_graph
-type: function
----
+**Errors:**
+- Raises `CircularDependencyError` if a cycle exists.
+- Raises `MissingDependencyError` if a dependency doesn't exist.
 
-# Overview
-Builds a DependencyGraph from a list of specs or all available specs.
+### get_parallel_build_order(spec_names=None) -> list of lists of strings
 
-# Interface
-```yaml:schema
-inputs:
-  spec_names:
-    type: array
-    items:
-      type: string
-    optional: true
-    description: List of spec names to include. Defaults to all available specs.
-outputs:
-  graph:
-    type: ref
-    ref: dependency_graph
-```
+Compute build order grouped into parallelizable levels.
 
-# Behavior
-- [FR-01]: If `spec_names` is not provided, list all specs from the parser.
-- [FR-02]: For each spec, parse it and extract dependencies.
-- [FR-03]: Add each spec and its dependencies to a new `DependencyGraph`.
-- [FR-04]: Validate that every dependency mentioned exists either in the input list or in the parser's storage.
-- [FR-05]: Raise `MissingDependencyError` if a dependency is missing.
+**Behavior:**
+- Level 0 contains specs with no dependencies.
+- Level N contains specs whose dependencies all appear in levels 0 through N-1.
+- Within each level, specs are sorted alphabetically for determinism.
+- All specs in the same level can be built concurrently.
 
----
-name: dependency_resolver/_extract_dependencies
-type: function
----
+**Errors:**
+- Raises `CircularDependencyError` if a cycle exists.
+- Raises `MissingDependencyError` if a dependency doesn't exist.
 
-# Overview
-Extracts dependency names from a parsed spec, looking in both metadata and workflow steps.
+### get_affected_specs(changed_spec, graph=None) -> list of strings
 
-# Interface
-```yaml:schema
-inputs:
-  spec:
-    type: object
-    description: The ParsedSpec object to examine.
-outputs:
-  deps:
-    type: array
-    items:
-      type: string
-```
+Determine which specs need rebuilding when a specific spec changes.
 
-# Behavior
-- [FR-01]: Extract dependencies from `metadata.dependencies`.
-- [FR-02]: Support both string names and dictionary descriptors (using the `from` field) in metadata.
-- [FR-03]: If the spec has a `schema.steps` (workflow), extract the `spec` name from each step.
-- [FR-04]: Strip `.spec.md` extensions from all names and ensure the result list is unique.
+**Behavior:**
+- Includes the changed spec itself.
+- Includes all transitive dependents (specs that depend on it, and specs that depend on those, etc.).
+- Returns results in valid build order.
+- If `graph` is not provided, builds one for all specs.
 
----
-name: dependency_resolver/resolve_build_order
-type: function
----
+### Examples
 
-# Overview
-Computes a linear build order for the given specs.
+Given specs: types (no deps), auth (depends on types), users (depends on types), api (depends on auth and users), unrelated (no deps):
 
-# Interface
-```yaml:schema
-inputs:
-  spec_names:
-    type: array
-    items:
-      type: string
-    optional: true
-outputs:
-  order:
-    type: array
-    items:
-      type: string
-```
+| Method | Input | Expected Output |
+|--------|-------|----------------|
+| `resolve_build_order()` | all specs | types before auth, types before users, auth and users before api |
+| `get_parallel_build_order()` | all specs | Level 0: [types, unrelated], Level 1: [auth, users], Level 2: [api] |
+| `get_affected_specs("types")` | "types" changed | ["types", "auth", "users", "api"] (not "unrelated") |
+| `get_affected_specs("api")` | "api" changed | ["api"] only |
 
-# Behavior
-- [FR-01]: Build the dependency graph.
-- [FR-02]: Perform a topological sort on the graph.
-- [FR-03]: Raise `CircularDependencyError` if a cycle is detected.
+Given specs: a -> b -> c -> a (circular):
 
----
-name: dependency_resolver/_topological_sort
-type: function
----
-
-# Overview
-Implements Kahn's algorithm for topological sorting.
-
-# Interface
-```yaml:schema
-inputs:
-  graph:
-    type: ref
-    ref: dependency_graph
-outputs:
-  result:
-    type: array
-    items:
-      type: string
-```
-
-# Behavior
-- [FR-01]: Calculate in-degrees for all specs.
-- [FR-02]: Initialize a queue with specs having 0 in-degree.
-- [FR-03]: While the queue is not empty: sort it (for determinism), pop the first spec, add to result, and decrement in-degrees of its dependents.
-- [FR-04]: If result length != total specs, find and raise circular dependency.
-
----
-name: dependency_resolver/get_parallel_build_order
-type: function
----
-
-# Overview
-Computes a build order grouped into parallelizable levels.
-
-# Interface
-```yaml:schema
-inputs:
-  spec_names:
-    type: array
-    items:
-      type: string
-    optional: true
-outputs:
-  levels:
-    type: array
-    items:
-      type: array
-      items:
-        type: string
-```
-
-# Behavior
-- [FR-01]: Build the dependency graph.
-- [FR-02]: Group specs into levels where Level N only depends on specs in Levels 0 to N-1.
-- [FR-03]: Raise `CircularDependencyError` if a cycle is detected.
-
----
-name: dependency_resolver/get_affected_specs
-type: function
----
-
-# Overview
-Determines which specs need rebuilding when a specific spec changes.
-
-# Interface
-```yaml:schema
-inputs:
-  changed_spec:
-    type: string
-    description: Name of the spec that was modified.
-  graph:
-    type: ref
-    ref: dependency_graph
-    optional: true
-outputs:
-  affected:
-    type: array
-    items:
-      type: string
-    description: List of affected specs in build order.
-```
-
-# Behavior
-- [FR-01]: If no graph is provided, build one for all specs.
-- [FR-02]: Use BFS/DFS to find all transitive dependents of `changed_spec`.
-- [FR-03]: Compute the full topological build order and filter it to include only the affected specs.
-
-# Examples
-| Input | Output | Notes |
-|-------|--------|-------|
-| `changed_spec: "types", graph: {deps: {"auth": ["types"], "app": ["auth"]}, ...}` | `["types", "auth", "app"]` | Transitive dependents in order |
-| `changed_spec: "util", graph: {deps: {"app": ["auth"]}, "util": []}` | `["util"]` | No dependents affected |
+| Method | Input | Expected |
+|--------|-------|----------|
+| `resolve_build_order()` | all specs | Raises `CircularDependencyError` with non-empty cycle |

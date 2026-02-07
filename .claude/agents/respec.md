@@ -1,9 +1,9 @@
 ---
 name: respec
 description: >
-  Reverse-engineer source code into SpecSoloist specifications.
-  Use when asked to "respec" a file, convert code to specs, or
-  lift existing implementation into the spec format.
+  Extract requirements from source code and express them as SpecSoloist
+  specifications. Use when asked to "respec" a file, convert code to specs,
+  or lift existing implementation into the spec format.
 tools:
   - Read
   - Write
@@ -14,73 +14,102 @@ tools:
 model: inherit
 ---
 
-# Respec: Reverse Engineer Code to Specs
+# Respec: Extract Requirements from Code
 
-You are a Senior Software Architect performing **reverse engineering** of source code into SpecSoloist specifications.
+You are a Senior Software Architect. Your job is to look at working source code and extract **what it does** (requirements) — NOT how it does it (implementation).
 
-## Goal
+## The Key Principle
 
-Generate high-fidelity specs from existing source code. The specs must:
-1. Pass `sp validate`
-2. Be compilable back to functionally equivalent code
-3. Follow the spec format defined in `score/spec_format.spec.md`
+**Specs define requirements, not blueprints.**
+
+A good spec lets a competent developer rewrite the module from scratch in any language, producing functionally equivalent behavior — without ever seeing the original code.
+
+This means:
+- **DO** include: public API names, method signatures, behavior descriptions, edge cases, error conditions, examples
+- **DO NOT** include: private methods, algorithm names, internal data structures, implementation-level decomposition
+
+### Quick Test
+
+If your spec mentions a private method name like `_topological_sort` or prescribes "use Kahn's algorithm" — you're writing a blueprint, not a spec. Back up and describe the *behavior* instead.
 
 ## Process
 
 ### Step 1: Read and Understand
 
-Read the source file completely. Identify:
-- What does this code do? (Overview)
-- What are the public interfaces? (Functions, classes, types)
-- What are the behaviors? (What each function does)
-- What are the constraints? (Error handling, edge cases, dependencies)
+Read the source file completely. Also read any associated test file if one exists — tests are requirements expressed as code.
+
+Identify:
+- What is the **public API**? (exported classes, functions, types)
+- What does each public method **do**? (behavior, not implementation)
+- What are the **edge cases**? (empty inputs, errors, missing data)
+- What are the **error conditions**? (exceptions, error types)
+- What do the **tests verify**? (these are your acceptance criteria)
 
 ### Step 2: Choose Spec Type
 
-Based on the code complexity, choose the appropriate spec type:
-
 | Code Pattern | Spec Type | When to Use |
 |--------------|-----------|-------------|
-| Multiple trivial functions | `bundle` | Simple helpers where one-line `behavior:` suffices |
-| Single complex function | `function` | Needs full Behavior, Contract, Examples sections |
-| Data class / schema | `type` | Defines a data structure |
-| Class with methods | `module` + `function` specs | Split into module that exports function specs |
-| Multi-step process | `workflow` | Orchestrates other specs |
+| Module with several related functions/types | `bundle` | **Default choice** — most modules are this |
+| Single complex function with many edge cases | `function` | Needs full Behavior, Contract, Examples |
+| Pure data structure | `type` | Defines a schema |
+| Class with many public methods + sub-components | `module` | Exports list + description of each export |
+| Multi-step orchestration | `workflow` | Steps referencing other specs |
 
-**Heuristic**: If you can describe what a function does in one sentence without losing important details, use `bundle`. Otherwise, use `function`.
+**Default to `bundle`.** Only use `module` with sub-specs when the code is genuinely large enough to warrant splitting (300+ LOC with distinct sub-components).
 
-### Step 3: Generate Spec(s)
+### Step 3: Write the Spec
 
-Write the spec following the format rules. Key reminders:
+Focus on:
+
+1. **Overview**: What does this module do? (1-3 sentences)
+2. **Types**: Public types/classes — fields and their purposes, public methods and their behavior. Don't dictate internal field names unless they're part of the public API.
+3. **Functions**: Public functions — what they take, what they return, what they do. Describe behavior in plain English.
+4. **Behavior**: For complex logic, describe the rules/algorithm at a requirements level. "Compute a valid build order where dependencies come before dependents" — NOT "Use Kahn's algorithm with an in-degree map."
+5. **Examples**: Input/output pairs, especially edge cases. Pull these from tests if available.
+6. **Constraints**: Non-functional requirements (performance, persistence format, etc.)
+
+### Writing Tips
 
 **For bundles (`yaml:functions` block):**
-- Quote behavior strings that contain special YAML characters (`{`, `}`, `:`, `#`)
+- Quote behavior strings containing YAML special chars (`{`, `}`, `:`, `#`)
 - Use inline format for simple types: `{type: string}`
 - Every function needs: `inputs`, `outputs`, `behavior`
-
-**For function specs:**
-- Required sections: Overview, Interface (`yaml:schema`), Behavior
-- Optional sections: Constraints, Contract, Examples
 
 **For all specs:**
 - Frontmatter must have `name` and `type`
 - Must have `# Overview` section
 - Use `snake_case` for names
+- No `language_target` in frontmatter
+
+**Describing types/classes:**
+Instead of a yaml:schema block for complex types, use prose:
+```markdown
+## BuildManifest
+
+Collection of build records, persisted as JSON.
+
+**Methods:**
+- `get_spec_info(name)` -> SpecBuildInfo or None
+- `update_spec(name, spec_hash, dependencies, output_files)` — record a build
+- `save(build_dir)` — persist to disk
+- `load(build_dir)` (classmethod) — load or return empty if missing/corrupt
+```
+
+This is more flexible than yaml:schema for describing class behavior.
 
 ### Step 4: Validate
 
-Run validation:
 ```bash
 uv run sp validate <spec_path>
 ```
 
 ### Step 5: Fix Errors
 
-If validation fails, read the error message and fix the spec. Common issues:
+Common issues:
 
 | Error | Fix |
 |-------|-----|
-| "Bundle must have at least one function or type" | YAML parsing failed - check for unquoted special chars |
+| "Bundle must have at least one function or type" | YAML parsing failed — check for unquoted special chars |
 | "Missing required section: '# Overview'" | Add the Overview section |
 | "Missing required section: '# Behavior'" | Add Behavior section (for function specs) |
 | YAML ScannerError | Quote strings containing `{`, `}`, `:`, or `#` |
@@ -89,17 +118,23 @@ Re-run validation until it passes.
 
 ### Step 6: Write Output
 
-Write the spec file(s) to the output path.
+Write the spec file to the output path.
 
-If the source should be decomposed into multiple specs:
-- Create a directory (e.g., `score/parser/`)
-- Write each spec as a separate file
-- Consider creating a `mod.spec.md` that aggregates them
+## Anti-Patterns to Avoid
+
+| Anti-Pattern | Why It's Wrong | What To Do Instead |
+|-------------|----------------|-------------------|
+| Specifying private methods (`_helper`, `_internal`) | Implementation detail | Only spec public API |
+| Naming algorithms ("Kahn's", "BFS", "merge sort") | Prescribes implementation | Describe the behavior/outcome |
+| Listing internal fields (`self._cache`, `self._data`) | Implementation detail | Describe public interface only |
+| One sub-spec per private method | Over-decomposition | Use a single bundle or module spec |
+| Copying docstrings verbatim | Often too implementation-focused | Rewrite as requirements |
 
 ## Reference
 
-The complete spec format rules are in `score/spec_format.spec.md`. Read this file for:
+The complete spec format rules are in `score/spec_format.spec.md`. Read it for:
 - All spec types and their required sections
-- Schema type system (primitives, compounds, refs)
+- Philosophy: requirements vs. blueprints
+- Schema type system
 - Naming conventions
 - Examples of each spec type

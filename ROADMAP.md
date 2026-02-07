@@ -76,82 +76,70 @@
 
 The core insight: **complex operations should delegate to AI agents** (Claude, Gemini) rather than single-shot LLM API calls. Agents can read files, validate, iterate on errors, and make multi-step decisions.
 
-### 5a: Agent-First Commands (Priority: High)
+### 5a: Agent-First Commands
 
 | Command | Status | Description |
 |---------|--------|-------------|
 | `sp respec` | ✅ Done | Reverse engineer code → specs with validation loop |
 | `sp compose` | ✅ Done | Architecture drafting with iterative refinement |
+| `sp conduct` | ✅ Done | Conductor agent spawns soloist subagents per spec |
 | `sp fix` | 🔲 Todo | Self-healing with error analysis and re-testing |
 
 **Implementation pattern:**
-- Commands default to `--agent auto` (detect claude/gemini CLI)
-- Agent receives task prompt + context from `score/prompts/`
-- Agent handles file I/O, validation, iteration
+- Commands default to agent mode (detect claude/gemini CLI)
 - `--no-agent` flag for direct LLM API fallback
+- Agent handles file I/O, validation, iteration
 
-### 5b: Agent Prompts
-- [x] `respec.md` - Reverse engineering prompt
-- [x] `compose.md` - Architecture drafting prompt
-- [ ] `fix.md` - Self-healing prompt
+### 5b: Native Subagents
+
+| Agent | Status | Role |
+|-------|--------|------|
+| `respec` | ✅ Done | Extract requirements from code → spec |
+| `compose` | ✅ Done | Draft architecture from natural language |
+| `conductor` | ✅ Done | Orchestrate builds, spawn soloists per dependency level |
+| `soloist` | ✅ Done | Read spec, write code directly (agent IS the compiler) |
+| `fix` | 🔲 Todo | Self-healing: analyze test failures, patch code |
+
+### 5c: Requirements-Oriented Specs
+
+Key philosophical shift: specs define **requirements and public API**, not implementation blueprints.
+
+- [x] **Validated round-trip** on 3 modules (resolver, config, manifest)
+- [x] **Updated spec_format.spec.md** with "Requirements, Not Blueprints" philosophy
+- [x] **Updated respec agents** to extract requirements, not implementation details
+- [x] **Updated parser templates** for requirements-oriented output
+- [x] **Respecced all modules** — every module in score/ now has a requirements-oriented spec
 
 ---
 
 ## Phase 6: The Quine (Self-Hosting)
 
-Goal: `sp conduct score/` regenerates `src/` with high fidelity.
+Goal: `sp conduct score/` regenerates `src/` with passing tests.
 
-### 6a: Granular Spec Strategy
+### 6a: Score Status
 
-Each source module gets granular specs (one class/function per spec file):
+All modules have requirements-oriented specs in `score/`:
 
-```
-score/
-  specsoloist/
-    ui/                    # Bundle: trivial helpers
-    config/                # Bundle: config types + functions
-    schema/                # Types: Pydantic models
-    parser/                # Multiple function specs
-    compiler/              # Multiple function specs
-    ...
-  spechestra/
-    composer/
-    conductor/
-  providers/
-    base/
-    gemini/
-    anthropic/
-```
+| Spec | Type | Dependencies | Round-trip Validated |
+|------|------|-------------|---------------------|
+| `config.spec.md` | bundle | — | ✅ Yes |
+| `manifest.spec.md` | bundle | config | ✅ Yes |
+| `resolver.spec.md` | bundle | — | ✅ Yes |
+| `ui.spec.md` | bundle | — | |
+| `schema.spec.md` | bundle | — | |
+| `runner.spec.md` | bundle | config | |
+| `compiler.spec.md` | bundle | — | |
+| `parser.spec.md` | module | schema | |
+| `respec.spec.md` | bundle | config | |
+| `core.spec.md` | bundle | config, parser, compiler, runner, resolver, manifest | |
+| `cli.spec.md` | bundle | core, resolver, ui | |
+| `speccomposer.spec.md` | bundle | core | |
+| `specconductor.spec.md` | bundle | core | |
 
-### 6b: Module Status
-
-| Module | Lines | Status | Notes |
-|--------|-------|--------|-------|
-| **specsoloist/** | | | |
-| `ui.py` | 70 | ✅ Done | Bundle |
-| `config.py` | 130 | ✅ Done | Bundle (with env src_dir fix) |
-| `schema.py` | 200 | ✅ Done | Bundle |
-| `lifter.py` | 93 | 🔲 Todo | Small, single function |
-| `server.py` | 88 | 🔲 Todo | Small, MCP entry point |
-| `runner.py` | 155 | 🔲 In Progress | Test execution |
-| `manifest.py` | 200 | 🔲 Todo | Build tracking |
-| `resolver.py` | 314 | 🔲 Todo | Dependency resolution |
-| `compiler.py` | 312 | 🔲 Todo | LLM prompt construction |
-| `parser.py` | 684 | 🔲 Todo | Complex - split into multiple specs |
-| `cli.py` | 605 | 🔲 Todo | Complex - split into multiple specs |
-| `core.py` | 743 | 🔲 Todo | Complex - split into multiple specs |
-| **spechestra/** | | | |
-| `composer.py` | 382 | ⚠️ Review | Has spec, needs granular split |
-| `conductor.py` | 447 | ⚠️ Review | Has spec, needs granular split |
-| **providers/** | | | |
-| `base.py` | 30 | 🔲 Todo | Protocol definition |
-| `gemini.py` | 95 | 🔲 Todo | Gemini implementation |
-| `anthropic.py` | 120 | 🔲 Todo | Anthropic implementation |
-
-### 6c: Fidelity Verification
-- [ ] **Compile specs**: Generate code from specs
-- [ ] **Diff check**: Compare generated vs original
-- [ ] **Test suite**: Verify generated code passes all tests
+### 6b: Quine Attempt
+- [ ] Run `sp conduct score/` end-to-end
+- [ ] Verify generated code passes all 52 tests
+- [ ] Document fidelity gaps and iterate
 
 ---
 
@@ -163,6 +151,7 @@ score/
 - [ ] **Visual Spec Editor**: GUI for defining requirements
 - [ ] **Advanced Workflows**: Conditional branching, loops, fan-out/fan-in
 - [ ] **Streaming Compilation**: Real-time feedback during compilation
+- [ ] **CLI Agent**: SpecSoloist defines its own CLI agent for self-management
 
 ---
 

@@ -1,8 +1,6 @@
 ---
 name: compiler
 type: bundle
-dependencies:
-  - parser/types
 tags:
   - core
   - compilation
@@ -10,123 +8,42 @@ tags:
 
 # Overview
 
-Provides functionality to compile SpecSoloist specifications into implementation code, type definitions, orchestration workflows, and test suites using an LLM provider. It also handles generating and parsing fixes for failing tests.
+Compiles SpecSoloist specifications into implementation code, type definitions, workflow scripts, and test suites by constructing prompts and calling an LLM provider. Also handles generating and parsing fix suggestions for failing tests.
+
+# Types
+
+## SpecCompiler
+
+Compiler for specs. Constructed with an `LLMProvider` instance and an optional `global_context` string (project-wide context included in all prompts).
 
 # Functions
 
-```yaml:functions
-compiler_init:
-  inputs:
-    provider:
-      type: object
-      description: LLM provider instance for generation.
-    global_context:
-      type: string
-      description: Global project context to include in prompts.
-  outputs:
-    compiler:
-      type: object
-      description: An initialized compiler instance.
-  behavior: "Initialize a SpecCompiler with an LLM provider and global context."
+## SpecCompiler.compile_code(spec, model=None) -> string
 
-compile_code:
-  inputs:
-    compiler: {type: object}
-    spec: {type: ref, ref: parser/types/parsed_spec}
-    model: {type: optional, of: {type: string}}
-  outputs:
-    code: {type: string}
-  behavior: |
-    Compiles a function or bundle specification to implementation code:
-    1. Identify the target language from the spec metadata.
-    2. Build an import context string from the spec's dependencies.
-    3. Construct a prompt for an expert developer in the target language, providing global context, dependencies, and the component specification.
-    4. Instruct the LLM to implement the component strictly according to requirements and output raw code.
-    5. Call the LLM provider and strip markdown fences from the result.
+Compile a function/bundle spec to implementation code. Constructs a prompt with the spec body, dependency context, and global context, then calls the LLM. Returns raw code (markdown fences stripped).
 
-compile_typedef:
-  inputs:
-    compiler: {type: object}
-    spec: {type: ref, ref: parser/types/parsed_spec}
-    model: {type: optional, of: {type: string}}
-  outputs:
-    code: {type: string}
-  behavior: |
-    Compiles a type or bundle specification to type definition code:
-    1. Identify the target language from the spec metadata.
-    2. Construct a prompt for an expert developer specializing in type systems, providing global context and the type specification.
-    3. Instruct the LLM to define all types using appropriate language constructs (e.g., dataclasses in Python), including validation and docstrings.
-    4. Call the LLM provider and strip markdown fences from the result.
+## SpecCompiler.compile_typedef(spec, model=None) -> string
 
-compile_orchestrator:
-  inputs:
-    compiler: {type: object}
-    spec: {type: ref, ref: parser/types/parsed_spec}
-    model: {type: optional, of: {type: string}}
-  outputs:
-    code: {type: string}
-  behavior: |
-    Compiles a workflow or orchestrator specification to execution code:
-    1. Identify the target language from the spec metadata.
-    2. Extract the list of specs used in the workflow steps to build a component context.
-    3. Construct a prompt for an expert developer specializing in multi-agent orchestration, providing global context and the orchestration specification.
-    4. Instruct the LLM to implement the workflow logic, state passing, and error handling.
-    5. Call the LLM provider and strip markdown fences from the result.
+Compile a type spec to type definition code. Prompts the LLM to define types using idiomatic constructs for the target language. Returns raw code.
 
-compile_tests:
-  inputs:
-    compiler: {type: object}
-    spec: {type: ref, ref: parser/types/parsed_spec}
-    model: {type: optional, of: {type: string}}
-  outputs:
-    code: {type: string}
-  behavior: |
-    Generates a unit test suite for a specification:
-    1. Identify the target language and module name from the spec metadata.
-    2. Determine appropriate test framework instructions (e.g., pytest for Python, node:test for TypeScript).
-    3. Construct a prompt for an expert QA engineer, providing the component specification and test instructions.
-    4. Instruct the LLM to implement test cases for all scenarios and edge cases from the spec.
-    5. Call the LLM provider and strip markdown fences from the result.
+## SpecCompiler.compile_orchestrator(spec, model=None) -> string
 
-generate_fix:
-  inputs:
-    compiler: {type: object}
-    spec: {type: ref, ref: parser/types/parsed_spec}
-    code_content: {type: string}
-    test_content: {type: string}
-    error_log: {type: string}
-    model: {type: optional, of: {type: string}}
-  outputs:
-    response: {type: string}
-  behavior: |
-    Generates a fix for failing tests:
-    1. Identify the target language and module name.
-    2. Construct a prompt for a senior software engineer to analyze the discrepancy between the spec, code, tests, and error output.
-    3. Instruct the LLM to provide corrected content for the failing file(s) using a specific '### FILE:' marker format.
-    4. Call the LLM provider and return the raw response.
+Compile a workflow/orchestrator spec to execution code. Extracts step references for context and prompts the LLM to implement the workflow with state passing between steps. Returns raw code.
 
-parse_fix_response:
-  inputs:
-    response: {type: string}
-  outputs:
-    fixes: {type: object, description: "Map of filenames to corrected contents."}
-  behavior: |
-    Parses an LLM fix response to extract file updates:
-    1. Use regex to find blocks starting with '### FILE: <path>' and ending with '### END'.
-    2. For each match, extract the path and content.
-    3. Strip markdown fences from the content and return a map of filename to cleaned content.
+## SpecCompiler.compile_tests(spec, model=None) -> string
 
-build_import_context:
-  inputs:
-    spec: {type: ref, ref: parser/types/parsed_spec}
-  outputs:
-    context: {type: string}
-  behavior: "Format a spec's dependencies into a human-readable instruction string for use in compilation prompts."
+Generate a test suite for a spec. Prompts the LLM to write tests covering all scenarios and edge cases from the spec. Uses appropriate test framework for the target language (pytest for Python, node:test for TypeScript). Returns raw test code.
 
-strip_markdown_fences:
-  inputs:
-    code: {type: string}
-  outputs:
-    cleaned: {type: string}
-  behavior: "Remove markdown code fences (e.g., ```python ... ```) from the beginning and end of a string if present."
-```
+## SpecCompiler.generate_fix(spec, code_content, test_content, error_log, model=None) -> string
+
+Generate a fix for failing tests. Provides the spec (source of truth), current code, current tests, and error output to the LLM. Returns raw response with `### FILE: path` / `### END` markers.
+
+## SpecCompiler.parse_fix_response(response) -> dict
+
+Parse the LLM fix response to extract file contents. Finds all `### FILE: <path>` ... `### END` blocks and returns a dict mapping filename to cleaned content (markdown fences stripped).
+
+# Constraints
+
+- All compilation methods strip markdown code fences from LLM responses
+- The spec body/content is passed directly to the LLM — the compiler does not interpret spec semantics
+- Dependency context is built from `spec.metadata.dependencies` (supports both string and dict formats)

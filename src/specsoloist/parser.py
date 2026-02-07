@@ -157,7 +157,6 @@ class SpecParser:
         return f"""---
 name: {name}
 type: function
-status: draft
 ---
 
 # Overview
@@ -170,24 +169,16 @@ status: draft
 inputs:
   # param_name:
   #   type: integer
-  #   description: Description of parameter
+  #   description: What this parameter represents
 outputs:
   result:
     type: string
+    description: What the function returns
 ```
 
 # Behavior
 
-- **[FR-01]**: [Describe the primary behavior]
-
-# Constraints
-
-- **[NFR-01]**: Must be pure (no side effects)
-
-# Contract
-
-- **Pre**: [Precondition]
-- **Post**: [Postcondition]
+- [FR-01]: [Describe what this function does, not how it does it]
 
 # Examples
 
@@ -201,7 +192,6 @@ outputs:
         return f"""---
 name: {name}
 type: type
-status: draft
 ---
 
 # Overview
@@ -212,16 +202,11 @@ status: draft
 
 ```yaml:schema
 properties:
-  id:
-    type: string
-    format: uuid
-required:
-  - id
+  # field_name:
+  #   type: string
+  #   description: What this field represents
+required: []
 ```
-
-# Constraints
-
-- **[NFR-01]**: [Describe constraints]
 
 # Examples
 
@@ -235,7 +220,6 @@ required:
         return f"""---
 name: {name}
 type: bundle
-status: draft
 ---
 
 # Overview
@@ -248,17 +232,13 @@ status: draft
 example_function:
   inputs: {{a: integer, b: integer}}
   outputs: {{result: integer}}
-  behavior: Return a + b
+  behavior: "Describe what this function does"
 ```
 
 # Types
 
-```yaml:types
-example_type:
-  properties:
-    id: {{type: string}}
-  required: [id]
-```
+Describe public types here using prose — fields, methods, behavior.
+Remove this section if the module has no public types.
 """
 
     def _generate_workflow_template(self, name: str, description: str) -> str:
@@ -266,7 +246,6 @@ example_type:
         return f"""---
 name: {name}
 type: workflow
-status: draft
 dependencies:
   - step1_spec
   - step2_spec
@@ -282,9 +261,11 @@ dependencies:
 inputs:
   input_param:
     type: string
+    description: What this workflow receives
 outputs:
   result:
     type: string
+    description: What this workflow produces
 ```
 
 # Steps
@@ -303,7 +284,7 @@ outputs:
 
 # Error Handling
 
-- If step1 fails: [describe handling]
+- If step1 fails: [describe what should happen]
 """
 
     def _generate_module_template(self, name: str, description: str) -> str:
@@ -311,10 +292,6 @@ outputs:
         return f"""---
 name: {name}
 type: module
-status: draft
-dependencies:
-  - function1
-  - function2
 ---
 
 # Overview
@@ -323,8 +300,10 @@ dependencies:
 
 # Exports
 
-- `function1`: [Description]
-- `function2`: [Description]
+- `export1`: [What this does]
+- `export2`: [What this does]
+
+Describe each export's public interface and behavior below.
 """
 
     def parse_spec(self, name: str) -> ParsedSpec:

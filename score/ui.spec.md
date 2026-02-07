@@ -8,9 +8,7 @@ tags:
 
 # Overview
 
-Terminal UI utilities for the SpecSoloist CLI. Provides styled output functions using the Rich library, including headers, status messages, tables, spinners, and user confirmation prompts.
-
-All functions use a shared console instance with a custom theme (success=green, error=red, warning=yellow, info=cyan).
+Terminal UI utilities for the SpecSoloist CLI. Provides styled output functions for headers, status messages, tables, spinners, and user confirmation prompts. All output goes through a shared console instance.
 
 # Functions
 
@@ -18,65 +16,65 @@ All functions use a shared console instance with a custom theme (success=green, 
 print_header:
   inputs:
     title: {type: string, description: Main title text}
-    subtitle: {type: string, optional: true, description: Optional subtitle displayed above title}
+    subtitle: {type: string, optional: true, description: Optional subtitle}
   outputs: {}
-  behavior: "Print a styled panel with blue border containing the title (bold blue) and optional subtitle (dim, centered)"
+  behavior: "Print a styled panel containing the title and optional subtitle"
 
 print_success:
   inputs:
     message: {type: string}
   outputs: {}
-  behavior: "Print checkmark followed by message in green"
+  behavior: "Print a success indicator followed by message"
 
 print_error:
   inputs:
     message: {type: string}
   outputs: {}
-  behavior: "Print 'Error:' prefix followed by message in bold red"
+  behavior: "Print an error prefix followed by message"
 
 print_warning:
   inputs:
     message: {type: string}
   outputs: {}
-  behavior: "Print 'Warning:' prefix followed by message in yellow"
+  behavior: "Print a warning prefix followed by message"
 
 print_info:
   inputs:
     message: {type: string}
   outputs: {}
-  behavior: "Print info symbol followed by message in cyan"
+  behavior: "Print an info indicator followed by message"
 
 print_step:
   inputs:
     message: {type: string}
   outputs: {}
-  behavior: "Print arrow symbol followed by message in bold blue"
+  behavior: "Print a step/arrow indicator followed by message"
 
 create_table:
   inputs:
     columns: {type: array, items: {type: string}, description: Column header names}
     title: {type: string, optional: true, description: Optional table title}
   outputs:
-    table: {type: object, description: Rich Table instance ready for add_row() calls}
-  behavior: "Create and return a Rich Table with bold cyan headers and dim borders"
+    table: {type: object, description: Table object ready for add_row() calls}
+  behavior: "Create and return a styled table with the given column headers"
 
 spinner:
   inputs:
     message: {type: string, description: Status message to display}
   outputs:
-    status: {type: object, description: Rich Status context manager}
-  behavior: "Return a console.status() context manager with dots spinner and bold blue message"
+    status: {type: object, description: Context manager that shows a spinner while active}
+  behavior: "Return a context manager that displays a spinner with the given message"
 
 confirm:
   inputs:
     question: {type: string, description: Yes/no question to ask}
   outputs:
-    confirmed: {type: boolean, description: True if user entered 'y' (case-insensitive)}
-  behavior: "Prompt with question and [y/N], return True only if input is 'y' or 'Y'"
+    confirmed: {type: boolean}
+  behavior: "Prompt the user with question and [y/N], return True only if they enter y or Y"
 ```
 
 # Constraints
 
-- [NFR-01]: All output goes to a shared Rich Console instance
-- [NFR-02]: Functions are stateless (no side effects beyond printing)
-- [NFR-03]: Depends on `rich` library (Console, Table, Panel, Status, Text, Theme)
+- All output goes through a shared console instance with a consistent color theme
+- Functions are stateless (no side effects beyond terminal output)
+- The module also exports the `console` and `Panel` objects for direct use by other modules

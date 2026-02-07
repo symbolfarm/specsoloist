@@ -81,6 +81,10 @@ def main():
 
     # conduct
     conduct_parser = subparsers.add_parser("conduct", help="Orchestrate project build")
+    conduct_parser.add_argument("src_dir", nargs="?", default=None, help="Spec directory (default: src/)")
+    conduct_parser.add_argument("--no-agent", action="store_true",
+                                help="Use direct LLM API instead of agent CLI")
+    conduct_parser.add_argument("--auto-accept", action="store_true", help="Skip interactive review")
     conduct_parser.add_argument("--incremental", action="store_true", help="Only recompile changed specs")
     conduct_parser.add_argument("--parallel", action="store_true", help="Compile independent specs concurrently")
     conduct_parser.add_argument("--workers", type=int, default=4, help="Max parallel workers (default: 4)")
@@ -139,7 +143,8 @@ def main():
         elif args.command == "compose":
             cmd_compose(core, args.request, args.no_agent, args.auto_accept)
         elif args.command == "conduct":
-            cmd_conduct(core, args.incremental, args.parallel, args.workers)
+            cmd_conduct(core, args.src_dir, args.no_agent, args.auto_accept,
+                        args.incremental, args.parallel, args.workers)
         elif args.command == "perform":
             cmd_perform(core, args.workflow, args.inputs)
         elif args.command == "respec":
@@ -499,31 +504,62 @@ def _compose_with_llm(core: SpecSoloistCore, request: str, auto_accept: bool):
     ui.print_info("Review specs, then run 'sp conduct' to build.")
 
 
-def cmd_conduct(core: SpecSoloistCore, incremental: bool, parallel: bool, workers: int):
+def cmd_conduct(core: SpecSoloistCore, src_dir: str | None, no_agent: bool, auto_accept: bool,
+                 incremental: bool, parallel: bool, workers: int):
+    """Orchestrate project build."""
+
+    ui.print_header("Conducting Build", src_dir or "project specs")
+
+    if no_agent:
+        _conduct_with_llm(core, incremental, parallel, workers)
+    else:
+        _conduct_with_agent(src_dir, auto_accept)
+
+
+def _conduct_with_agent(src_dir: str | None, auto_accept: bool):
+    """Use an AI agent CLI for multi-step orchestrated build."""
+    agent = _detect_agent_cli()
+    if not agent:
+        ui.print_error("No agent CLI found (claude or gemini). Install one or use --no-agent.")
+        sys.exit(1)
+
+    ui.print_info(f"Using {agent} agent with native subagent...")
+
+    prompt_parts = ["conduct"]
+    if src_dir:
+        prompt_parts.append(src_dir)
+    prompt = " ".join(prompt_parts)
+
+    try:
+        _run_agent_oneshot(agent, prompt, auto_accept)
+    except Exception as e:
+        ui.print_error(f"Agent error: {e}")
+        sys.exit(1)
+
+
+def _conduct_with_llm(core: SpecSoloistCore, incremental: bool, parallel: bool, workers: int):
+    """Direct LLM build (single-shot compilation, no agent iteration)."""
     _check_api_key()
-    
-    ui.print_header("Conducting Build", "Using SpecConductor")
-    
+
+    ui.print_info("Using direct LLM calls (no agent)...")
+
     conductor = SpecConductor(core.project_dir)
-    
+
     with ui.spinner("Orchestrating build..."):
         result = conductor.build(
             incremental=incremental,
             parallel=parallel,
             max_workers=workers
         )
-        
-    # Reuse the summary display from build? Or create new one.
-    # For now, let's create a similar summary.
-    
+
     table = ui.create_table(["Result", "Spec", "Details"], title="Conductor Report")
-    
+
     for spec in result.specs_compiled:
         table.add_row("[green]Compiled[/]", spec, "Success")
-    
+
     for spec in result.specs_skipped:
         table.add_row("[dim]Skipped[/]", spec, "Unchanged")
-        
+
     for spec in result.specs_failed:
         error = result.errors.get(spec, "Unknown error")
         if len(error) > 50:

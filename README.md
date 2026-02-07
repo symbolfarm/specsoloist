@@ -1,17 +1,19 @@
 # SpecSoloist
 
-**SpecSoloist** is a "Spec-as-Source" AI coding framework. It treats rigorous, SRS-style specifications as the source of truth and uses LLMs to compile them into executable code.
+**SpecSoloist** is a "Spec-as-Source" AI coding framework. It treats specifications as the source of truth and uses AI agents to compile them into executable code.
 
-Now with **Spechestra** features: define and run multi-agent orchestration workflows directly from your specs.
+Now with **Spechestra** features: compose systems from natural language, conduct parallel builds, and orchestrate multi-step workflows.
 
 ## Why SpecSoloist?
 
 Code is often messy, poorly documented, and prone to drift from original requirements. SpecSoloist flips the script:
 
-1.  **Write Specs**: You write high-level, human-readable specifications (Markdown).
-2.  **Compile to Code**: SpecSoloist uses LLMs (Gemini/Claude) to implement the spec.
-3.  **Self-Healing**: If tests fail, SpecSoloist analyzes the failure and patches the code or tests automatically.
+1.  **Write Specs**: You write requirements-oriented specifications (Markdown).
+2.  **Compile to Code**: AI agents read your specs and write implementations directly.
+3.  **Self-Healing**: If tests fail, agents analyze the failure and patch the code.
 4.  **Orchestrate**: Define complex workflows where agents collaborate, share state, and pause for human input.
+
+> **Code is a build artifact. Specs are the source of truth.**
 
 ## Installation
 
@@ -66,10 +68,11 @@ SpecSoloist allows you to chain multiple specs into a workflow.
     ```
     This generates a component architecture and draft specs.
 
-2.  **Conduct Build**: Compile all components in parallel.
+2.  **Conduct Build**: Compile all components via agent orchestration.
     ```bash
     sp conduct
     ```
+    The conductor agent resolves dependency order and spawns soloist agents to compile each spec in parallel.
 
 3.  **Perform Workflow**: Execute a workflow spec.
     ```bash
@@ -83,7 +86,7 @@ SpecSoloist allows you to chain multiple specs into a workflow.
 | `sp list` | List all specs in `src/` |
 | `sp create` | Create a new spec manually |
 | `sp compose` | **Draft architecture & specs from natural language** |
-| `sp conduct` | **Build/Compile project (parallel & incremental)** |
+| `sp conduct [dir]` | **Build project via conductor/soloist agents** |
 | `sp perform` | **Execute an orchestration workflow** |
 | `sp validate` | Check spec structure |
 | `sp verify` | Verify schemas and interface compatibility |
@@ -91,8 +94,10 @@ SpecSoloist allows you to chain multiple specs into a workflow.
 | `sp test` | Run tests for a spec |
 | `sp fix` | Auto-fix failing tests |
 | `sp respec` | **Reverse engineer code to spec** |
-| `sp build` | Alias for `conduct` |
+| `sp build` | Compile all specs (direct LLM, no agents) |
 | `sp graph` | Export dependency graph (Mermaid.js) |
+
+Commands that use agents (`compose`, `conduct`, `respec`) default to detecting an available agent CLI (Claude Code or Gemini CLI). Use `--no-agent` to fall back to direct LLM API calls.
 
 ## Configuration
 
@@ -140,20 +145,19 @@ For the full agentic experience, SpecSoloist provides native subagent definition
 | Agent | Purpose |
 |-------|---------|
 | `compose` | Draft architecture and specs from natural language |
-| `conductor` | Orchestrate parallel builds |
-| `soloist` | Compile a single spec |
-| `respec` | Reverse-engineer code to specs |
+| `conductor` | Orchestrate builds — resolves dependencies, spawns soloists |
+| `soloist` | Compile a single spec — reads spec, writes code directly |
+| `respec` | Extract requirements from code into specs |
 
 **Usage with Claude Code:**
 ```
+> conduct score/
 > respec src/specsoloist/parser.py to score/parser.spec.md
 ```
-Claude will delegate to the `respec` subagent, which handles validation and error fixing.
 
 **Usage with Gemini CLI:**
 ```
 > compose a todo app with user auth
 ```
-Gemini will delegate to the `compose` subagent.
 
 The subagent definitions are in `.claude/agents/` and `.gemini/agents/`.

@@ -1,189 +1,154 @@
 ---
 name: specconductor
-type: class
-language_target: python
+type: bundle
 status: draft
 dependencies:
-  - {name: SpecSoloist, from: specsoloist.spec.md}
+  - config
+  - core
+  - resolver
+  - parser
 ---
 
-# 1. Overview
+# Overview
 
-**SpecConductor** is the build and execution manager of Spechestra. It takes a spec architecture (from SpecComposer or manually written specs) and:
+SpecConductor is the build and execution manager of Spechestra. It takes a spec architecture (from SpecComposer or manually written specs) and orchestrates parallel compilation via SpecSoloistCore, then optionally executes workflows defined by workflow specs. The Conductor is responsible for the entire "concert" -- preparing the orchestra (build) and leading the performance (run).
 
-1. **Builds** - Orchestrates parallel SpecSoloist instances to compile specs into code
-2. **Performs** - Executes workflows defined by orchestrator/workflow specs
+# Types
 
-The Conductor is responsible for the entire "concert" - preparing the orchestra (build) and leading the performance (run).
+## StepResult
 
-# 2. Interface Specification
+Result of a single workflow step execution.
 
-```yaml:schema
-inputs:
-  project_dir:
-    type: string
-    description: Path to project root
-  specs:
-    type: array
-    description: Optional list of spec names to build (default: all)
-    required: false
-outputs:
-  build_result:
-    type: object
-    description: Results of compilation
-  perform_result:
-    type: object
-    description: Results of workflow execution
-```
+**Fields:** `name` (string), `spec` (string -- the spec that was executed), `inputs` (dict), `outputs` (dict), `success` (bool), `error` (string or null, default null), `duration` (float seconds, default 0.0).
 
-## 2.1 Constructor
+## PerformResult
 
-### `SpecConductor(project_dir: str, config: Optional[SpecSoloistConfig] = None)`
-*   Initializes with a project directory.
-*   If `config` is not given, loads from environment.
-*   Creates an internal `SpecSoloistCore` instance for compilation.
+Result of a complete workflow execution.
 
-## 2.2 Build Methods
+**Fields:** `success` (bool), `workflow` (string -- name of the workflow spec), `steps` (list of StepResult), `outputs` (dict -- final outputs from the last step), `trace_path` (string, default empty), `duration` (float seconds, default 0.0).
 
-### `build(specs: List[str] = None, parallel: bool = True, incremental: bool = True, max_workers: int = 4) -> BuildResult`
-*   Compiles specs in dependency order.
-*   Uses multiple SpecSoloist instances in parallel when `parallel=True`.
-*   With `incremental=True`, only recompiles changed specs.
-*   Returns `BuildResult` with compilation status.
+## VerifyResult
 
-### `verify() -> VerifyResult`
-*   Validates all specs for schema compliance and interface compatibility.
-*   Checks that dependencies exist and types match.
-*   Returns `VerifyResult` with per-spec status.
+Result of project verification.
 
-### `get_build_order(specs: List[str] = None) -> List[str]`
-*   Returns specs in topological order without building.
-*   Useful for previewing what will be built.
+**Fields:** `success` (bool), `results` (dict mapping spec name to verification details dict).
 
-### `get_dependency_graph(specs: List[str] = None) -> DependencyGraph`
-*   Returns the full dependency graph for visualization.
+# Functions
 
-## 2.3 Perform Methods
+## SpecConductor (class)
 
-### `perform(workflow: str, inputs: Dict[str, Any], checkpoint_callback: Callable = None) -> PerformResult`
-*   Executes a workflow defined by an orchestrator/workflow spec.
-*   Loads compiled modules and runs them in sequence.
-*   With `checkpoint_callback`, pauses at checkpoints for approval.
-*   Returns `PerformResult` with step outputs and execution trace.
+The main conductor class. Constructed with a project directory path and an optional `SpecSoloistConfig`. If config is not provided, loads from environment. Creates an internal `SpecSoloistCore` instance for compilation and exposes its parser and resolver.
 
-### `get_trace(workflow: str) -> List[ExecutionTrace]`
-*   Returns execution traces for a workflow.
-*   Traces are saved to `.spechestra/traces/`.
+### verify() -> VerifyResult
 
-## 2.4 Convenience Methods
+Verify all specs for schema compliance and interface compatibility.
 
-### `build_and_perform(workflow: str, inputs: Dict[str, Any]) -> Tuple[BuildResult, PerformResult]`
-*   Builds all required specs, then performs the workflow.
-*   Convenience method for the common case.
+**Behavior:**
+- Delegates to SpecSoloistCore's project verification.
+- Returns a VerifyResult summarizing per-spec verification status.
+- An empty project (no specs) is considered valid.
 
-## 2.5 Data Classes
+### build(specs=None, parallel=True, incremental=True, max_workers=4) -> BuildResult
 
-### `BuildResult`
-```python
-@dataclass
-class BuildResult:
-    success: bool
-    specs_compiled: List[str]
-    specs_skipped: List[str]  # Unchanged in incremental mode
-    specs_failed: List[str]
-    build_order: List[str]
-    errors: Dict[str, str]
-    duration: float  # seconds
-```
+Build specs in dependency order.
 
-### `PerformResult`
-```python
-@dataclass
-class PerformResult:
-    success: bool
-    workflow: str
-    steps: List[StepResult]
-    outputs: Dict[str, Any]  # Final outputs
-    trace_path: str  # Path to saved trace
-    duration: float
+- `specs`: optional list of spec name strings; if null, builds all specs
+- `parallel`: bool, compile independent specs concurrently (default true)
+- `incremental`: bool, only recompile changed specs (default true)
+- `max_workers`: int, maximum parallel workers (default 4)
 
-@dataclass
-class StepResult:
-    name: str
-    spec: str
-    inputs: Dict[str, Any]
-    outputs: Dict[str, Any]
-    success: bool
-    error: Optional[str]
-    duration: float
-```
+**Behavior:**
+- Resolves dependencies and determines build order.
+- Independent specs (no mutual dependencies) are compiled concurrently when parallel is enabled.
+- With incremental enabled, unchanged specs are skipped.
+- Build failures are captured per-spec; one spec failing does not prevent other independent specs from building.
+- Delegates actual compilation to SpecSoloistCore, including test generation.
+- Returns a BuildResult (from specsoloist.core) with compiled, skipped, and failed spec lists.
 
-### `VerifyResult`
-```python
-@dataclass
-class VerifyResult:
-    success: bool
-    results: Dict[str, Dict[str, Any]]  # spec_name -> verification details
-```
+### get_build_order(specs=None) -> list of strings
 
-# 3. Functional Requirements
+Return specs in build order without actually building.
 
-## Build Orchestration
-*   **FR-01**: SpecConductor shall resolve dependencies and determine build order.
-*   **FR-02**: Independent specs (no mutual dependencies) shall be compiled in parallel.
-*   **FR-03**: Specs at level N must complete before level N+1 begins.
-*   **FR-04**: Build failures shall be captured and reported per-spec.
-*   **FR-05**: With `incremental=True`, unchanged specs shall be skipped.
-*   **FR-06**: Each spec compilation shall use a separate SpecSoloist instance.
+- `specs`: optional list of spec names; if null, includes all specs
 
-## Verification
-*   **FR-07**: `verify()` shall check all specs for valid structure.
-*   **FR-08**: `verify()` shall check schema compatibility between connected specs.
-*   **FR-09**: Verification failures shall not prevent build (warning mode).
+**Behavior:**
+- Returns an empty list for an empty project.
+- Dependencies appear before dependents in the result.
 
-## Workflow Execution (Perform)
-*   **FR-10**: `perform()` shall load compiled modules dynamically.
-*   **FR-11**: `perform()` shall execute steps in the order defined by the workflow spec.
-*   **FR-12**: Inputs shall be resolved from previous step outputs or initial inputs.
-*   **FR-13**: Step results shall be stored in memory for subsequent steps.
-*   **FR-14**: With `checkpoint_callback`, execution shall pause at checkpoint steps.
-*   **FR-15**: Execution traces shall be saved to `.spechestra/traces/`.
+### get_dependency_graph(specs=None) -> DependencyGraph
 
-## Error Handling
-*   **FR-16**: If a step fails during perform, execution shall stop and return partial results.
-*   **FR-17**: Build errors shall not affect unrelated specs (fail-fast per spec, not globally).
-*   **FR-18**: Self-healing (`attempt_fix`) can be triggered on build failures (optional).
+Return the dependency graph for the given specs (or all specs).
 
-# 4. Non-Functional Requirements
+**Behavior:**
+- Delegates to SpecSoloistCore's dependency graph construction.
+- Returns a DependencyGraph object (from specsoloist.resolver).
 
-*   **NFR-Performance**: Parallel builds shall use a configurable thread pool (default 4 workers).
-*   **NFR-Observability**: Build progress shall be reportable (for UI integration).
-*   **NFR-Isolation**: Each SpecSoloist runs independently; one failure doesn't corrupt others.
-*   **NFR-Resumable**: Failed builds can be resumed with `incremental=True`.
-*   **NFR-Traceable**: All perform executions save traces for debugging.
+### perform(workflow, inputs, checkpoint_callback=None) -> PerformResult
 
-# 5. Design Contract
+Execute a workflow defined by a workflow spec.
 
-*   **Pre-condition**: Specs to build must exist in `src/` directory.
-*   **Pre-condition**: For `perform()`, workflow spec must be of type "orchestrator" or "workflow".
-*   **Pre-condition**: For `perform()`, all referenced specs must be compiled.
-*   **Invariant**: SpecConductor uses SpecSoloist's public API only.
-*   **Post-condition**: After successful `build()`, compiled code exists in `build/`.
-*   **Post-condition**: After `perform()`, trace file exists in `.spechestra/traces/`.
+- `workflow`: string, name of the workflow spec
+- `inputs`: dict, input values for the workflow
+- `checkpoint_callback`: optional callable that takes a step name string and returns bool (true to continue, false to abort)
 
-# 6. Test Scenarios
+**Behavior:**
+- Parses the named workflow spec and validates it is of type "workflow" or "orchestrator". Raises ValueError if not.
+- Raises ValueError if the workflow has no steps defined.
+- Executes steps in the order defined by the workflow spec.
+- For each step, resolves input values from previous step outputs or initial workflow inputs using dot-notation references (e.g., `inputs.field` or `step_name.outputs.field`).
+- Loads compiled modules dynamically from the build directory and calls a standard entry point (run, main, execute, or handler).
+- If a checkpoint_callback is provided and a step has `checkpoint: true`, calls the callback before that step. If the callback returns false, execution stops and returns a failed result with partial steps.
+- If any step fails with an exception, execution stops immediately and returns a failed result with all completed steps plus the failed step.
+- On success, final outputs come from the last step's outputs.
+- Saves an execution trace to disk after successful completion.
 
-| Scenario | Input | Expected Output |
-|----------|-------|-----------------|
-| Build single spec | One spec, no deps | `specs_compiled: [spec]` |
-| Build with deps | A depends on B | B compiled before A |
-| Parallel build | 3 independent specs | All in `specs_compiled`, faster than sequential |
-| Incremental build | Unchanged spec | `specs_skipped: [spec]` |
-| Build failure | Spec with syntax error | `specs_failed: [spec]`, others still compile |
-| Verify valid | All specs with schemas | `success: True` |
-| Verify missing schema | Spec without schema | `status: "warning"` |
-| Perform simple | 2-step workflow | Both steps in results |
-| Perform with checkpoint | Workflow with checkpoint | Callback invoked |
-| Perform failure | Step throws exception | `success: False`, partial results |
-| Build and perform | Workflow + inputs | Build succeeds, then perform runs |
-| Get trace | After perform | Trace file contents returned |
+### build_and_perform(workflow, inputs, checkpoint_callback=None) -> tuple of (BuildResult, PerformResult)
+
+Build all specs, then execute the workflow.
+
+**Behavior:**
+- Calls `build()` first. If the build fails, returns the failed BuildResult paired with an empty failed PerformResult (no steps executed).
+- If the build succeeds, calls `perform()` with the given workflow and inputs.
+- Returns both results as a tuple.
+
+### get_trace(workflow) -> list of dicts
+
+Retrieve saved execution traces for a workflow.
+
+- `workflow`: string, name of the workflow
+
+**Behavior:**
+- Looks for trace files in the build directory under `.spechestra/traces/`.
+- Returns traces as a list of dicts, sorted newest first by timestamp.
+- Returns an empty list if no traces exist.
+
+# Behavior
+
+## Step input resolution
+
+Workflow step inputs are resolved from dot-notation reference strings:
+- `inputs.field` resolves to the workflow's initial input value for `field`.
+- `step_name.outputs.field` resolves to a previous step's output value for `field`.
+- Strings without dots are treated as literal values.
+
+## Trace persistence
+
+After a successful workflow execution, a JSON trace file is saved containing the workflow name, timestamp, inputs, and per-step details (name, spec, inputs, outputs, success, error, duration). Trace files are named with the workflow name and a timestamp for uniqueness.
+
+## Separation of concerns
+
+SpecConductor delegates compilation to SpecSoloistCore. It does not contain compilation logic itself. Its role is orchestration: ordering, parallelism, workflow execution, and trace management.
+
+# Examples
+
+| Scenario | Input | Expected |
+|----------|-------|----------|
+| Initialize conductor | `SpecConductor("/path/to/project")` | `project_dir` is set to the absolute path |
+| Verify empty project | No specs in project | `result.success == True` |
+| Build order empty project | No specs | Returns `[]` |
+| StepResult defaults | `StepResult(name="s1", spec="f", inputs={}, outputs={}, success=True)` | `error` is null, `duration` is 0.0 |
+| PerformResult | `PerformResult(success=True, workflow="w", steps=[], outputs={"result": 42})` | `outputs == {"result": 42}` |
+| Build then perform | Build fails | PerformResult has `success=False`, empty steps |
+| Perform non-workflow | Spec type is "function" | Raises ValueError |
+| Step failure | Step raises exception | Returns partial results, `success=False` |
+| Checkpoint abort | Callback returns false | Execution stops, returns partial results |

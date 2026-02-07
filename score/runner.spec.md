@@ -10,127 +10,48 @@ tags:
 
 # Overview
 
-Test execution and result handling for SpecSoloist. Provides functionality to manage implementation and test files within a build directory and execute tests according to language-specific configurations.
+Test execution and file management for SpecSoloist builds. Manages implementation and test files within a build directory, and executes tests according to language-specific configurations.
 
 # Types
 
-```yaml:types
-test_result:
-  description: Result of a test execution.
-  properties:
-    success: {type: boolean, description: "True if the test passed (exit code 0)"}
-    output: {type: string, description: "Combined stdout and stderr from the test execution"}
-    return_code: {type: integer, description: "Process exit code, or -1 for execution errors"}
-  required: [success, output, return_code]
-```
+## TestResult
 
-# Functions
+Result of a test execution. **Fields:** `success` (bool), `output` (string — combined stdout/stderr), `return_code` (int, default 0).
 
-```yaml:functions
-test_runner_init:
-  inputs:
-    build_dir: {type: string, description: "Path to the build directory"}
-    config: {type: optional, of: {type: ref, ref: config/specsoloist_config}, description: "Framework configuration"}
-  outputs:
-    runner: {type: object, description: "An initialized TestRunner instance"}
-  behavior: "Initialize a TestRunner with an absolute build_dir path and optional config"
+## TestRunner
 
-get_test_path:
-  inputs:
-    runner: {type: object}
-    module_name: {type: string}
-    language: {type: string, default: python}
-  outputs:
-    path: {type: string}
-  behavior: "Compute the absolute path to the test file for a module using the language configuration's test_filename_pattern and test_extension"
+Manages the build directory and runs tests. Constructed with `build_dir` (string) and optional `config` (SpecSoloistConfig).
 
-get_code_path:
-  inputs:
-    runner: {type: object}
-    module_name: {type: string}
-    language: {type: string, default: python}
-  outputs:
-    path: {type: string}
-  behavior: "Compute the absolute path to the implementation file for a module using the language configuration's extension"
+**File management methods:**
+- `get_code_path(module_name, language="python")` -> string: absolute path to implementation file
+- `get_test_path(module_name, language="python")` -> string: absolute path to test file
+- `code_exists(module_name, language)` -> bool
+- `test_exists(module_name, language)` -> bool
+- `read_code(module_name, language)` -> string or None
+- `read_tests(module_name, language)` -> string or None
+- `write_code(module_name, content, language)` -> string (path written)
+- `write_tests(module_name, content, language)` -> string (path written)
+- `write_file(filename, content)` -> string: write to build dir using basename only (prevents path traversal)
 
-test_exists:
-  inputs:
-    runner: {type: object}
-    module_name: {type: string}
-    language: {type: string, default: python}
-  outputs:
-    exists: {type: boolean}
-  behavior: "Return True if the test file for the module exists in the build directory"
+**Test execution:**
+- `run_tests(module_name, language="python")` -> TestResult
 
-code_exists:
-  inputs:
-    runner: {type: object}
-    module_name: {type: string}
-    language: {type: string, default: python}
-  outputs:
-    exists: {type: boolean}
-  behavior: "Return True if the implementation file for the module exists in the build directory"
+# Behavior
 
-read_code:
-  inputs:
-    runner: {type: object}
-    module_name: {type: string}
-    language: {type: string, default: python}
-  outputs:
-    content: {type: optional, of: {type: string}}
-  behavior: "Read and return the content of the implementation file, or null if it does not exist"
+## File path resolution
 
-read_tests:
-  inputs:
-    runner: {type: object}
-    module_name: {type: string}
-    language: {type: string, default: python}
-  outputs:
-    content: {type: optional, of: {type: string}}
-  behavior: "Read and return the content of the test file, or null if it does not exist"
+File paths are computed from the language configuration:
+- Code path: `{build_dir}/{module_name}{extension}`
+- Test path: `{build_dir}/{test_filename_pattern}{test_extension}` where pattern substitutes `{name}` with module_name
 
-write_code:
-  inputs:
-    runner: {type: object}
-    module_name: {type: string}
-    content: {type: string}
-    language: {type: string, default: python}
-  outputs:
-    path: {type: string}
-  behavior: "Write implementation content to the build directory and return the resulting file path"
+Default language is Python if not specified or not in config.
 
-write_tests:
-  inputs:
-    runner: {type: object}
-    module_name: {type: string}
-    content: {type: string}
-    language: {type: string, default: python}
-  outputs:
-    path: {type: string}
-  behavior: "Write test content to the build directory and return the resulting file path"
+## Test execution
 
-write_file:
-  inputs:
-    runner: {type: object}
-    filename: {type: string}
-    content: {type: string}
-  outputs:
-    path: {type: string}
-  behavior: "Write content to a file in the build directory using only the filename's basename to prevent path traversal"
-
-run_tests:
-  inputs:
-    runner: {type: object}
-    module_name: {type: string}
-    language: {type: string, default: python}
-  outputs:
-    result: {type: ref, ref: test_result}
-  behavior: |
-    Execute tests for a module:
-    1. Resolve language configuration (defaulting to Python if not configured).
-    2. Verify test file existence; return failure if missing.
-    3. Prepare environment: copy current env and prepend cfg.env_vars (formatting {build_dir}) to existing values using path separator.
-    4. Prepare command: format cfg.test_command parts with {file} placeholder.
-    5. Execute command, capture output, and return TestResult.
-    6. Handle FileNotFoundError or other exceptions by returning a failure TestResult.
-```
+When running tests:
+1. Verify the test file exists; return failure TestResult if missing
+2. Set up environment variables from language config, formatting `{build_dir}` placeholders and prepending to existing values using path separator
+3. Format the test command with `{file}` placeholder
+4. Execute the command and capture output
+5. Return TestResult with success based on exit code 0
+6. Handle execution errors (missing command, other exceptions) by returning failure TestResult

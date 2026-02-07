@@ -8,70 +8,75 @@ tags:
 
 # Overview
 
-Configuration management for SpecSoloist. Provides dataclasses for framework configuration and language-specific settings, with support for loading from environment variables and creating LLM provider instances.
+Configuration management for SpecSoloist. Defines the settings needed to run the framework: which LLM provider to use, where source and build files live, and how to build/test each supported language.
 
 # Types
 
-```yaml:types
-language_config:
-  description: "Configuration for a specific programming language's build and test settings"
-  properties:
-    extension: {type: string, description: "Source file extension (e.g., '.py')"}
-    test_extension: {type: string, description: "Test file extension"}
-    test_filename_pattern: {type: string, description: "Pattern for test filenames, e.g., 'test_{name}' or '{name}.test'"}
-    test_command: {type: array, items: {type: string}, description: "Command to run tests, with {file} and {build_dir} placeholders"}
-    env_vars: {type: object, description: "Environment variables to set when running tests"}
-  required: [extension, test_extension, test_filename_pattern, test_command]
+## LanguageConfig
 
-specsoloist_config:
-  description: "Main configuration for SpecSoloist framework"
-  properties:
-    llm_provider: {type: string, enum: [gemini, anthropic], description: "LLM provider to use"}
-    llm_model: {type: string, optional: true, description: "Model identifier, or null for provider default"}
-    api_key: {type: string, optional: true, description: "API key, or null to load from environment"}
-    root_dir: {type: string, description: "Project root directory"}
-    src_dir: {type: string, description: "Source directory name (relative to root)"}
-    build_dir: {type: string, description: "Build output directory name (relative to root)"}
-    languages: {type: object, description: "Map of language name to LanguageConfig"}
-    src_path: {type: string, description: "Computed absolute path to src directory"}
-    build_path: {type: string, description: "Computed absolute path to build directory"}
-  required: [llm_provider, root_dir, src_dir, build_dir]
-```
+Settings for building and testing in a specific programming language.
+
+**Fields:**
+- `extension`: source file extension (e.g., `".py"`)
+- `test_extension`: test file extension
+- `test_filename_pattern`: pattern for test filenames with `{name}` placeholder (e.g., `"test_{name}"` or `"{name}.test"`)
+- `test_command`: list of command parts to run tests, with `{file}` and `{build_dir}` placeholders
+- `env_vars`: optional dict of environment variables to set when running tests
+
+## SpecSoloistConfig
+
+Main configuration dataclass for the framework.
+
+**Fields:**
+- `llm_provider`: string, which LLM backend to use (default: `"gemini"`)
+- `llm_model`: optional string, model identifier (None = provider default)
+- `api_key`: optional string (None = load from environment)
+- `root_dir`: string, project root directory (default: `"."`)
+- `src_dir`: string, source directory name relative to root (default: `"src"`)
+- `build_dir`: string, build output directory name relative to root (default: `"build"`)
+- `languages`: dict mapping language name to `LanguageConfig` (defaults include Python and TypeScript)
+- `src_path`: computed absolute path to source directory
+- `build_path`: computed absolute path to build directory
+
+`src_path` and `build_path` are computed automatically from `root_dir` + `src_dir`/`build_dir` after construction.
 
 # Functions
 
-```yaml:functions
-config_from_env:
-  inputs:
-    root_dir: {type: string, default: ".", description: "Project root directory"}
-  outputs:
-    config: {type: ref, ref: specsoloist_config}
-  behavior: "Load configuration from environment variables: SPECSOLOIST_LLM_PROVIDER (gemini|anthropic), SPECSOLOIST_LLM_MODEL, GEMINI_API_KEY or ANTHROPIC_API_KEY based on provider"
+## SpecSoloistConfig.from_env(root_dir=".") -> SpecSoloistConfig
 
-create_provider:
-  inputs:
-    config: {type: ref, ref: specsoloist_config}
-  outputs:
-    provider: {type: object, description: "LLMProvider instance (GeminiProvider or AnthropicProvider)"}
-  behavior: "Create and return an LLM provider instance based on config.llm_provider"
-  contract:
-    pre: "config.llm_provider must be 'gemini' or 'anthropic'"
-    post: "Returns a valid LLMProvider instance"
-  examples:
-    - input: {config: {llm_provider: gemini, api_key: "key123"}}
-      output: "GeminiProvider instance"
-    - input: {config: {llm_provider: unknown}}
-      output: "ValueError: Unknown LLM provider"
+Class method. Load configuration from environment variables.
 
-ensure_directories:
-  inputs:
-    config: {type: ref, ref: specsoloist_config}
-  outputs: {}
-  behavior: "Create config.src_path and config.build_path directories if they don't exist"
-```
+**Environment variables:**
+- `SPECSOLOIST_LLM_PROVIDER`: `"gemini"` or `"anthropic"` (default: `"gemini"`)
+- `SPECSOLOIST_LLM_MODEL`: model identifier (optional)
+- `SPECSOLOIST_SRC_DIR`: source directory name (default: `"src"`)
+- API key: `GEMINI_API_KEY` if provider is gemini, `ANTHROPIC_API_KEY` if provider is anthropic
 
-# Constraints
+## SpecSoloistConfig.create_provider() -> LLMProvider
 
-- [NFR-01]: Default languages dict includes Python and TypeScript configurations
-- [NFR-02]: src_path and build_path are computed as absolute paths in post-init
-- [NFR-03]: API key resolution is provider-aware (GEMINI_API_KEY vs ANTHROPIC_API_KEY)
+Create and return an LLM provider instance based on current config.
+
+- If `llm_provider` is `"gemini"`, return a `GeminiProvider`
+- If `llm_provider` is `"anthropic"`, return an `AnthropicProvider`
+- Pass `api_key` and `llm_model` (if set) to the provider constructor
+- Raise `ValueError` for unknown providers
+
+Providers are imported from `specsoloist.providers`.
+
+## SpecSoloistConfig.ensure_directories()
+
+Create `src_path` and `build_path` directories if they don't exist.
+
+# Default Language Configurations
+
+**Python:**
+- extension: `.py`, test_extension: `.py`
+- test_filename_pattern: `test_{name}`
+- test_command: `["python", "-m", "pytest", "{file}"]`
+- env_vars: `{"PYTHONPATH": "{build_dir}"}`
+
+**TypeScript:**
+- extension: `.ts`, test_extension: `.ts`
+- test_filename_pattern: `{name}.test`
+- test_command: `["npx", "-y", "tsx", "{file}"]`
+- env_vars: `{}`

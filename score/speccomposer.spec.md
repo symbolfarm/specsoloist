@@ -1,154 +1,108 @@
 ---
 name: speccomposer
-type: class
-language_target: python
+type: bundle
 status: draft
 dependencies:
-  - {name: SpecSoloist, from: specsoloist.spec.md}
+  - config
+  - parser
 ---
 
-# 1. Overview
+# Overview
 
-**SpecComposer** is the architect component of Spechestra. It takes plain English requests and drafts a complete spec architecture - the dependency graph and individual `*.spec.md` files for each component.
+SpecComposer is the architect component of Spechestra. It takes plain English requests and drafts a complete spec architecture -- the dependency graph and individual `*.spec.md` files for each component. This is the "vibe-coding" entry point: users describe what they want, and SpecComposer figures out the architecture.
 
-This is the "vibe-coding" entry point: users describe what they want, and SpecComposer figures out the architecture.
+# Types
 
-**Key workflow:**
-1. User provides natural language request
-2. SpecComposer drafts an architecture (components + dependencies)
-3. User reviews/edits the architecture (optional)
-4. SpecComposer generates individual specs
-5. User reviews/edits specs (optional)
-6. Hand off to SpecConductor for building
+## ComponentDef
 
-# 2. Interface Specification
+Definition of a single component in an architecture plan.
 
-```yaml:schema
-inputs:
-  request:
-    type: string
-    description: Natural language description of desired software
-  context:
-    type: object
-    description: Optional existing specs/code context
-    required: false
-outputs:
-  architecture:
-    type: object
-    description: Component graph with dependencies
-  specs:
-    type: array
-    description: List of generated spec file paths
-```
+**Fields:** `name` (string), `type` (string -- one of function, type, bundle, module, workflow), `description` (string), `inputs` (dict, default empty), `outputs` (dict, default empty), `dependencies` (list of strings, default empty).
 
-## 2.1 Constructor
+## Architecture
 
-### `SpecComposer(project_dir: str, provider: Optional[LLMProvider] = None)`
-*   Initializes with a project directory.
-*   If `provider` is not given, loads from environment configuration.
+An architecture plan for a project, consisting of components and their relationships.
 
-## 2.2 Core Methods
+**Fields:** `components` (list of ComponentDef), `dependencies` (dict mapping component name to list of dependency names), `build_order` (list of component name strings), `description` (string, default empty).
 
-### `draft_architecture(request: str, context: Optional[Dict] = None) -> Architecture`
-*   Takes a natural language request and produces an architecture plan.
-*   Returns an `Architecture` object containing:
-    - `components`: List of component definitions (name, type, description)
-    - `dependencies`: Dependency graph between components
-    - `build_order`: Suggested compilation order
-*   Does NOT create files yet.
+**Methods:**
+- `to_yaml()` -> string -- serialize the architecture to a YAML string
+- `from_yaml(yaml_str)` (classmethod) -> Architecture -- parse an Architecture from a YAML string; components in the YAML each have name, type, description, and dependencies fields
 
-### `generate_specs(architecture: Architecture) -> List[str]`
-*   Creates `*.spec.md` files in `src/` for each component.
-*   Returns list of created file paths.
-*   Uses the spec template and fills in based on architecture.
+## CompositionResult
 
-### `compose(request: str, auto_accept: bool = False, context: Optional[Dict] = None) -> CompositionResult`
-*   High-level method that runs the full workflow:
-    1. `draft_architecture(request)`
-    2. (Client handles review)
-    3. `generate_specs(architecture)`
-*   Returns `CompositionResult(architecture, spec_paths, ready_for_build)`.
+Result of a compose operation.
 
-## 2.3 Data Classes
+**Fields:** `architecture` (Architecture), `spec_paths` (list of file path strings), `ready_for_build` (bool), `cancelled` (bool, default false).
 
-### `Architecture`
-```python
-@dataclass
-class Architecture:
-    components: List[ComponentDef]
-    dependencies: Dict[str, List[str]]
-    build_order: List[str]
+# Functions
 
-    def to_yaml(self) -> str: ...
-    @classmethod
-    def from_yaml(cls, yaml_str: str) -> "Architecture": ...
+## SpecComposer (class)
 
-@dataclass
-class ComponentDef:
-    name: str
-    type: str  # "function", "class", "module", "typedef"
-    description: str
-    inputs: Optional[Dict[str, Any]] = None
-    outputs: Optional[Dict[str, Any]] = None
-```
+The main composer class. Constructed with a project directory path, an optional `SpecSoloistConfig`, and an optional `LLMProvider`. If config is not provided, loads from environment. The LLM provider is created lazily from the config when first needed.
 
-### `CompositionResult`
-```python
-@dataclass
-class CompositionResult:
-    architecture: Architecture
-    spec_paths: List[str]
-    ready_for_build: bool
-```
+### draft_architecture(request, context=None) -> Architecture
 
-# 3. Functional Requirements
+Draft an architecture plan from a natural language request.
 
-## Architecture Drafting
-*   **FR-01**: Given a plain English request, SpecComposer shall produce a component architecture.
-*   **FR-02**: The architecture shall identify component types (function, class, module, typedef).
-*   **FR-03**: The architecture shall infer dependencies between components.
-*   **FR-04**: The architecture shall suggest a build order (topological sort).
+- `request`: string, natural language description of desired software
+- `context`: optional dict with additional context (e.g., existing specs)
 
-## Spec Generation
-*   **FR-05**: Generated specs shall follow the standard SRS template (Overview, Interface, FRs, NFRs, Contract, Tests).
-*   **FR-06**: Generated specs shall include `yaml:schema` blocks for interface definitions.
-*   **FR-07**: Specs shall be placed in the project's `src/` directory.
-*   **FR-08**: Existing specs with the same name shall NOT be overwritten without confirmation.
+**Behavior:**
+- Sends the request to the LLM with instructions to break it into discrete components, identify dependencies, and suggest a build order.
+- If context contains an `existing_specs` key, includes those spec names in the prompt so the LLM can integrate with existing components.
+- Parses the LLM response (expected as YAML) into an Architecture object.
+- If the YAML response cannot be parsed, returns an empty Architecture rather than raising an error.
+- Does NOT create any files on disk.
 
-## Review Flow
-*   **FR-09**: In interactive mode, the architecture shall be presented for review before spec generation.
-*   **FR-10**: In interactive mode, generated specs shall be presented for review/editing.
-*   **FR-11**: In auto-accept mode (`auto_accept=True`), all reviews are skipped.
-*   **FR-12**: The review interface shall support terminal-based display (using Rich).
+### generate_specs(architecture) -> list of strings
 
-## Context Awareness
-*   **FR-13**: If existing specs are provided as context, SpecComposer shall incorporate them into the architecture.
-*   **FR-14**: SpecComposer shall detect and avoid duplicate component names.
+Generate `*.spec.md` files for each component in the architecture.
 
-# 4. Non-Functional Requirements
+- `architecture`: Architecture object to generate specs for
 
-*   **NFR-LLM**: Architecture drafting and spec generation use LLM calls; results may vary.
-*   **NFR-Idempotent**: Running compose twice with the same input should produce similar (not necessarily identical) architectures.
-*   **NFR-Transparent**: The user should be able to see and understand the generated architecture before committing.
-*   **NFR-Editable**: All generated artifacts (architecture, specs) should be human-editable.
+**Behavior:**
+- For each component in the architecture, generates a spec file using the LLM.
+- Skips components whose specs already exist (checked via the parser).
+- Writes spec files to the configured src directory as `{component_name}.spec.md`.
+- Creates parent directories if they do not exist.
+- Returns a list of file paths for the specs that were created (not skipped).
 
-# 5. Design Contract
+### compose(request, auto_accept=False, context=None) -> CompositionResult
 
-*   **Pre-condition**: `request` must be a non-empty string describing desired functionality.
-*   **Pre-condition**: Project directory must exist and be writable.
-*   **Invariant**: SpecComposer never compiles specs; that's SpecConductor's job.
-*   **Post-condition**: After `compose()`, all spec files exist in `src/` (if not cancelled).
-*   **Post-condition**: Generated specs are valid according to `validate_spec()`.
+Full composition workflow: draft architecture then generate specs.
 
-# 6. Test Scenarios
+- `request`: string, natural language description
+- `auto_accept`: bool, if true skip review prompts (default false)
+- `context`: optional dict
 
-| Scenario | Input | Expected Output |
-|----------|-------|-----------------|
-| Simple request | "A function that adds two numbers" | Architecture with 1 component |
-| Multi-component | "A REST API with auth and user CRUD" | Architecture with 3+ components |
-| With dependencies | "A service using a shared User type" | Architecture shows User as dependency |
-| Auto-accept mode | Request + `auto_accept=True` | Specs created without prompts |
-| Existing context | Request + existing specs | New specs integrate with existing |
-| Duplicate name | Request creating "auth" when exists | Confirmation prompt or rename |
-| Invalid request | Empty string | `ValueError` raised |
-| Review and cancel | User cancels during review | No specs created, returns early |
+**Behavior:**
+- Discovers existing specs in the project and includes them in the context automatically.
+- Calls `draft_architecture` to create the architecture plan.
+- If the architecture has no components, returns a result with `cancelled=True` and `ready_for_build=False`.
+- Calls `generate_specs` to create spec files.
+- Returns a CompositionResult with the architecture, created spec paths, and `ready_for_build=True`.
+
+# Behavior
+
+## Separation of concerns
+
+SpecComposer never compiles specs into code. Its job ends when spec files exist on disk. Compilation is the responsibility of SpecConductor and SpecSoloistCore.
+
+## LLM interaction
+
+All architecture drafting and spec content generation happens through the LLM provider. The composer constructs prompts and parses responses. LLM results may vary between calls; the composer handles malformed responses gracefully by falling back to empty/minimal structures.
+
+## Idempotency
+
+Existing spec files are never overwritten. If a spec with the same name already exists, it is skipped during generation. This makes `generate_specs` safe to call multiple times.
+
+# Examples
+
+| Scenario | Input | Expected |
+|----------|-------|----------|
+| Initialize composer | `SpecComposer("/path/to/project")` | `project_dir` is set to the absolute path |
+| Architecture with dependencies | Components: add (function), calc (module depending on add) | `arch.build_order == ["add", "calc"]`, `arch.dependencies == {"calc": ["add"]}` |
+| Composition result | Architecture with no components | `result.cancelled == True`, `result.ready_for_build == False` |
+| Composition result | Architecture with components | `result.ready_for_build == True`, `result.spec_paths` contains created paths |
+| Existing spec | Component "auth" already has a spec file | "auth" skipped, not in returned paths |

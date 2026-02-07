@@ -10,45 +10,54 @@ This file provides context for AI agents working with SpecSoloist, whether devel
 
 ### The Vision: Vibe-Coding
 
-SpecSoloist enables "vibe-coding" - describe what you want in plain English, and the system generates working code:
+SpecSoloist enables "vibe-coding" - describe what you want in plain English, and agents generate working code:
 
 ```
 User: "Build me a todo app with auth"
-         │
-         ▼
-   SpecComposer          → Drafts architecture + specs
-         │
-   [Optional Review]     → User can edit specs
-         │
-         ▼
-   SpecConductor         → Compiles specs in parallel
-         │
-         ▼
-   Working Code + Tests  → Ready to run
+         |
+         v
+   SpecComposer          -> Drafts architecture + specs
+         |
+   [Optional Review]     -> User can edit specs
+         |
+         v
+   SpecConductor         -> Spawns soloist agents per spec
+         |
+         v
+   Working Code + Tests  -> Ready to run
 ```
 
 ### The Orchestra Metaphor
 
-The project uses an orchestra metaphor:
-
 | Role | Component | Responsibility |
 |------|-----------|----------------|
 | **Composer** | `SpecComposer` | Writes the music (drafts specs from plain English) |
-| **Conductor** | `SpecConductor` | Leads the orchestra (manages parallel builds, executes workflows) |
-| **Soloist** | `SpecSoloistCore` | Individual performer (compiles one spec at a time) |
+| **Conductor** | `SpecConductor` | Leads the orchestra (resolves dependencies, spawns soloists) |
+| **Soloist** | Soloist agent | Individual performer (reads one spec, writes code directly) |
 | **Score** | `score/` directory | The sheet music (specs that define the system itself) |
+
+### Spec Philosophy: Requirements, Not Blueprints
+
+Specs define **what** the code should do, not **how** it should do it:
+
+- **Public API**: Names, signatures, return types (these ARE the interface contract)
+- **Behavior**: What happens when you call a method, including edge cases
+- **Examples**: Inputs and expected outputs
+- **No internals**: No private methods, algorithm names, or internal data structures
+
+The quick test: *"Could a competent developer implement this in any language?"*
 
 ### Spec Types
 
 Specs are language-agnostic Markdown files. The `type` field determines structure:
 
-| Type | Purpose | Key Sections |
-|------|---------|--------------|
-| `function` | Single function (full format) | Interface, Behavior, Contract, Examples |
-| `type` | Data structure | Schema, Constraints, Examples |
-| `bundle` | Multiple trivial functions/types | `yaml:functions`, `yaml:types` blocks |
-| `module` | Aggregates for export | Exports list |
-| `workflow` | Multi-step execution | `yaml:steps` block |
+| Type | Purpose | When to Use |
+|------|---------|-------------|
+| `bundle` | Multiple functions/types (default) | Most modules |
+| `function` | Single function (full format) | Complex standalone functions |
+| `type` | Data structure | Pure data definitions |
+| `module` | Aggregates for export | Large modules with many exports |
+| `workflow` | Multi-step execution | Orchestration pipelines |
 
 ### Key Insight
 
@@ -77,28 +86,37 @@ src/specsoloist/       # Core package - individual spec compilation
   config.py            # Configuration
   cli.py               # CLI (sp command)
   schema.py            # Interface validation (Pydantic models)
+  manifest.py          # Build manifest tracking
+  respec.py            # Code-to-spec reverse engineering
   providers/           # LLM backends (Gemini, Anthropic)
 
 src/spechestra/        # Orchestration package - high-level workflows
-  composer.py          # SpecComposer: Plain English → specs
+  composer.py          # SpecComposer: Plain English -> specs
   conductor.py         # SpecConductor: Parallel builds + perform
 
 tests/                 # pytest tests (52 tests)
 
 score/                 # The Score - SpecSoloist's own specs (The Quine)
-  prompts/             # Agent prompts (reference/documentation)
-  specsoloist.spec.md  # Core package spec
-  spechestra.spec.md   # Orchestration package spec
   spec_format.spec.md  # The spec format itself
-  ui.spec.md           # UI module spec
-  config.spec.md       # Config module spec
-  examples/            # Example specs
+  config.spec.md       # Config module
+  resolver.spec.md     # Dependency resolution
+  manifest.spec.md     # Build manifest
+  parser.spec.md       # Spec parsing
+  compiler.spec.md     # LLM prompt construction
+  runner.spec.md       # Test execution
+  schema.spec.md       # Interface validation
+  core.spec.md         # Core orchestrator
+  cli.spec.md          # CLI
+  ui.spec.md           # Terminal UI
+  respec.spec.md       # Reverse engineering
+  speccomposer.spec.md # Architecture drafting
+  specconductor.spec.md # Build orchestration
 
 .claude/agents/        # Native subagents for Claude Code
   compose.md           # Draft architecture from natural language
-  conductor.md         # Orchestrate parallel builds
-  respec.md            # Reverse-engineer code to specs
-  soloist.md           # Compile a single spec
+  conductor.md         # Orchestrate builds, spawn soloists
+  respec.md            # Extract requirements from code -> spec
+  soloist.md           # Read spec, write code directly
 
 .gemini/agents/        # Native subagents for Gemini CLI
   compose.md           # (same as Claude, different tool names)
@@ -109,54 +127,49 @@ score/                 # The Score - SpecSoloist's own specs (The Quine)
 
 ### The Score ("The Quine")
 
-`score/` contains SpecSoloist's own specifications - it describes itself. The goal is for `sp conduct score/` to regenerate the entire `src/` directory.
+`score/` contains SpecSoloist's own specifications - it describes itself. The goal is for `sp conduct score/` to regenerate the entire `src/` directory with passing tests.
 
 ### Current State (Phase 5: Agent-First Architecture)
 
 **Completed:**
-- CLI: `sp compose`, `sp conduct`, `sp perform`, `sp respec`
-- Native subagents: `.claude/agents/` and `.gemini/agents/` for agentic workflows
-- Score: `ui.spec.md`, `config.spec.md` lifted
-- Renamed: `self_hosting/` → `score/`, `lifter.py` → `respec.py`
+- Agent-first CLI: `sp compose`, `sp conduct`, `sp respec` all default to agent mode
+- Native subagents: `.claude/agents/` and `.gemini/agents/` fully defined
+- Requirements-oriented specs: All modules in `score/` rewritten to describe requirements, not implementation
+- Round-trip validated: resolver, config, manifest regenerated from specs with all tests passing
+- Soloist agents write code directly from specs (agent IS the compiler)
 
 **Next up (see ROADMAP.md):**
-- Agent-first: Convert `sp fix` to use agents
-- Quine completion: Lift remaining modules to `score/`
+- Quine attempt: `sp conduct score/` to regenerate `src/`
+- Agent-first `sp fix` command
 
 ### Native Subagent Architecture
 
-SpecSoloist uses **native subagents** for Claude Code and Gemini CLI. Instead of spawning external processes, the AI delegates to specialized subagents:
+SpecSoloist uses **native subagents** for Claude Code and Gemini CLI:
 
 ```
-User: "respec src/parser.py"
-         │
-         ▼
-   Claude/Gemini (main agent)
-         │
-         └─► respec subagent
-               │
-               ├── Read source code
-               ├── Generate spec
-               ├── Run sp validate
-               ├── Fix errors
-               └── Write output
+sp conduct score/
+         |
+         v
+   Conductor agent
+         |
+         +-- Read specs, resolve dependencies
+         |
+         +-- Level 0: spawn soloists for leaf specs (parallel)
+         |     +-> soloist: config
+         |     +-> soloist: resolver
+         |     +-> soloist: ui
+         |
+         +-- Level 1: spawn soloists for next level
+         |     +-> soloist: manifest
+         |     +-> soloist: runner
+         |     ...
+         |
+         +-- Run full test suite
+         v
+   Report results
 ```
 
-The subagents are defined in `.claude/agents/` and `.gemini/agents/` with agent-specific tool names.
-
-### The Respec Workflow
-
-**Using native subagents (recommended):**
-```
-> respec src/specsoloist/parser.py to score/parser.spec.md
-```
-The AI delegates to the `respec` subagent which handles validation and fixes.
-
-**Using CLI directly:**
-```bash
-uv run sp respec src/specsoloist/parser.py --out score/parser.spec.md
-```
-This uses a single LLM call without the validation loop.
+Each soloist reads the spec file, writes implementation code directly, writes tests, runs them, and fixes issues — up to 3 retries.
 
 ### Before Committing
 
@@ -191,7 +204,7 @@ When using SpecSoloist, the agent's role shifts from "Writing Code" to **"Defini
 >
 > **Rules:**
 > 1. **Never write source code** (Python/JS) directly. Always create or edit `*.spec.md` files.
-> 2. **Be Rigorous**: When editing specs, clearly define **Functional Requirements (FRs)** and **Design Contracts**.
+> 2. **Be Rigorous**: Define requirements clearly — public API, behavior, edge cases, examples.
 > 3. **Iterate**:
 >    - Create Spec -> `compile_spec` -> `compile_tests` -> `run_tests`
 >    - If tests fail, use `attempt_fix` first
