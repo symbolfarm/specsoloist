@@ -8,7 +8,7 @@ tools:
   - read_file
   - write_file
   - run_shell_command
-  - grep_search
+  - search_file_content
 model: inherit
 max_turns: 15
 ---
