@@ -743,7 +743,8 @@ def _run_agent_oneshot(agent: str, prompt: str, auto_accept: bool):
         # Claude Code: claude -p "prompt" --verbose for progress visibility
         cmd = ["claude", "-p", prompt, "--verbose"]
         if auto_accept:
-            cmd.append("-y")
+            # Use bypassPermissions for fully automated quine runs
+            cmd.extend(["--permission-mode", "bypassPermissions"])
         result = subprocess.run(cmd, capture_output=False, text=True)
     elif agent == "gemini":
         # Gemini CLI: gemini -p "prompt"
