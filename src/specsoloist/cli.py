@@ -526,12 +526,37 @@ def _conduct_with_agent(src_dir: str | None, auto_accept: bool):
     ui.print_info(f"Using {agent} agent with native subagent...")
 
     spec_dir = src_dir or "src/"
-    prompt = (
-        f"conduct: Read all *.spec.md files in {spec_dir}, resolve their dependency order, "
-        f"then compile each spec into working code by spawning soloist subagents. "
-        f"Write implementations to the appropriate src/ paths and tests to tests/. "
-        f"Run the full test suite when done."
-    )
+
+    # Detect if this is a quine attempt (spec_dir is score/)
+    is_quine = "score" in spec_dir
+
+    if is_quine:
+        # Create quine output directory
+        quine_dir = "build/quine"
+        os.makedirs(f"{quine_dir}/src/specsoloist", exist_ok=True)
+        os.makedirs(f"{quine_dir}/src/spechestra", exist_ok=True)
+        os.makedirs(f"{quine_dir}/tests", exist_ok=True)
+
+        ui.print_info(f"🔄 Quine mode: Will regenerate code to {quine_dir}/")
+
+        prompt = (
+            f"conduct: Read all *.spec.md files in {spec_dir}, resolve their dependency order, "
+            f"then compile each spec into working code by spawning soloist subagents. "
+            f"\n\n**Output Paths:**\n"
+            f"- Write specsoloist implementations to: {quine_dir}/src/specsoloist/<name>.py\n"
+            f"- Write spechestra implementations to: {quine_dir}/src/spechestra/<name>.py\n"
+            f"- Write tests to: {quine_dir}/tests/test_<name>.py\n\n"
+            f"This is a QUINE VALIDATION - you are intentionally regenerating code to verify specs are complete. "
+            f"Do NOT skip compilation because code already exists elsewhere. "
+            f"Run the full test suite from {quine_dir}/tests/ when done."
+        )
+    else:
+        prompt = (
+            f"conduct: Read all *.spec.md files in {spec_dir}, resolve their dependency order, "
+            f"then compile each spec into working code by spawning soloist subagents. "
+            f"Write implementations to the appropriate src/ paths and tests to tests/. "
+            f"Run the full test suite when done."
+        )
 
     try:
         _run_agent_oneshot(agent, prompt, auto_accept)

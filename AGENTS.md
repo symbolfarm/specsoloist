@@ -129,18 +129,21 @@ score/                 # The Score - SpecSoloist's own specs (The Quine)
 
 `score/` contains SpecSoloist's own specifications - it describes itself. The goal is for `sp conduct score/` to regenerate the entire `src/` directory with passing tests.
 
-### Current State (Phase 5: Agent-First Architecture)
+### Current State (Phase 6: The Quine)
 
-**Completed:**
-- Agent-first CLI: `sp compose`, `sp conduct`, `sp respec` all default to agent mode
-- Native subagents: `.claude/agents/` and `.gemini/agents/` fully defined
-- Requirements-oriented specs: All modules in `score/` rewritten to describe requirements, not implementation
-- Round-trip validated: resolver, config, manifest regenerated from specs with all tests passing
-- Soloist agents write code directly from specs (agent IS the compiler)
+**Phase 5 Completed:**
+- ✅ Agent-first CLI: `sp compose`, `sp conduct`, `sp respec` all default to agent mode
+- ✅ Native subagents: `.claude/agents/` and `.gemini/agents/` fully defined
+- ✅ Requirements-oriented specs: All modules in `score/` rewritten to describe requirements, not implementation
+- ✅ Round-trip validated: resolver, config, manifest regenerated from specs with all tests passing
+- ✅ Soloist agents write code directly from specs (agent IS the compiler)
+
+**Current Goal:**
+- Quine attempt: `sp conduct score/` to regenerate entire `src/` directory with all 52 tests passing
 
 **Next up (see ROADMAP.md):**
-- Quine attempt: `sp conduct score/` to regenerate `src/`
 - Agent-first `sp fix` command
+- Phase 7: Developer Experience enhancements
 
 ### Native Subagent Architecture
 

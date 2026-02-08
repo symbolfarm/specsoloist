@@ -25,7 +25,19 @@ Compile all specs in a project directory into working code, respecting dependenc
 
 ## Process
 
+### Step 0: Setup and Context
+
+**IMPORTANT**: You may be regenerating code that already exists (this is a quine/round-trip validation). This is intentional - you are duplicating code to verify specs are complete. Do NOT skip compilation because code exists.
+
+Check if the prompt specifies an output directory. If not specified, use default paths:
+- Implementation: `src/specsoloist/` or `src/spechestra/`
+- Tests: `tests/`
+
+**Progress Reporting**: After each major step, explicitly report what you're doing so the user can see progress.
+
 ### Step 1: Discover Specs
+
+**Report**: "🔍 Discovering specs in <spec_dir>..."
 
 Find all `*.spec.md` files in the given directory (default: `src/`):
 
@@ -35,7 +47,11 @@ ls <spec_dir>/*.spec.md
 
 Read each spec's frontmatter to extract `name`, `type`, and `dependencies`.
 
+**Report**: "Found N specs: [list names]"
+
 ### Step 2: Resolve Build Order
+
+**Report**: "🔗 Resolving dependency graph..."
 
 Build a dependency graph from the specs. Determine:
 - **Levels**: Groups of specs that can be compiled in parallel (no mutual dependencies)
@@ -43,12 +59,29 @@ Build a dependency graph from the specs. Determine:
 
 Specs with no dependencies go first. A spec can only compile after all its dependencies have succeeded.
 
+**Report**: Display the dependency levels clearly:
+```
+Level 0: spec1, spec2, spec3
+Level 1: spec4, spec5
+Level 2: spec6
+...
+```
+
 ### Step 3: Compile Each Level
 
-For each dependency level, spawn `soloist` subagents to compile specs.
+For each dependency level:
+
+**Report**: "🎼 Compiling Level N (<count> specs in parallel)..."
+
+Spawn `soloist` subagents to compile specs. Tell each soloist:
+- The spec path to compile
+- Where to write implementation: `<output_dir>/<package>/<name>.py`
+- Where to write tests: `<test_dir>/test_<name>.py`
+- That this is a quine validation (duplicating code is intentional)
 
 - Specs within the same level can be spawned in parallel
 - Wait for all specs in a level to complete before starting the next level
+- Report progress as soloists complete
 
 ### Step 4: Handle Failures
 
@@ -58,20 +91,24 @@ For each dependency level, spawn `soloist` subagents to compile specs.
 
 ### Step 5: Report Results
 
+**Report**: "📊 Compilation Summary"
+
 After all specs are processed, summarize:
-- Specs compiled successfully
-- Specs skipped (due to failed dependencies)
-- Specs that failed (with error details)
+- ✅ Specs compiled successfully
+- ⏭️ Specs skipped (due to failed dependencies)
+- ❌ Specs that failed (with error details)
 
 ### Step 6: Run Full Test Suite
+
+**Report**: "🧪 Running full test suite..."
 
 After all compilation is done, run the complete test suite:
 
 ```bash
-uv run python -m pytest tests/ -v
+uv run python -m pytest <test_dir>/ -v
 ```
 
-Report the overall result.
+**Report**: Final result with pass/fail counts and overall success/failure.
 
 ## Error Handling
 

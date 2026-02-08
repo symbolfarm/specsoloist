@@ -25,9 +25,13 @@ Given a spec file path or name, produce:
 2. Passing tests
 3. All files written to the correct locations
 
+**IMPORTANT**: You may be asked to regenerate code that already exists (this is a quine/round-trip validation). This is intentional - you are duplicating code to verify the spec is complete. Write the code as if it doesn't exist.
+
 ## Process
 
 ### Step 1: Read the Spec
+
+**Report**: "📖 Reading spec: <spec_name>"
 
 Read the spec file and understand:
 - What types and functions need to be implemented
@@ -37,41 +41,57 @@ Read the spec file and understand:
 
 Also read any dependency modules referenced by the spec so you understand the interfaces you need to use.
 
+**Extract output paths from the prompt**: The conductor will tell you where to write files. Look for paths like:
+- Implementation: `<output_dir>/<package>/<name>.py`
+- Tests: `<test_dir>/test_<name>.py`
+
+If no paths are specified, use defaults: `src/specsoloist/<name>.py` and `tests/test_<name>.py`
+
 ### Step 2: Write the Implementation
+
+**Report**: "✍️ Writing implementation to <path>"
 
 Write the implementation code directly. You ARE the compiler — use your understanding of the spec to write clean, correct code.
 
-- Write to the appropriate path (e.g., `src/specsoloist/<name>.py`)
+- Write to the path specified by the conductor
 - Import dependencies as needed
 - Implement all public API elements described in the spec
 - Handle edge cases and error conditions from the spec
 
 ### Step 3: Write Tests
 
+**Report**: "🧪 Writing tests to <test_path>"
+
 Write a comprehensive test suite covering:
 - All public API methods
 - Edge cases mentioned in the spec
 - Error conditions and validation
 
-Write to the appropriate test path (e.g., `tests/test_<name>.py`).
+Write to the test path specified by the conductor.
 
 ### Step 4: Run Tests
 
+**Report**: "🔬 Running tests for <name>"
+
 ```bash
-uv run python -m pytest tests/test_<name>.py -v
+uv run python -m pytest <test_path> -v
 ```
 
 ### Step 5: Fix if Needed
 
-If tests fail, read the error output, analyze the issue, and fix the code or tests. Retry up to 3 times.
+If tests fail:
+- **Report**: "⚠️ Tests failed, analyzing errors..."
+- Read the error output, analyze the issue, and fix the code or tests
+- **Report**: "🔧 Attempt <N>/3: Fixing <issue>"
+- Retry up to 3 times
 
 The spec is the source of truth — if tests and code disagree with the spec, fix the code/tests, not the spec.
 
 ### Step 6: Report Result
 
-Report back to the parent agent:
-- **Success**: Spec compiled, tests passing, files written
-- **Failure**: What went wrong, error messages
+Report back with a clear summary:
+- **Success**: "✅ <spec_name> compiled successfully - tests passing, files written to <paths>"
+- **Failure**: "❌ <spec_name> failed: <error summary>"
 
 ## Constraints
 
