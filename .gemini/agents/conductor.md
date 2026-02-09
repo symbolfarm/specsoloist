@@ -73,11 +73,15 @@ For each dependency level:
 
 **Report**: "🎼 Compiling Level N (<count> specs in parallel)..."
 
-Spawn `soloist` subagents to compile specs. Tell each soloist:
+Spawn `soloist` subagents to compile specs. **You MUST include the exact output paths in every soloist prompt** — soloists will default to `src/` if paths are missing, which can overwrite original source during quine runs.
+
+Tell each soloist:
 - The spec path to compile
 - Where to write implementation: `<output_dir>/<package>/<name>.py`
 - Where to write tests: `<test_dir>/test_<name>.py`
+- The test command: `PYTHONPATH=<output_dir_parent>/src uv run python -m pytest <test_path> -v`
 - That this is a quine validation (duplicating code is intentional)
+- That they must NOT write to any other directory
 
 **Model selection**: If the prompt includes a `**Model**:` instruction specifying a model (e.g. "haiku"), pass that as the `model` parameter in every subagent call for soloists. This controls cost by running soloists on cheaper models.
 

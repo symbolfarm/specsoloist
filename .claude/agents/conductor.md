@@ -73,12 +73,17 @@ For each dependency level:
 
 **Report**: "🎼 Compiling Level N (<count> specs in parallel)..."
 
-Spawn `soloist` subagents using the Task tool:
+Spawn `soloist` subagents using the Task tool. **You MUST include the exact output paths in every soloist prompt** — soloists will default to `src/` if paths are missing, which can overwrite original source during quine runs.
 
 ```
 Task tool:
   subagent_type: soloist
-  prompt: "Compile the spec at <path/to/spec.spec.md>. Write implementation to <output_dir>/<package>/<name>.py and tests to <test_dir>/test_<name>.py. This is a quine validation - you are intentionally duplicating code."
+  prompt: "Compile the spec at <path/to/spec.spec.md>.
+    Write implementation to: <output_dir>/<package>/<name>.py
+    Write tests to: <test_dir>/test_<name>.py
+    Run tests with: PYTHONPATH=<output_dir_parent>/src uv run python -m pytest <test_path> -v
+    Do NOT write to any other directory.
+    This is a quine validation - you are intentionally duplicating code."
   run_in_background: true  # For progress monitoring
   model: <model>           # If the prompt specifies a model, pass it here
 ```

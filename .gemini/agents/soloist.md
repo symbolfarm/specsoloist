@@ -40,11 +40,12 @@ Read the spec file and understand:
 
 Also read any dependency modules referenced by the spec so you understand the interfaces you need to use.
 
-**Extract output paths from the prompt**: The conductor will tell you where to write files. Look for paths like:
+**Extract output paths from the prompt**: The conductor will tell you where to write files. Look for explicit paths like:
 - Implementation: `<output_dir>/<package>/<name>.py`
 - Tests: `<test_dir>/test_<name>.py`
+- Test command: `PYTHONPATH=... uv run python -m pytest <test_path> -v`
 
-If no paths are specified, use defaults: `src/specsoloist/<name>.py` and `tests/test_<name>.py`
+**You MUST write to the exact paths specified.** If the prompt says `build/quine/src/...`, write there — not to `src/`. Only if NO paths are specified at all, use defaults: `src/specsoloist/<name>.py` and `tests/test_<name>.py`.
 
 ### Step 2: Write the Implementation
 
@@ -96,6 +97,7 @@ Report back with a clear summary:
 
 - Do NOT spawn other agents (this is a leaf node)
 - Do NOT modify other specs or other modules' code
+- Do NOT write files outside the paths specified in the prompt
 - Focus only on the assigned spec
 - The spec is the source of truth — do not contradict it
 - Report back promptly when done
