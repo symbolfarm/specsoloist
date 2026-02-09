@@ -78,6 +78,7 @@ def main():
     compose_parser.add_argument("--no-agent", action="store_true",
                                 help="Use direct LLM API instead of agent CLI")
     compose_parser.add_argument("--auto-accept", action="store_true", help="Skip interactive review (with --no-agent)")
+    compose_parser.add_argument("--model", help="Override LLM model")
 
     # conduct
     conduct_parser = subparsers.add_parser("conduct", help="Orchestrate project build")
@@ -141,10 +142,10 @@ def main():
         elif args.command == "build":
             cmd_build(core, args.incremental, args.parallel, args.workers, args.model, not args.no_tests)
         elif args.command == "compose":
-            cmd_compose(core, args.request, args.no_agent, args.auto_accept)
+            cmd_compose(core, args.request, args.no_agent, args.auto_accept, args.model)
         elif args.command == "conduct":
             cmd_conduct(core, args.src_dir, args.no_agent, args.auto_accept,
-                        args.incremental, args.parallel, args.workers)
+                        args.incremental, args.parallel, args.workers, args.model)
         elif args.command == "perform":
             cmd_perform(core, args.workflow, args.inputs)
         elif args.command == "respec":
@@ -383,7 +384,8 @@ def cmd_build(core: SpecSoloistCore, incremental: bool, parallel: bool, workers:
         sys.exit(1)
 
 
-def cmd_compose(core: SpecSoloistCore, request: str, no_agent: bool, auto_accept: bool):
+def cmd_compose(core: SpecSoloistCore, request: str, no_agent: bool, auto_accept: bool,
+                model: str | None = None):
     """Draft architecture and specs from natural language."""
 
     ui.print_header("Composing System", request[:50] + "..." if len(request) > 50 else request)
@@ -391,10 +393,10 @@ def cmd_compose(core: SpecSoloistCore, request: str, no_agent: bool, auto_accept
     if no_agent:
         _compose_with_llm(core, request, auto_accept)
     else:
-        _compose_with_agent(request, auto_accept)
+        _compose_with_agent(request, auto_accept, model=model)
 
 
-def _compose_with_agent(request: str, auto_accept: bool):
+def _compose_with_agent(request: str, auto_accept: bool, model: str | None = None):
     """Use an AI agent CLI for multi-step composition."""
     agent = _detect_agent_cli()
     if not agent:
@@ -402,12 +404,14 @@ def _compose_with_agent(request: str, auto_accept: bool):
         sys.exit(1)
 
     ui.print_info(f"Using {agent} agent with native subagent...")
+    if model:
+        ui.print_info(f"Model: {model}")
 
     # Simple natural language prompt - the native subagent handles the rest
     prompt = f"compose: {request}"
 
     try:
-        _run_agent_oneshot(agent, prompt, auto_accept)
+        _run_agent_oneshot(agent, prompt, auto_accept, model=model)
     except Exception as e:
         ui.print_error(f"Agent error: {e}")
         sys.exit(1)
@@ -505,7 +509,7 @@ def _compose_with_llm(core: SpecSoloistCore, request: str, auto_accept: bool):
 
 
 def cmd_conduct(core: SpecSoloistCore, src_dir: str | None, no_agent: bool, auto_accept: bool,
-                 incremental: bool, parallel: bool, workers: int):
+                 incremental: bool, parallel: bool, workers: int, model: str | None = None):
     """Orchestrate project build."""
 
     ui.print_header("Conducting Build", src_dir or "project specs")
@@ -513,10 +517,10 @@ def cmd_conduct(core: SpecSoloistCore, src_dir: str | None, no_agent: bool, auto
     if no_agent:
         _conduct_with_llm(core, incremental, parallel, workers)
     else:
-        _conduct_with_agent(src_dir, auto_accept)
+        _conduct_with_agent(src_dir, auto_accept, model=model)
 
 
-def _conduct_with_agent(src_dir: str | None, auto_accept: bool):
+def _conduct_with_agent(src_dir: str | None, auto_accept: bool, model: str | None = None):
     """Use an AI agent CLI for multi-step orchestrated build."""
     agent = _detect_agent_cli()
     if not agent:
@@ -524,6 +528,8 @@ def _conduct_with_agent(src_dir: str | None, auto_accept: bool):
         sys.exit(1)
 
     ui.print_info(f"Using {agent} agent with native subagent...")
+    if model:
+        ui.print_info(f"Model: {model}")
 
     spec_dir = src_dir or "src/"
 
@@ -558,8 +564,14 @@ def _conduct_with_agent(src_dir: str | None, auto_accept: bool):
             f"Run the full test suite when done."
         )
 
+    if model:
+        prompt += (
+            f'\n\n**Model**: When spawning soloist subagents via the Task tool, '
+            f'set model: "{model}".'
+        )
+
     try:
-        _run_agent_oneshot(agent, prompt, auto_accept)
+        _run_agent_oneshot(agent, prompt, auto_accept, model=model)
     except Exception as e:
         ui.print_error(f"Agent error: {e}")
         sys.exit(1)
@@ -667,10 +679,11 @@ def cmd_respec(core: SpecSoloistCore, file_path: str, test_path: str, out_path: 
     if no_agent:
         _respec_with_llm(core, file_path, test_path, out_path, model)
     else:
-        _respec_with_agent(file_path, test_path, out_path, auto_accept)
+        _respec_with_agent(file_path, test_path, out_path, auto_accept, model=model)
 
 
-def _respec_with_agent(file_path: str, test_path: str, out_path: str, auto_accept: bool):
+def _respec_with_agent(file_path: str, test_path: str, out_path: str, auto_accept: bool,
+                       model: str | None = None):
     """Use an AI agent CLI for multi-step respec with validation."""
     agent = _detect_agent_cli()
     if not agent:
@@ -678,6 +691,8 @@ def _respec_with_agent(file_path: str, test_path: str, out_path: str, auto_accep
         sys.exit(1)
 
     ui.print_info(f"Using {agent} agent with native subagent...")
+    if model:
+        ui.print_info(f"Model: {model}")
 
     # Build natural language prompt
     prompt_parts = [f"respec {file_path}"]
@@ -688,7 +703,7 @@ def _respec_with_agent(file_path: str, test_path: str, out_path: str, auto_accep
     prompt = " ".join(prompt_parts)
 
     try:
-        _run_agent_oneshot(agent, prompt, auto_accept)
+        _run_agent_oneshot(agent, prompt, auto_accept, model=model)
     except Exception as e:
         ui.print_error(f"Agent error: {e}")
         sys.exit(1)
@@ -735,13 +750,15 @@ def _detect_agent_cli() -> str | None:
     return None
 
 
-def _run_agent_oneshot(agent: str, prompt: str, auto_accept: bool):
+def _run_agent_oneshot(agent: str, prompt: str, auto_accept: bool, model: str | None = None):
     """Run an agent CLI in one-shot mode."""
     import subprocess
 
     if agent == "claude":
         # Claude Code: claude -p "prompt" --verbose for progress visibility
         cmd = ["claude", "-p", prompt, "--verbose"]
+        if model:
+            cmd.extend(["--model", model])
         if auto_accept:
             # Use bypassPermissions for fully automated quine runs
             cmd.extend(["--permission-mode", "bypassPermissions"])
@@ -749,6 +766,8 @@ def _run_agent_oneshot(agent: str, prompt: str, auto_accept: bool):
     elif agent == "gemini":
         # Gemini CLI: gemini -p "prompt"
         cmd = ["gemini", "-p", prompt]
+        if model:
+            cmd.extend(["--model", model])
         if auto_accept:
             cmd.append("-y")
         result = subprocess.run(cmd, capture_output=False, text=True)

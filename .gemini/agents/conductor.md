@@ -79,6 +79,8 @@ Spawn `soloist` subagents to compile specs. Tell each soloist:
 - Where to write tests: `<test_dir>/test_<name>.py`
 - That this is a quine validation (duplicating code is intentional)
 
+**Model selection**: If the prompt includes a `**Model**:` instruction specifying a model (e.g. "haiku"), pass that as the `model` parameter in every subagent call for soloists. This controls cost by running soloists on cheaper models.
+
 - Specs within the same level can be spawned in parallel
 - Wait for all specs in a level to complete before starting the next level
 - Report progress as soloists complete

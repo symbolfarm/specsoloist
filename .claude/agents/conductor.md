@@ -80,7 +80,10 @@ Task tool:
   subagent_type: soloist
   prompt: "Compile the spec at <path/to/spec.spec.md>. Write implementation to <output_dir>/<package>/<name>.py and tests to <test_dir>/test_<name>.py. This is a quine validation - you are intentionally duplicating code."
   run_in_background: true  # For progress monitoring
+  model: <model>           # If the prompt specifies a model, pass it here
 ```
+
+**Model selection**: If the prompt includes a `**Model**:` instruction specifying a model (e.g. "haiku"), pass that as the `model` parameter in every Task tool call for soloists. This controls cost by running soloists on cheaper models.
 
 - Specs within the same level should be spawned in parallel (multiple Task calls in one message)
 - After spawning, report the output file for each background task
