@@ -83,7 +83,7 @@ The core insight: **complex operations should delegate to AI agents** (Claude, G
 | `sp respec` | ✅ Done | Reverse engineer code → specs with validation loop |
 | `sp compose` | ✅ Done | Architecture drafting with iterative refinement |
 | `sp conduct` | ✅ Done | Conductor agent spawns soloist subagents per spec |
-| `sp fix` | 🔲 Todo | Self-healing with error analysis and re-testing |
+| `sp fix` | ✅ Done | Self-healing with error analysis and re-testing |
 
 **Implementation pattern:**
 - Commands default to agent mode (detect claude/gemini CLI)
@@ -98,7 +98,7 @@ The core insight: **complex operations should delegate to AI agents** (Claude, G
 | `compose` | ✅ Done | Draft architecture from natural language |
 | `conductor` | ✅ Done | Orchestrate builds, spawn soloists per dependency level |
 | `soloist` | ✅ Done | Read spec, write code directly (agent IS the compiler) |
-| `fix` | 🔲 Todo | Self-healing: analyze test failures, patch code |
+| `fix` | ✅ Done | Self-healing: analyze test failures, patch code |
 
 ### 5c: Requirements-Oriented Specs
 
@@ -158,12 +158,12 @@ All modules have requirements-oriented specs in `score/`. All validated via quin
 - [x] **`server.py` spec**: Add spec for the MCP server so the quine is fully complete
 - [x] **Naming consistency**: Align quine output names (`composer`, `conductor`)
 - [ ] **Arrangement System**: Implement the Arrangement (makefile) system to decouple build config from specs
+- [ ] **Sandboxed Execution**: Run generated code in Docker/Wasm containers for safety
 - [ ] **Quine diff report**: Implement the quine_diff tool for semantic fidelity analysis
 
 ## Phase 8: Developer Experience (Future)
 
 - [ ] **Interactive Mode**: Terminal UI for reviewing/approving specs and architecture
-- [ ] **Sandboxed Execution**: Run generated code in Docker containers
 - [ ] **VS Code Extension**: Live preview while editing specs
 - [ ] **Visual Spec Editor**: GUI for defining requirements
 - [ ] **Advanced Workflows**: Conditional branching, loops, fan-out/fan-in
