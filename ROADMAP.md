@@ -153,12 +153,12 @@ All modules have requirements-oriented specs in `score/`. All validated via quin
 
 ## Phase 7: Robustness & Polish (Next)
 
-- [ ] **Agent-first `sp fix`**: Self-healing command using native subagents
-- [ ] **Fix agent**: `.claude/agents/fix.md` — analyze test failures, patch code, re-test
-- [ ] **`server.py` spec**: Add spec for the MCP server so the quine is fully complete
-- [ ] **Naming consistency**: Align quine output names (`speccomposer` vs `composer`) — either rename originals or update specs
-- [ ] **Output path enforcement**: Consider a pre-write hook or path validation in the conductor to catch soloists writing outside the target directory
-- [ ] **Quine diff report**: Tooling to diff `build/quine/src/` against `src/` for semantic fidelity analysis
+- [x] **Agent-first `sp fix`**: Self-healing command using native subagents
+- [x] **Fix agent**: `.claude/agents/fix.md` and `.gemini/agents/fix.md` — analyze test failures, patch code, re-test
+- [x] **`server.py` spec**: Add spec for the MCP server so the quine is fully complete
+- [x] **Naming consistency**: Align quine output names (`composer`, `conductor`)
+- [ ] **Arrangement System**: Implement the Arrangement (makefile) system to decouple build config from specs
+- [ ] **Quine diff report**: Implement the quine_diff tool for semantic fidelity analysis
 
 ## Phase 8: Developer Experience (Future)
 
