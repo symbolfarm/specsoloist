@@ -62,6 +62,9 @@ def main():
     # fix
     fix_parser = subparsers.add_parser("fix", help="Auto-fix failing tests")
     fix_parser.add_argument("name", help="Spec name to fix")
+    fix_parser.add_argument("--no-agent", action="store_true",
+                                help="Use direct LLM API instead of agent CLI")
+    fix_parser.add_argument("--auto-accept", action="store_true", help="Skip interactive review")
     fix_parser.add_argument("--model", help="Override LLM model")
 
     # build
@@ -138,7 +141,7 @@ def main():
         elif args.command == "test":
             cmd_test(core, args.name)
         elif args.command == "fix":
-            cmd_fix(core, args.name, args.model)
+            cmd_fix(core, args.name, args.no_agent, args.auto_accept, args.model)
         elif args.command == "build":
             cmd_build(core, args.incremental, args.parallel, args.workers, args.model, not args.no_tests)
         elif args.command == "compose":
@@ -322,15 +325,48 @@ def cmd_test(core: SpecSoloistCore, name: str):
         sys.exit(1)
 
 
-def cmd_fix(core: SpecSoloistCore, name: str, model: str):
+def cmd_fix(core: SpecSoloistCore, name: str, no_agent: bool, auto_accept: bool, model: str | None = None):
+    """Auto-fix failing tests."""
     _check_api_key()
 
     ui.print_header("Auto-Fixing Spec", name)
-    
+
+    if no_agent:
+        _fix_with_llm(core, name, model)
+    else:
+        _fix_with_agent(name, auto_accept, model=model)
+
+
+def _fix_with_agent(name: str, auto_accept: bool, model: str | None = None):
+    """Use an AI agent CLI for multi-step self-healing."""
+    agent = _detect_agent_cli()
+    if not agent:
+        ui.print_error("No agent CLI found (claude or gemini). Install one or use --no-agent.")
+        sys.exit(1)
+
+    ui.print_info(f"Using {agent} agent with native subagent...")
+    if model:
+        ui.print_info(f"Model: {model}")
+
+    # Build natural language prompt
+    prompt = f"fix: Resolve failing tests for {name}"
+
+    try:
+        _run_agent_oneshot(agent, prompt, auto_accept, model=model)
+    except Exception as e:
+        ui.print_error(f"Agent error: {e}")
+        sys.exit(1)
+
+
+def _fix_with_llm(core: SpecSoloistCore, name: str, model: str | None = None):
+    """Direct LLM self-healing (single-shot, no agent iteration)."""
     with ui.spinner(f"Analyzing [bold]{name}[/] failures and generating fix..."):
-        result = core.attempt_fix(name, model=model)
-    
-    ui.print_success(result)
+        try:
+            result = core.attempt_fix(name, model=model)
+            ui.print_success(result)
+        except Exception as e:
+            ui.print_error(f"Fix failed: {e}")
+            sys.exit(1)
 
 
 def cmd_build(core: SpecSoloistCore, incremental: bool, parallel: bool, workers: int, model: str, generate_tests: bool):
