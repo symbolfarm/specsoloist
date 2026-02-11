@@ -34,11 +34,12 @@ User: "Build me a todo app with auth"
 | **Composer** | `SpecComposer` | Writes the music (drafts specs from plain English) |
 | **Conductor** | `SpecConductor` | Leads the orchestra (resolves dependencies, spawns soloists) |
 | **Soloist** | Soloist agent | Individual performer (reads one spec, writes code directly) |
+| **Arrangement** | Arrangement file | The technical rider (build config, output paths, tools) |
 | **Score** | `score/` directory | The sheet music (specs that define the system itself) |
 
 ### Spec Philosophy: Requirements, Not Blueprints
 
-Specs define **what** the code should do, not **how** it should do it:
+Specs define **what** the code should do, not **how** it should do it. The **Arrangement** file defines the **how** (output paths, language, tools).
 
 - **Public API**: Names, signatures, return types (these ARE the interface contract)
 - **Behavior**: What happens when you call a method, including edge cases
@@ -109,20 +110,24 @@ score/                 # The Score - SpecSoloist's own specs (The Quine)
   cli.spec.md          # CLI
   ui.spec.md           # Terminal UI
   respec.spec.md       # Reverse engineering
-  speccomposer.spec.md # Architecture drafting
-  specconductor.spec.md # Build orchestration
+  composer.spec.md     # Architecture drafting
+  conductor.spec.md    # Build orchestration
+  server.spec.md       # MCP Server spec
+  arrangement.spec.md  # Build configuration schema
 
 .claude/agents/        # Native subagents for Claude Code
   compose.md           # Draft architecture from natural language
   conductor.md         # Orchestrate builds, spawn soloists
   respec.md            # Extract requirements from code -> spec
   soloist.md           # Read spec, write code directly
+  fix.md               # Analyze failures, patch code, re-test
 
 .gemini/agents/        # Native subagents for Gemini CLI
   compose.md           # (same as Claude, different tool names)
   conductor.md
   respec.md
   soloist.md
+  fix.md
 ```
 
 ### The Score ("The Quine")
@@ -132,18 +137,18 @@ score/                 # The Score - SpecSoloist's own specs (The Quine)
 ### Current State (Phase 6: The Quine)
 
 **Phase 5 Completed:**
-- ✅ Agent-first CLI: `sp compose`, `sp conduct`, `sp respec` all default to agent mode
+- ✅ Agent-first CLI: `sp compose`, `sp conduct`, `sp respec`, `sp fix` all default to agent mode
 - ✅ Native subagents: `.claude/agents/` and `.gemini/agents/` fully defined
 - ✅ Requirements-oriented specs: All modules in `score/` rewritten to describe requirements, not implementation
 - ✅ Round-trip validated: resolver, config, manifest regenerated from specs with all tests passing
 - ✅ Soloist agents write code directly from specs (agent IS the compiler)
 
-**Current Goal:**
-- Quine attempt: `sp conduct score/` to regenerate entire `src/` directory with all 52 tests passing
+**Phase 6 Completed:**
+- ✅ Quine attempt: `sp conduct score/` to regenerate entire `src/` directory with 52+ tests passing
+- ✅ Full spec coverage: `server.spec.md` added for MCP server completeness
 
-**Next up (see ROADMAP.md):**
-- Agent-first `sp fix` command
-- Phase 7: Developer Experience enhancements
+**Current Goal:**
+- Phase 7: Robustness & Polish (Arrangement system, Quine diff tool)
 
 ### Native Subagent Architecture
 

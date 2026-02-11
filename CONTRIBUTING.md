@@ -65,6 +65,15 @@ uv run sp respec src/specsoloist/some_module.py --out score/some_module.spec.md
 
 This invokes an AI agent that analyzes the code, generates a requirements-oriented spec, validates it, and fixes any errors.
 
+If tests fail after regeneration, use `sp fix`:
+
+```bash
+uv run sp fix some_module
+```
+
+**Arrangements (Build Configuration)**
+Requirements go in `*.spec.md`. Build configuration (output paths, tools, language) belongs in an `Arrangement` file.
+
 **Round-trip Validation**
 After respeccing, verify the spec is sufficient by regenerating the code and running tests:
 

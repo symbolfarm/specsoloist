@@ -92,12 +92,12 @@ SpecSoloist allows you to chain multiple specs into a workflow.
 | `sp verify` | Verify schemas and interface compatibility |
 | `sp compile` | Compile single spec to code + tests |
 | `sp test` | Run tests for a spec |
-| `sp fix` | Auto-fix failing tests |
+| `sp fix` | **Auto-fix failing tests (Agent-first)** |
 | `sp respec` | **Reverse engineer code to spec** |
 | `sp build` | Compile all specs (direct LLM, no agents) |
 | `sp graph` | Export dependency graph (Mermaid.js) |
 
-Commands that use agents (`compose`, `conduct`, `respec`) default to detecting an available agent CLI (Claude Code or Gemini CLI). Use `--no-agent` to fall back to direct LLM API calls.
+Commands that use agents (`compose`, `conduct`, `respec`, `fix`) default to detecting an available agent CLI (Claude Code or Gemini CLI). Use `--no-agent` to fall back to direct LLM API calls.
 
 ## Configuration
 
@@ -148,6 +148,7 @@ For the full agentic experience, SpecSoloist provides native subagent definition
 | `conductor` | Orchestrate builds — resolves dependencies, spawns soloists |
 | `soloist` | Compile a single spec — reads spec, writes code directly |
 | `respec` | Extract requirements from code into specs |
+| `fix` | Analyze failures, patch code, and re-test |
 
 **Usage with Claude Code:**
 ```
