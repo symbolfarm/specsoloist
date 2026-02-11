@@ -1,5 +1,5 @@
 ---
-name: specconductor
+name: conductor
 type: bundle
 status: draft
 dependencies:
@@ -11,7 +11,7 @@ dependencies:
 
 # Overview
 
-SpecConductor is the build and execution manager of Spechestra. It takes a spec architecture (from SpecComposer or manually written specs) and orchestrates parallel compilation via SpecSoloistCore, then optionally executes workflows defined by workflow specs. The Conductor is responsible for the entire "concert" -- preparing the orchestra (build) and leading the performance (run).
+Conductor is the build and execution manager of Spechestra. It takes a spec architecture (from Composer or manually written specs) and orchestrates parallel compilation via SpecSoloistCore, then optionally executes workflows defined by workflow specs. The Conductor is responsible for the entire "concert" -- preparing the orchestra (build) and leading the performance (run).
 
 # Types
 
@@ -35,7 +35,7 @@ Result of project verification.
 
 # Functions
 
-## SpecConductor (class)
+## Conductor (class)
 
 The main conductor class. Constructed with a project directory path and an optional `SpecSoloistConfig`. If config is not provided, loads from environment. Creates an internal `SpecSoloistCore` instance for compilation and exposes its parser and resolver.
 
@@ -137,13 +137,13 @@ After a successful workflow execution, a JSON trace file is saved containing the
 
 ## Separation of concerns
 
-SpecConductor delegates compilation to SpecSoloistCore. It does not contain compilation logic itself. Its role is orchestration: ordering, parallelism, workflow execution, and trace management.
+Conductor delegates compilation to SpecSoloistCore. It does not contain compilation logic itself. Its role is orchestration: ordering, parallelism, workflow execution, and trace management.
 
 # Examples
 
 | Scenario | Input | Expected |
 |----------|-------|----------|
-| Initialize conductor | `SpecConductor("/path/to/project")` | `project_dir` is set to the absolute path |
+| Initialize conductor | `Conductor("/path/to/project")` | `project_dir` is set to the absolute path |
 | Verify empty project | No specs in project | `result.success == True` |
 | Build order empty project | No specs | Returns `[]` |
 | StepResult defaults | `StepResult(name="s1", spec="f", inputs={}, outputs={}, success=True)` | `error` is null, `duration` is 0.0 |

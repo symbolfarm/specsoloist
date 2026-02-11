@@ -446,7 +446,7 @@ The `yaml:schema` block uses a language-agnostic type system:
 
 # 10. Compilation
 
-At build time, the SpecConductor:
+At build time, the Conductor:
 
 1. Reads all specs and builds dependency graph
 2. Infers or reads target language from build config

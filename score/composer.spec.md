@@ -1,5 +1,5 @@
 ---
-name: speccomposer
+name: composer
 type: bundle
 status: draft
 dependencies:
@@ -9,7 +9,7 @@ dependencies:
 
 # Overview
 
-SpecComposer is the architect component of Spechestra. It takes plain English requests and drafts a complete spec architecture -- the dependency graph and individual `*.spec.md` files for each component. This is the "vibe-coding" entry point: users describe what they want, and SpecComposer figures out the architecture.
+Composer is the architect component of Spechestra. It takes plain English requests and drafts a complete spec architecture -- the dependency graph and individual `*.spec.md` files for each component. This is the "vibe-coding" entry point: users describe what they want, and Composer figures out the architecture.
 
 # Types
 
@@ -37,7 +37,7 @@ Result of a compose operation.
 
 # Functions
 
-## SpecComposer (class)
+## Composer (class)
 
 The main composer class. Constructed with a project directory path, an optional `SpecSoloistConfig`, and an optional `LLMProvider`. If config is not provided, loads from environment. The LLM provider is created lazily from the config when first needed.
 
@@ -87,7 +87,7 @@ Full composition workflow: draft architecture then generate specs.
 
 ## Separation of concerns
 
-SpecComposer never compiles specs into code. Its job ends when spec files exist on disk. Compilation is the responsibility of SpecConductor and SpecSoloistCore.
+Composer never compiles specs into code. Its job ends when spec files exist on disk. Compilation is the responsibility of Conductor and SpecSoloistCore.
 
 ## LLM interaction
 
@@ -101,7 +101,7 @@ Existing spec files are never overwritten. If a spec with the same name already 
 
 | Scenario | Input | Expected |
 |----------|-------|----------|
-| Initialize composer | `SpecComposer("/path/to/project")` | `project_dir` is set to the absolute path |
+| Initialize composer | `Composer("/path/to/project")` | `project_dir` is set to the absolute path |
 | Architecture with dependencies | Components: add (function), calc (module depending on add) | `arch.build_order == ["add", "calc"]`, `arch.dependencies == {"calc": ["add"]}` |
 | Composition result | Architecture with no components | `result.cancelled == True`, `result.ready_for_build == False` |
 | Composition result | Architecture with components | `result.ready_for_build == True`, `result.spec_paths` contains created paths |

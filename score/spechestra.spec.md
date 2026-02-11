@@ -12,8 +12,8 @@ dependencies:
 **Spechestra** is the orchestration layer for spec-driven development. It sits above SpecSoloist and provides high-level workflows for turning plain English requests into working software.
 
 Spechestra introduces two key components:
-- **SpecComposer**: Takes natural language input and drafts an architecture with specs
-- **SpecConductor**: Manages parallel builds and workflow execution
+- **Composer**: Takes natural language input and drafts an architecture with specs
+- **Conductor**: Manages parallel builds and workflow execution
 
 Together they enable "vibe-coding" - users describe what they want, review the generated specs, and watch the system build it.
 
@@ -22,7 +22,7 @@ User (plain English)
         │
         ▼
 ┌──────────────────┐
-│   SpecComposer   │  "Build me a todo app with auth"
+│     Composer     │  "Build me a todo app with auth"
 │   (Architect)    │           │
 └──────────────────┘           ▼
         │            ┌─────────────────────┐
@@ -34,7 +34,7 @@ User (plain English)
         │                      │
         ▼              [User review/edit]
 ┌──────────────────┐           │
-│  SpecConductor   │◄──────────┘
+│    Conductor     │◄──────────┘
 │   (Manager)      │
 └──────────────────┘
         │
@@ -49,7 +49,7 @@ User (plain English)
                        │
                        ▼
               ┌─────────────────┐
-              │ SpecConductor   │
+              │    Conductor    │
               │   .perform()    │
               └─────────────────┘
 ```
@@ -60,18 +60,18 @@ User (plain English)
 
 ```
 spechestra/
-  __init__.py           # Exports SpecComposer, SpecConductor
-  composer.py           # SpecComposer implementation
-  conductor.py          # SpecConductor implementation
+  __init__.py           # Exports Composer, Conductor
+  composer.py           # Composer implementation
+  conductor.py          # Conductor implementation
 ```
 
-## 2.2 SpecComposer
+## 2.2 Composer
 
-See `speccomposer.spec.md` for detailed specification.
+See `composer.spec.md` for detailed specification.
 
-## 2.3 SpecConductor
+## 2.3 Conductor
 
-See `specconductor.spec.md` for detailed specification.
+See `conductor.spec.md` for detailed specification.
 
 # 3. Functional Requirements
 
@@ -96,7 +96,7 @@ See `specconductor.spec.md` for detailed specification.
 
 | Scenario | Input | Expected Output |
 |----------|-------|-----------------|
-| Import package | `from spechestra import SpecComposer` | No error |
+| Import package | `from spechestra import Composer` | No error |
 | Compose + Build | Natural language request | Specs created, code compiled |
 | Perform workflow | Compiled workflow | Execution trace returned |
 | Composer standalone | Request + no auto-build | Specs created, no compilation |

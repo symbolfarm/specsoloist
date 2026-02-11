@@ -37,7 +37,7 @@ Command-line interface for SpecSoloist. Provides the `sp` command with subcomman
 ## Orchestration
 
 - `sp compose <request> [--no-agent] [--auto-accept]` — Draft architecture and specs from natural language description
-- `sp conduct [--incremental] [--parallel] [--workers N] [--model MODEL]` — Orchestrate project build using SpecConductor
+- `sp conduct [--incremental] [--parallel] [--workers N] [--model MODEL]` — Orchestrate project build using Conductor
 - `sp perform <workflow> <inputs-json>` — Execute a workflow spec with JSON inputs
 
 ## Reverse Engineering
