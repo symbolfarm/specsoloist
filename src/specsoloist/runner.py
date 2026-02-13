@@ -93,64 +93,214 @@ class TestRunner:
             f.write(content)
         return path
 
-    def write_file(self, filename: str, content: str) -> str:
-        """
-        Writes a file to the build directory.
-        Security: Only allows writing to build_dir (no path traversal).
-        """
-        # Security check: ensure we only write to build dir
-        clean_name = os.path.basename(filename)
-        target_path = os.path.join(self.build_dir, clean_name)
-        with open(target_path, 'w') as f:
-            f.write(content)
-        return target_path
+        def read_file(self, filename: str) -> Optional[str]:
 
-    def run_tests(self, module_name: str, language: str = "python") -> TestResult:
-        """
-        Runs the test command for a module based on its language configuration.
-        """
-        cfg = self._get_lang_config(language)
-        test_path = self.get_test_path(module_name, language)
+            """Reads a file relative to the build directory."""
 
-        if not os.path.exists(test_path):
-            return TestResult(
-                success=False,
-                output=f"Test file not found at {test_path}. Compile first.",
-                return_code=-1
-            )
+            path = os.path.join(self.build_dir, filename)
 
-        # Prepare environment
-        env = os.environ.copy()
-        for k, v in cfg.env_vars.items():
-            # Inject build_dir if placeholder used
-            env[k] = v.format(build_dir=self.build_dir) + os.pathsep + env.get(k, "")
+            if not os.path.exists(path):
 
-        # Prepare command
-        cmd = [part.format(file=test_path) for part in cfg.test_command]
+                # Try absolute or relative to CWD if it exists and is within project root
 
-        try:
-            result = subprocess.run(
-                cmd,
-                env=env,
-                capture_output=True,
-                text=True,
-                check=False
-            )
+                if os.path.exists(filename):
 
-            return TestResult(
-                success=result.returncode == 0,
-                output=result.stdout + "\n" + result.stderr,
-                return_code=result.returncode
-            )
-        except FileNotFoundError:
-            return TestResult(
-                success=False,
-                output=f"Command not found: {cmd[0]}",
-                return_code=-1
-            )
-        except Exception as e:
-            return TestResult(
-                success=False,
-                output=f"Execution error: {str(e)}",
-                return_code=-1
-            )
+                    path = filename
+
+                else:
+
+                    return None
+
+            with open(path, 'r') as f:
+
+                return f.read()
+
+    
+
+        def write_file(self, filename: str, content: str) -> str:
+
+            """
+
+            Writes a file to a specific path.
+
+            If filename is relative, it's relative to build_dir.
+
+            """
+
+            if os.path.isabs(filename):
+
+                target_path = filename
+
+            else:
+
+                target_path = os.path.abspath(os.path.join(self.build_dir, filename))
+
+            
+
+            # Ensure directory exists
+
+            os.makedirs(os.path.dirname(target_path), exist_ok=True)
+
+            
+
+            with open(target_path, 'w') as f:
+
+                f.write(content)
+
+            return target_path
+
+    
+
+        def run_tests(self, module_name: str, language: str = "python") -> TestResult:
+
+            """
+
+            Runs the test command for a module based on its language configuration.
+
+            """
+
+            cfg = self._get_lang_config(language)
+
+            test_path = self.get_test_path(module_name, language)
+
+    
+
+            if not os.path.exists(test_path):
+
+                return TestResult(
+
+                    success=False,
+
+                    output=f"Test file not found at {test_path}. Compile first.",
+
+                    return_code=-1
+
+                )
+
+    
+
+            # Prepare environment
+
+            env = os.environ.copy()
+
+            for k, v in cfg.env_vars.items():
+
+                # Inject build_dir if placeholder used
+
+                env[k] = v.format(build_dir=self.build_dir) + os.pathsep + env.get(k, "")
+
+    
+
+            # Prepare command
+
+            cmd = [part.format(file=test_path) for part in cfg.test_command]
+
+            return self._execute_command(cmd, env)
+
+    
+
+        def run_custom_test(self, command: str) -> TestResult:
+
+            """Runs a custom test command (shell)."""
+
+            try:
+
+                # Use shell=True for custom commands which might have pipes/redirects
+
+                result = subprocess.run(
+
+                    command,
+
+                    shell=True,
+
+                    capture_output=True,
+
+                    text=True,
+
+                    check=False
+
+                )
+
+    
+
+                return TestResult(
+
+                    success=result.returncode == 0,
+
+                    output=result.stdout + "\n" + result.stderr,
+
+                    return_code=result.returncode
+
+                )
+
+            except Exception as e:
+
+                return TestResult(
+
+                    success=False,
+
+                    output=f"Execution error: {str(e)}",
+
+                    return_code=-1
+
+                )
+
+    
+
+        def _execute_command(self, cmd: list, env: dict) -> TestResult:
+
+            """Internal helper to execute a command list."""
+
+            try:
+
+                result = subprocess.run(
+
+                    cmd,
+
+                    env=env,
+
+                    capture_output=True,
+
+                    text=True,
+
+                    check=False
+
+                )
+
+    
+
+                return TestResult(
+
+                    success=result.returncode == 0,
+
+                    output=result.stdout + "\n" + result.stderr,
+
+                    return_code=result.returncode
+
+                )
+
+            except FileNotFoundError:
+
+                return TestResult(
+
+                    success=False,
+
+                    output=f"Command not found: {cmd[0]}",
+
+                    return_code=-1
+
+                )
+
+            except Exception as e:
+
+                return TestResult(
+
+                    success=False,
+
+                    output=f"Execution error: {str(e)}",
+
+                    return_code=-1
+
+                )
+
+    

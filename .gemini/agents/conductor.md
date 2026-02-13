@@ -29,9 +29,16 @@ Compile all specs in a project directory into working code, respecting dependenc
 
 **IMPORTANT**: You may be regenerating code that already exists (this is a quine/round-trip validation). This is intentional - you are duplicating code to verify specs are complete. Do NOT skip compilation because code exists.
 
-Check if the prompt specifies an output directory. If not specified, use default paths:
+**Check for Arrangement**: Look for an `arrangement.yaml` or `arrangement.md` file in the project directory. If found, read it. This file defines the 'makefile' for the project, including:
+- `target_language`: The language to use (e.g., python, typescript)
+- `output_paths`: Where to write implementation and tests
+- `build_commands`: Commands for linting and testing
+- `constraints`: Specific rules the soloist must follow
+
+If no arrangement is found, use default paths:
 - Implementation: `src/specsoloist/` or `src/spechestra/`
 - Tests: `tests/`
+- Language: `python`
 
 **Progress Reporting**: After each major step, explicitly report what you're doing so the user can see progress.
 
@@ -73,13 +80,14 @@ For each dependency level:
 
 **Report**: "🎼 Compiling Level N (<count> specs in parallel)..."
 
-Spawn `soloist` subagents to compile specs. **You MUST include the exact output paths in every soloist prompt** — soloists will default to `src/` if paths are missing, which can overwrite original source during quine runs.
+Spawn `soloist` subagents to compile specs. **You MUST include the exact output paths and arrangement details in every soloist prompt.**
 
 Tell each soloist:
 - The spec path to compile
-- Where to write implementation: `<output_dir>/<package>/<name>.py`
-- Where to write tests: `<test_dir>/test_<name>.py`
-- The test command: `PYTHONPATH=<output_dir_parent>/src uv run python -m pytest <test_path> -v`
+- **Arrangement Details**: Pass all fields from the Arrangement (language, paths, constraints, commands).
+- Where to write implementation: `<output_dir>/<package>/<name>.<ext>`
+- Where to write tests: `<test_dir>/test_<name>.<ext>`
+- The test command: The `build_commands.test` from the arrangement, or a sensible default if missing.
 - That this is a quine validation (duplicating code is intentional)
 - That they must NOT write to any other directory
 

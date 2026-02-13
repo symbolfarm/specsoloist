@@ -18,6 +18,7 @@ from .resolver import DependencyResolver, DependencyGraph
 from .manifest import BuildManifest, IncrementalBuilder, compute_content_hash
 from .providers import LLMProvider
 from .parser import ParsedSpec
+from .schema import Arrangement
 
 
 @dataclass
@@ -331,7 +332,8 @@ class SpecSoloistCore:
         self,
         name: str,
         model: Optional[str] = None,
-        skip_tests: bool = False
+        skip_tests: bool = False,
+        arrangement: Optional[Arrangement] = None
     ) -> str:
         """
         Compile a spec to implementation code.
@@ -340,6 +342,7 @@ class SpecSoloistCore:
             name: Spec filename (with or without .spec.md extension).
             model: Override the default LLM model (optional).
             skip_tests: If True, don't generate tests (default for typedef specs).
+            arrangement: Optional build arrangement.
 
         Returns:
             Success message with path to generated code.
@@ -357,27 +360,34 @@ class SpecSoloistCore:
 
         # Use appropriate compilation method based on spec type
         if spec.metadata.type == "typedef":
-            code = compiler.compile_typedef(spec, model=model)
+            code = compiler.compile_typedef(spec, model=model, arrangement=arrangement)
         elif spec.metadata.type == "orchestrator":
-            code = compiler.compile_orchestrator(spec, model=model)
+            code = compiler.compile_orchestrator(spec, model=model, arrangement=arrangement)
         else:
-            code = compiler.compile_code(spec, model=model)
+            code = compiler.compile_code(spec, model=model, arrangement=arrangement)
 
-        # Write output
-        module_name = self.parser.get_module_name(name)
-        output_path = self.runner.write_code(
-            module_name, code, language=spec.metadata.language_target
-        )
+        # Determine output path and language
+        if arrangement:
+            output_path = arrangement.output_paths.implementation
+            # Ensure output path is relative to project root or absolute as intended
+            # For now, we'll write it directly using runner.write_file if it's a specific path
+            full_path = self.runner.write_file(output_path, code)
+            return f"Compiled to {full_path}"
+        else:
+            module_name = self.parser.get_module_name(name)
+            output_path = self.runner.write_code(
+                module_name, code, language=spec.metadata.language_target
+            )
+            return f"Compiled to {output_path}"
 
-        return f"Compiled to {output_path}"
-
-    def compile_tests(self, name: str, model: Optional[str] = None) -> str:
+    def compile_tests(self, name: str, model: Optional[str] = None, arrangement: Optional[Arrangement] = None) -> str:
         """
         Generate a test suite for a spec.
 
         Args:
             name: Spec filename (with or without .spec.md extension).
             model: Override the default LLM model (optional).
+            arrangement: Optional build arrangement.
 
         Returns:
             Success message with path to generated tests.
@@ -389,14 +399,18 @@ class SpecSoloistCore:
             return f"Skipped tests for typedef spec: {name}"
 
         compiler = self._get_compiler()
-        code = compiler.compile_tests(spec, model=model)
+        code = compiler.compile_tests(spec, model=model, arrangement=arrangement)
 
-        module_name = self.parser.get_module_name(name)
-        output_path = self.runner.write_tests(
-            module_name, code, language=spec.metadata.language_target
-        )
-
-        return f"Generated tests at {output_path}"
+        if arrangement:
+            output_path = arrangement.output_paths.tests
+            full_path = self.runner.write_file(output_path, code)
+            return f"Generated tests at {full_path}"
+        else:
+            module_name = self.parser.get_module_name(name)
+            output_path = self.runner.write_tests(
+                module_name, code, language=spec.metadata.language_target
+            )
+            return f"Generated tests at {output_path}"
 
     def compile_project(
         self,
@@ -405,7 +419,8 @@ class SpecSoloistCore:
         generate_tests: bool = True,
         incremental: bool = False,
         parallel: bool = False,
-        max_workers: int = 4
+        max_workers: int = 4,
+        arrangement: Optional[Arrangement] = None
     ) -> BuildResult:
         """
         Compile multiple specs in dependency order.
@@ -420,17 +435,18 @@ class SpecSoloistCore:
             incremental: If True, only recompile specs that have changed.
             parallel: If True, compile independent specs concurrently.
             max_workers: Maximum number of parallel compilation workers.
+            arrangement: Optional build arrangement.
 
         Returns:
             BuildResult with compilation status and details.
         """
         if parallel:
             return self._compile_project_parallel(
-                specs, model, generate_tests, incremental, max_workers
+                specs, model, generate_tests, incremental, max_workers, arrangement
             )
         else:
             return self._compile_project_sequential(
-                specs, model, generate_tests, incremental
+                specs, model, generate_tests, incremental, arrangement
             )
 
     def _compile_project_sequential(
@@ -438,7 +454,8 @@ class SpecSoloistCore:
         specs: List[str],
         model: Optional[str],
         generate_tests: bool,
-        incremental: bool
+        incremental: bool,
+        arrangement: Optional[Arrangement] = None
     ) -> BuildResult:
         """Sequential compilation - original implementation."""
         # Resolve build order
@@ -459,7 +476,7 @@ class SpecSoloistCore:
                 skipped.append(spec_name)
                 continue
 
-            result = self._compile_single_spec(spec_name, model, generate_tests)
+            result = self._compile_single_spec(spec_name, model, generate_tests, arrangement)
             if result["success"]:
                 compiled.append(spec_name)
             else:
@@ -484,7 +501,8 @@ class SpecSoloistCore:
         model: Optional[str],
         generate_tests: bool,
         incremental: bool,
-        max_workers: int
+        max_workers: int,
+        arrangement: Optional[Arrangement] = None
     ) -> BuildResult:
         """Parallel compilation - compiles independent specs concurrently."""
         # Get build order grouped by levels
@@ -513,7 +531,7 @@ class SpecSoloistCore:
             # Compile this level in parallel
             with ThreadPoolExecutor(max_workers=min(max_workers, len(level_to_build))) as executor:
                 futures = {
-                    executor.submit(self._compile_single_spec, spec_name, model, generate_tests): spec_name
+                    executor.submit(self._compile_single_spec, spec_name, model, generate_tests, arrangement): spec_name
                     for spec_name in level_to_build
                 }
 
@@ -542,7 +560,8 @@ class SpecSoloistCore:
         self,
         spec_name: str,
         model: Optional[str],
-        generate_tests: bool
+        generate_tests: bool,
+        arrangement: Optional[Arrangement] = None
     ) -> Dict[str, Any]:
         """
         Compile a single spec and return result.
@@ -552,24 +571,32 @@ class SpecSoloistCore:
         try:
             # Parse spec for metadata
             spec = self.parser.parse_spec(spec_name)
-            lang = spec.metadata.language_target
+            lang = arrangement.target_language if arrangement else spec.metadata.language_target
             spec_hash = compute_content_hash(spec.content)
             deps = [d.get("from", "").replace(".spec.md", "")
                     for d in spec.metadata.dependencies
                     if isinstance(d, dict)]
 
             # Compile the spec
-            self.compile_spec(spec_name, model=model)
+            self.compile_spec(spec_name, model=model, arrangement=arrangement)
 
-            # Determine output files from config
-            code_path = os.path.basename(self.runner.get_code_path(spec_name, language=lang))
-            output_files = [code_path]
-            
-            # Generate tests if requested and not a typedef
-            if generate_tests and spec.metadata.type != "typedef":
-                self.compile_tests(spec_name, model=model)
-                test_path = os.path.basename(self.runner.get_test_path(spec_name, language=lang))
-                output_files.append(test_path)
+            # Determine output files
+            if arrangement:
+                output_files = [
+                    os.path.basename(arrangement.output_paths.implementation)
+                ]
+                if generate_tests and spec.metadata.type != "typedef":
+                    self.compile_tests(spec_name, model=model, arrangement=arrangement)
+                    output_files.append(os.path.basename(arrangement.output_paths.tests))
+            else:
+                code_path = os.path.basename(self.runner.get_code_path(spec_name, language=lang))
+                output_files = [code_path]
+                
+                # Generate tests if requested and not a typedef
+                if generate_tests and spec.metadata.type != "typedef":
+                    self.compile_tests(spec_name, model=model)
+                    test_path = os.path.basename(self.runner.get_test_path(spec_name, language=lang))
+                    output_files.append(test_path)
 
             # Update manifest
             manifest = self._get_manifest()
@@ -687,7 +714,7 @@ class SpecSoloistCore:
     # Public API - Self-Healing
     # =========================================================================
 
-    def attempt_fix(self, name: str, model: Optional[str] = None) -> str:
+    def attempt_fix(self, name: str, model: Optional[str] = None, arrangement: Optional[Arrangement] = None) -> str:
         """
         Attempt to fix a failing component.
 
@@ -697,22 +724,35 @@ class SpecSoloistCore:
         Args:
             name: Spec filename.
             model: Override the default LLM model (optional).
+            arrangement: Optional build arrangement.
 
         Returns:
             Status message describing what was fixed.
         """
         module_name = self.parser.get_module_name(name)
         spec = self.parser.parse_spec(name)
-        lang = spec.metadata.language_target
+        lang = arrangement.target_language if arrangement else spec.metadata.language_target
 
         # 1. Run tests to get current error
-        result = self.runner.run_tests(module_name, language=lang)
+        if arrangement:
+            # If we have an arrangement, we use its test command
+            # For now, we still rely on the runner to execute it, but we might need to 
+            # customize the runner or just use shell directly
+            # Let's see if runner can handle custom commands
+            result = self.runner.run_custom_test(arrangement.build_commands.test)
+        else:
+            result = self.runner.run_tests(module_name, language=lang)
+
         if result.success:
             return "Tests already passed. No fix needed."
 
         # 2. Gather context
-        code_content = self.runner.read_code(module_name, language=lang) or ""
-        test_content = self.runner.read_tests(module_name, language=lang) or ""
+        if arrangement:
+            code_content = self.runner.read_file(arrangement.output_paths.implementation) or ""
+            test_content = self.runner.read_file(arrangement.output_paths.tests) or ""
+        else:
+            code_content = self.runner.read_code(module_name, language=lang) or ""
+            test_content = self.runner.read_tests(module_name, language=lang) or ""
 
         # 3. Generate fix
         compiler = self._get_compiler()
@@ -721,7 +761,8 @@ class SpecSoloistCore:
             code_content=code_content,
             test_content=test_content,
             error_log=result.output,
-            model=model
+            model=model,
+            arrangement=arrangement
         )
 
         # 4. Parse and apply fixes

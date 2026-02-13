@@ -40,20 +40,23 @@ Read the spec file and understand:
 
 Also read any dependency modules referenced by the spec so you understand the interfaces you need to use.
 
-**Extract output paths from the prompt**: The conductor will tell you where to write files. Look for explicit paths like:
-- Implementation: `<output_dir>/<package>/<name>.py`
-- Tests: `<test_dir>/test_<name>.py`
-- Test command: `PYTHONPATH=... uv run python -m pytest <test_path> -v`
+**Extract Arrangement from the prompt**: The conductor will provide an **Arrangement** which acts as your build configuration. Look for:
+- `target_language`: (e.g., python, typescript, rust) - **YOU MUST USE THIS LANGUAGE**.
+- `output_paths`: Exact paths for implementation and tests.
+- `constraints`: Rules to follow (e.g., "Must use type hints", "No external libraries").
+- `build_commands`: Commands to run for linting and testing.
 
-**You MUST write to the exact paths specified.** If the prompt says `build/quine/src/...`, write there — not to `src/`. Only if NO paths are specified at all, use defaults: `src/specsoloist/<name>.py` and `tests/test_<name>.py`.
+**You MUST write to the exact paths specified.** If the prompt says `build/quine/src/...`, write there — not to `src/`.
 
 ### Step 2: Write the Implementation
 
-**Report**: "✍️ Writing implementation to <path>"
+**Report**: "✍️ Writing <language> implementation to <path>"
 
-Write the implementation code directly. You ARE the compiler — use your understanding of the spec to write clean, correct code.
+Write the implementation code directly. You ARE the compiler — use your understanding of the spec and the Arrangement to write clean, correct code.
 
-- Write to the path specified by the conductor
+- Write to the path specified in the Arrangement
+- Use the `target_language` specified
+- Adhere to all `constraints` in the Arrangement
 - Import dependencies as needed
 - Implement all public API elements described in the spec
 - Handle edge cases and error conditions from the spec
@@ -73,9 +76,7 @@ Write to the test path specified by the conductor.
 
 **Report**: "🔬 Running tests for <name>"
 
-```bash
-uv run python -m pytest <test_path> -v
-```
+Use the test command provided in the Arrangement. If no command is provided, use a sensible default for the language (e.g., `uv run pytest` for Python, `npm test` for JS/TS).
 
 ### Step 5: Fix if Needed
 

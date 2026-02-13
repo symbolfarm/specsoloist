@@ -14,6 +14,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 from specsoloist.config import SpecSoloistConfig
 from specsoloist.core import SpecSoloistCore, BuildResult
 from specsoloist.resolver import DependencyGraph
+from specsoloist.schema import Arrangement
 
 
 @dataclass
@@ -107,7 +108,8 @@ class SpecConductor:
         specs: Optional[List[str]] = None,
         parallel: bool = True,
         incremental: bool = True,
-        max_workers: int = 4
+        max_workers: int = 4,
+        arrangement: Optional[Arrangement] = None
     ) -> BuildResult:
         """
         Build specs in dependency order.
@@ -117,16 +119,20 @@ class SpecConductor:
             parallel: If True, compile independent specs concurrently.
             incremental: If True, only recompile changed specs.
             max_workers: Maximum number of parallel workers.
+            arrangement: Optional build arrangement.
 
         Returns:
             BuildResult with compilation status.
         """
+        # Note: compile_project in core needs to be updated to accept arrangement
+        # Or we can loop and call compile_spec individually if arrangement is provided
         return self._core.compile_project(
             specs=specs,
             generate_tests=True,
             incremental=incremental,
             parallel=parallel,
-            max_workers=max_workers
+            max_workers=max_workers,
+            arrangement=arrangement
         )
 
     def get_build_order(self, specs: Optional[List[str]] = None) -> List[str]:

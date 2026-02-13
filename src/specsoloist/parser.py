@@ -18,6 +18,7 @@ from .schema import (
     BundleFunction,
     BundleType,
     WorkflowStep,
+    Arrangement,
     parse_schema_block,
     parse_bundle_functions,
     parse_bundle_types,
@@ -640,6 +641,27 @@ Describe each export's public interface and behavior below.
     def get_module_name(self, name: str) -> str:
         """Extracts the module name from a spec filename."""
         return name.replace(".spec.md", "")
+
+    def parse_arrangement(self, content: str) -> Arrangement:
+        """Parses an Arrangement from YAML or Markdown frontmatter."""
+        # Check for YAML frontmatter
+        if content.strip().startswith("---"):
+            parts = content.split("---", 2)
+            if len(parts) >= 3:
+                yaml_text = parts[1].strip()
+            else:
+                yaml_text = content
+        else:
+            # Check for yaml:arrangement code block
+            yaml_text = self._extract_yaml_block(content, "yaml") or content
+
+        try:
+            raw_data = yaml.safe_load(yaml_text)
+            if not isinstance(raw_data, dict):
+                raise ValueError("Arrangement must be a YAML dictionary")
+            return Arrangement(**raw_data)
+        except Exception as e:
+            raise ValueError(f"Invalid Arrangement definition: {e}")
 
     def load_global_context(self) -> str:
         """Loads the global context template for compilation prompts."""

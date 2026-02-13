@@ -7,6 +7,7 @@ from typing import Optional
 
 from .parser import ParsedSpec
 from .providers import LLMProvider
+from .schema import Arrangement
 
 
 class SpecCompiler:
@@ -19,7 +20,8 @@ class SpecCompiler:
     def compile_code(
         self,
         spec: ParsedSpec,
-        model: Optional[str] = None
+        model: Optional[str] = None,
+        arrangement: Optional[Arrangement] = None
     ) -> str:
         """
         Compiles a spec to implementation code.
@@ -27,14 +29,18 @@ class SpecCompiler:
         Args:
             spec: The parsed specification.
             model: Optional model override.
+            arrangement: Optional build arrangement.
 
         Returns:
             The generated code.
         """
-        language = spec.metadata.language_target
+        language = arrangement.target_language if arrangement else spec.metadata.language_target
 
         # Build import context from dependencies
         import_context = self._build_import_context(spec)
+        
+        # Build arrangement context
+        arrangement_context = self._build_arrangement_context(arrangement)
 
         prompt = f"""
 You are an expert {language} developer.
@@ -45,6 +51,8 @@ Your task is to implement the code described in the following specification.
 
 # Dependencies
 {import_context}
+
+{arrangement_context}
 
 # Component Specification
 {spec.body}
@@ -62,7 +70,8 @@ Your task is to implement the code described in the following specification.
     def compile_typedef(
         self,
         spec: ParsedSpec,
-        model: Optional[str] = None
+        model: Optional[str] = None,
+        arrangement: Optional[Arrangement] = None
     ) -> str:
         """
         Compiles a typedef spec to type definitions (dataclasses, TypedDicts, etc.).
@@ -70,11 +79,13 @@ Your task is to implement the code described in the following specification.
         Args:
             spec: The parsed specification (must be type: typedef).
             model: Optional model override.
+            arrangement: Optional build arrangement.
 
         Returns:
             The generated type definition code.
         """
-        language = spec.metadata.language_target
+        language = arrangement.target_language if arrangement else spec.metadata.language_target
+        arrangement_context = self._build_arrangement_context(arrangement)
 
         prompt = f"""
 You are an expert {language} developer specializing in type systems.
@@ -82,6 +93,8 @@ Your task is to define the data types described in the following specification.
 
 # Global Project Context
 {self.global_context}
+
+{arrangement_context}
 
 # Type Specification
 {spec.body}
@@ -100,7 +113,8 @@ Your task is to define the data types described in the following specification.
     def compile_orchestrator(
         self,
         spec: ParsedSpec,
-        model: Optional[str] = None
+        model: Optional[str] = None,
+        arrangement: Optional[Arrangement] = None
     ) -> str:
         """
         Compiles an orchestrator spec to workflow execution code.
@@ -108,11 +122,13 @@ Your task is to define the data types described in the following specification.
         Args:
             spec: The parsed specification (must be type: orchestrator).
             model: Optional model override.
+            arrangement: Optional build arrangement.
 
         Returns:
             The generated orchestration code.
         """
-        language = spec.metadata.language_target
+        language = arrangement.target_language if arrangement else spec.metadata.language_target
+        arrangement_context = self._build_arrangement_context(arrangement)
         
         # Extract specs used in steps to include in import context
         used_specs = []
@@ -133,6 +149,8 @@ Your task is to implement the workflow described in the following specification.
 # Components Available
 {import_context}
 
+{arrangement_context}
+
 # Orchestration Specification
 {spec.content}
 
@@ -147,6 +165,28 @@ Your task is to implement the workflow described in the following specification.
 """
         code = self.provider.generate(prompt, model=model)
         return self._strip_markdown_fences(code)
+
+    def _build_arrangement_context(self, arrangement: Optional[Arrangement]) -> str:
+        """Builds a prompt context from an Arrangement."""
+        if not arrangement:
+            return ""
+
+        context = [f"# Build Arrangement ({arrangement.target_language})"]
+        context.append(f"- Output Implementation: `{arrangement.output_paths.implementation}`")
+        context.append(f"- Output Tests: `{arrangement.output_paths.tests}`")
+
+        if arrangement.constraints:
+            context.append("\n## Environment Constraints")
+            for constraint in arrangement.constraints:
+                context.append(f"- {constraint}")
+        
+        if arrangement.build_commands:
+            context.append("\n## Build & Test Commands")
+            if arrangement.build_commands.lint:
+                context.append(f"- Lint: `{arrangement.build_commands.lint}`")
+            context.append(f"- Test: `{arrangement.build_commands.test}`")
+
+        return "\n".join(context)
 
     def _build_import_context(self, spec: ParsedSpec) -> str:
         """Build import instructions from spec dependencies."""
@@ -169,7 +209,8 @@ Your task is to implement the workflow described in the following specification.
     def compile_tests(
         self,
         spec: ParsedSpec,
-        model: Optional[str] = None
+        model: Optional[str] = None,
+        arrangement: Optional[Arrangement] = None
     ) -> str:
         """
         Generates a test suite for a spec.
@@ -177,15 +218,19 @@ Your task is to implement the workflow described in the following specification.
         Args:
             spec: The parsed specification.
             model: Optional model override.
+            arrangement: Optional build arrangement.
 
         Returns:
             The generated test code.
         """
-        language = spec.metadata.language_target or "python"
+        language = arrangement.target_language if arrangement else (spec.metadata.language_target or "python")
         module_name = spec.metadata.name or spec.path.replace(".spec.md", "")
+        arrangement_context = self._build_arrangement_context(arrangement)
 
-        test_instructions = "1. Write a standard test file (e.g., using `pytest` for Python)."
-        if language.lower() in ["typescript", "javascript", "ts", "js"]:
+        test_instructions = f"1. Write a standard test file for {language}."
+        if language.lower() in ["python"]:
+            test_instructions = "1. Use `pytest` for testing."
+        elif language.lower() in ["typescript", "javascript", "ts", "js"]:
             test_instructions = (
                 "1. Use the Node.js built-in test runner: `import { describe, it } from 'node:test';` "
                 "and `import assert from 'node:assert';`.\n"
@@ -198,6 +243,8 @@ Your task is to write a comprehensive unit test suite for the component describe
 
 # Component Specification
 {spec.body}
+
+{arrangement_context}
 
 # Instructions
 {test_instructions}
@@ -215,7 +262,8 @@ Your task is to write a comprehensive unit test suite for the component describe
         code_content: str,
         test_content: str,
         error_log: str,
-        model: Optional[str] = None
+        model: Optional[str] = None,
+        arrangement: Optional[Arrangement] = None
     ) -> str:
         """
         Generates a fix for failing tests.
@@ -226,22 +274,30 @@ Your task is to write a comprehensive unit test suite for the component describe
             test_content: Current test code.
             error_log: Test failure output.
             model: Optional model override.
+            arrangement: Optional build arrangement.
 
         Returns:
             The raw LLM response with FILE markers.
         """
         module_name = spec.metadata.name or spec.path.replace(".spec.md", "")
-        language = spec.metadata.language_target or "python"
+        language = arrangement.target_language if arrangement else (spec.metadata.language_target or "python")
+        arrangement_context = self._build_arrangement_context(arrangement)
 
         # Simple extension mapping (could use config, but this is prompt-side)
         ext = ".py"
+        test_filename = f"test_{module_name}.py"
 
         if language.lower() in ["typescript", "ts"]:
             ext = ".ts"
-            # for TS, test file pattern is usually module.test.ts
             test_filename = f"{module_name}.test.ts"
+        
+        if arrangement:
+            # Use exact paths from arrangement if available
+            impl_path = arrangement.output_paths.implementation
+            test_path = arrangement.output_paths.tests
         else:
-            test_filename = f"test_{module_name}.py"
+            impl_path = f"build/{module_name}{ext}"
+            test_path = f"build/{test_filename}"
 
         prompt = f"""
 You are a Senior Software Engineer tasked with fixing a build failure.
@@ -250,10 +306,12 @@ Analyze the discrepancy between the Code, the Test, and the Specification.
 # 1. The Specification (Source of Truth)
 {spec.content}
 
-# 2. The Current Implementation ({module_name}{ext})
+{arrangement_context}
+
+# 2. The Current Implementation ({impl_path})
 {code_content}
 
-# 3. The Failing Test Suite ({test_filename})
+# 3. The Failing Test Suite ({test_path})
 {test_content}
 
 # 4. The Test Failure Output
@@ -265,13 +323,13 @@ Analyze the discrepancy between the Code, the Test, and the Specification.
 3. Provide the CORRECTED content for the file that needs fixing.
 4. Use the following format for your output so I can apply the patch:
 
-### FILE: build/{module_name}{ext}
+### FILE: {impl_path}
 ... (full corrected code content) ...
 ### END
 
 OR
 
-### FILE: build/{test_filename}
+### FILE: {test_path}
 ... (full corrected test content) ...
 ### END
 

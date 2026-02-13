@@ -388,3 +388,30 @@ A workflow.
         parsed = parser.parse_spec("test")
 
         assert parsed.metadata.dependencies == ["step1", "step2"]
+
+
+def test_parse_arrangement():
+    """Test parsing of an Arrangement file."""
+    content = """---
+target_language: python
+output_paths:
+  implementation: src/math_utils.py
+  tests: tests/test_math_utils.py
+environment:
+  tools: [uv, pytest]
+build_commands:
+  test: uv run pytest
+constraints:
+  - Must use type hints
+---
+"""
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        parser = SpecParser(tmp_dir)
+        arrangement = parser.parse_arrangement(content)
+
+        assert arrangement.target_language == "python"
+        assert arrangement.output_paths.implementation == "src/math_utils.py"
+        assert arrangement.output_paths.tests == "tests/test_math_utils.py"
+        assert arrangement.environment.tools == ["uv", "pytest"]
+        assert arrangement.build_commands.test == "uv run pytest"
+        assert arrangement.constraints == ["Must use type hints"]

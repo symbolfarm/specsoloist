@@ -83,6 +83,37 @@ class BundleType(BaseModel):
     description: Optional[str] = None
 
 
+class ArrangementOutputPaths(BaseModel):
+    """Output paths for implementation and tests."""
+    implementation: str
+    tests: str
+
+
+class ArrangementEnvironment(BaseModel):
+    """Environment settings for the build."""
+    tools: List[str] = Field(default_factory=list)
+    setup_commands: List[str] = Field(default_factory=list)
+
+
+class ArrangementBuildCommands(BaseModel):
+    """Build, lint, and test commands."""
+    compile: Optional[str] = None
+    lint: Optional[str] = None
+    test: str
+
+
+class Arrangement(BaseModel):
+    """
+    An Arrangement file bridges a Score (spec) to a specific Build Environment.
+    It defines how and where the code should be generated and verified.
+    """
+    target_language: str
+    output_paths: ArrangementOutputPaths
+    environment: Optional[ArrangementEnvironment] = Field(default_factory=ArrangementEnvironment)
+    build_commands: ArrangementBuildCommands
+    constraints: List[str] = Field(default_factory=list)
+
+
 class InterfaceSchema(BaseModel):
     """
     Represents the interface schema for a spec.
