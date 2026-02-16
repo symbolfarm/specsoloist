@@ -6,6 +6,7 @@ services:
     volumes:
       - .:/app
       - /app/.venv
+      - /var/run/docker.sock:/var/run/docker.sock
     environment:
       - GEMINI_API_KEY=${GEMINI_API_KEY}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
