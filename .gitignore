@@ -25,6 +25,7 @@ MANIFEST
 # Environments
 .venv/
 env/
+bin/
 venv/
 ENV/
 env.bak/
