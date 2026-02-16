@@ -16,6 +16,15 @@ uv run ruff check src/
 
 If ruff reports errors, fix them or run `uv run ruff check src/ --fix` for auto-fixable issues.
 
+## Docker & Sandboxing
+
+If you make changes to the Docker environment or `TestRunner`:
+
+1.  **Verify Framework build**: `docker build -t specsoloist -f docker/specsoloist.Dockerfile .`
+2.  **Verify Sandbox execution**: 
+    - Build sandbox: `docker build -t specsoloist-sandbox -f docker/sandbox.Dockerfile .`
+    - Run a test in sandbox: `SPECSOLOIST_SANDBOX=true uv run sp test score/examples/math_utils`
+
 ## Files to Keep in Sync
 
 When making changes, ensure these files stay consistent:

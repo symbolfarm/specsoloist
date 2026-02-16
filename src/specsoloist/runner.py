@@ -93,214 +93,132 @@ class TestRunner:
             f.write(content)
         return path
 
-        def read_file(self, filename: str) -> Optional[str]:
-
-            """Reads a file relative to the build directory."""
-
-            path = os.path.join(self.build_dir, filename)
-
-            if not os.path.exists(path):
-
-                # Try absolute or relative to CWD if it exists and is within project root
-
-                if os.path.exists(filename):
-
-                    path = filename
-
-                else:
-
-                    return None
-
-            with open(path, 'r') as f:
-
-                return f.read()
-
-    
-
-        def write_file(self, filename: str, content: str) -> str:
-
-            """
-
-            Writes a file to a specific path.
-
-            If filename is relative, it's relative to build_dir.
-
-            """
-
-            if os.path.isabs(filename):
-
-                target_path = filename
-
+    def read_file(self, filename: str) -> Optional[str]:
+        """Reads a file relative to the build directory."""
+        path = os.path.join(self.build_dir, filename)
+        if not os.path.exists(path):
+            # Try absolute or relative to CWD if it exists and is within project root
+            if os.path.exists(filename):
+                path = filename
             else:
-
-                target_path = os.path.abspath(os.path.join(self.build_dir, filename))
-
-            
-
-            # Ensure directory exists
-
-            os.makedirs(os.path.dirname(target_path), exist_ok=True)
-
-            
-
-            with open(target_path, 'w') as f:
-
-                f.write(content)
-
-            return target_path
-
-    
-
-        def run_tests(self, module_name: str, language: str = "python") -> TestResult:
-
-            """
-
-            Runs the test command for a module based on its language configuration.
-
-            """
-
-            cfg = self._get_lang_config(language)
-
-            test_path = self.get_test_path(module_name, language)
-
-    
-
-            if not os.path.exists(test_path):
-
-                return TestResult(
-
-                    success=False,
-
-                    output=f"Test file not found at {test_path}. Compile first.",
-
-                    return_code=-1
-
-                )
-
-    
-
-            # Prepare environment
-
-            env = os.environ.copy()
-
-            for k, v in cfg.env_vars.items():
-
-                # Inject build_dir if placeholder used
-
-                env[k] = v.format(build_dir=self.build_dir) + os.pathsep + env.get(k, "")
-
-    
-
-            # Prepare command
-
-            cmd = [part.format(file=test_path) for part in cfg.test_command]
-
-            return self._execute_command(cmd, env)
-
-    
-
-        def run_custom_test(self, command: str) -> TestResult:
-
-            """Runs a custom test command (shell)."""
-
-            try:
-
-                # Use shell=True for custom commands which might have pipes/redirects
-
-                result = subprocess.run(
-
-                    command,
-
-                    shell=True,
-
-                    capture_output=True,
-
-                    text=True,
-
-                    check=False
-
-                )
-
-    
-
-                return TestResult(
-
-                    success=result.returncode == 0,
-
-                    output=result.stdout + "\n" + result.stderr,
-
-                    return_code=result.returncode
-
-                )
-
-            except Exception as e:
-
-                return TestResult(
-
-                    success=False,
-
-                    output=f"Execution error: {str(e)}",
-
-                    return_code=-1
-
-                )
-
-    
-
-        def _execute_command(self, cmd: list, env: dict) -> TestResult:
-
-            """Internal helper to execute a command list."""
-
-            try:
-
-                result = subprocess.run(
-
-                    cmd,
-
-                    env=env,
-
-                    capture_output=True,
-
-                    text=True,
-
-                    check=False
-
-                )
-
-    
-
-                return TestResult(
-
-                    success=result.returncode == 0,
-
-                    output=result.stdout + "\n" + result.stderr,
-
-                    return_code=result.returncode
-
-                )
-
-            except FileNotFoundError:
-
-                return TestResult(
-
-                    success=False,
-
-                    output=f"Command not found: {cmd[0]}",
-
-                    return_code=-1
-
-                )
-
-            except Exception as e:
-
-                return TestResult(
-
-                    success=False,
-
-                    output=f"Execution error: {str(e)}",
-
-                    return_code=-1
-
-                )
-
-    
+                return None
+        with open(path, 'r') as f:
+            return f.read()
+
+    def write_file(self, filename: str, content: str) -> str:
+        """
+        Writes a file to a specific path.
+        If filename is relative, it's relative to build_dir.
+        """
+        if os.path.isabs(filename):
+            target_path = filename
+        else:
+            target_path = os.path.abspath(os.path.join(self.build_dir, filename))
+
+        # Ensure directory exists
+        os.makedirs(os.path.dirname(target_path), exist_ok=True)
+
+        with open(target_path, 'w') as f:
+            f.write(content)
+        return target_path
+
+    def run_tests(self, module_name: str, language: str = "python") -> TestResult:
+        """
+        Runs the test command for a module based on its language configuration.
+        """
+        cfg = self._get_lang_config(language)
+        test_path = self.get_test_path(module_name, language)
+
+        if not os.path.exists(test_path):
+            return TestResult(
+                success=False,
+                output=f"Test file not found at {test_path}. Compile first.",
+                return_code=-1
+            )
+
+        # Prepare environment
+        env = os.environ.copy()
+        for k, v in cfg.env_vars.items():
+            # Inject build_dir if placeholder used
+            env[k] = v.format(build_dir=self.build_dir) + os.pathsep + env.get(k, "")
+
+        # Prepare command
+        actual_test_path = test_path
+        if self.config and self.config.sandbox:
+            # Inside the container, build_dir is mounted at /app/build
+            rel_path = os.path.relpath(test_path, self.build_dir)
+            actual_test_path = os.path.join("/app/build", rel_path)
+
+        cmd = [part.format(file=actual_test_path) for part in cfg.test_command]
+        return self._execute_command(cmd, env)
+
+    def run_custom_test(self, command: str) -> TestResult:
+        """Runs a custom test command (shell)."""
+        try:
+            # Use shell=True for custom commands which might have pipes/redirects
+            result = subprocess.run(
+                command,
+                shell=True,
+                capture_output=True,
+                text=True,
+                check=False
+            )
+
+            return TestResult(
+                success=result.returncode == 0,
+                output=result.stdout + "\n" + result.stderr,
+                return_code=result.returncode
+            )
+        except Exception as e:
+            return TestResult(
+                success=False,
+                output=f"Execution error: {str(e)}",
+                return_code=-1
+            )
+
+    def _execute_command(self, cmd: list, env: dict) -> TestResult:
+        """Internal helper to execute a command list."""
+        try:
+            # If sandboxing is enabled, wrap the command in docker run
+            if self.config and self.config.sandbox:
+                docker_cmd = [
+                    "docker", "run", "--rm",
+                    "-v", f"{self.build_dir}:/app/build",
+                    "-w", "/app",
+                    "-e", f"PYTHONPATH=/app/build:{env.get('PYTHONPATH', '')}",
+                ]
+
+                # Add other env vars
+                for k, v in env.items():
+                    if k != "PYTHONPATH":
+                        docker_cmd.extend(["-e", f"{k}={v}"])
+
+                docker_cmd.append(self.config.sandbox_image)
+                docker_cmd.extend(cmd)
+                cmd = docker_cmd
+
+            result = subprocess.run(
+                cmd,
+                env=env if not (self.config and self.config.sandbox) else os.environ,
+                capture_output=True,
+                text=True,
+                check=False
+            )
+
+            return TestResult(
+                success=result.returncode == 0,
+                output=result.stdout + "\n" + result.stderr,
+                return_code=result.returncode
+            )
+        except FileNotFoundError:
+            return TestResult(
+                success=False,
+                output=f"Command not found: {cmd[0]}",
+                return_code=-1
+            )
+        except Exception as e:
+            return TestResult(
+                success=False,
+                output=f"Execution error: {str(e)}",
+                return_code=-1
+            )

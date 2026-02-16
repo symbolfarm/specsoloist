@@ -1,0 +1,14 @@
+services:
+  specsoloist:
+    build:
+      context: .
+      dockerfile: docker/specsoloist.Dockerfile
+    volumes:
+      - .:/app
+      - /app/.venv
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - SPECSOLOIST_LLM_PROVIDER=${SPECSOLOIST_LLM_PROVIDER:-gemini}
+    stdin_open: true
+    tty: true

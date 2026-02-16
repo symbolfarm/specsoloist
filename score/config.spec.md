@@ -34,6 +34,8 @@ Main configuration dataclass for the framework.
 - `root_dir`: string, project root directory (default: `"."`)
 - `src_dir`: string, source directory name relative to root (default: `"src"`)
 - `build_dir`: string, build output directory name relative to root (default: `"build"`)
+- `sandbox`: boolean, whether to run tests in a Docker container (default: `false`)
+- `sandbox_image`: string, Docker image to use for sandboxing (default: `"specsoloist-sandbox"`)
 - `languages`: dict mapping language name to `LanguageConfig` (defaults include Python and TypeScript)
 - `src_path`: computed absolute path to source directory
 - `build_path`: computed absolute path to build directory
@@ -50,6 +52,8 @@ Class method. Load configuration from environment variables.
 - `SPECSOLOIST_LLM_PROVIDER`: `"gemini"` or `"anthropic"` (default: `"gemini"`)
 - `SPECSOLOIST_LLM_MODEL`: model identifier (optional)
 - `SPECSOLOIST_SRC_DIR`: source directory name (default: `"src"`)
+- `SPECSOLOIST_SANDBOX`: set to `"true"` to enable sandboxing
+- `SPECSOLOIST_SANDBOX_IMAGE`: Docker image for sandboxing
 - API key: `GEMINI_API_KEY` if provider is gemini, `ANTHROPIC_API_KEY` if provider is anthropic
 
 ## SpecSoloistConfig.create_provider() -> LLMProvider

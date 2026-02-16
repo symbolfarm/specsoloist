@@ -52,6 +52,12 @@ When running tests:
 1. Verify the test file exists; return failure TestResult if missing
 2. Set up environment variables from language config, formatting `{build_dir}` placeholders and prepending to existing values using path separator
 3. Format the test command with `{file}` placeholder
-4. Execute the command and capture output
-5. Return TestResult with success based on exit code 0
-6. Handle execution errors (missing command, other exceptions) by returning failure TestResult
+4. If sandboxing is enabled in config:
+    - Wrap the test command in a `docker run --rm` call
+    - Mount the build directory to `/app/build`
+    - Set working directory to `/app`
+    - Pass environment variables to the container
+    - Use the configured `sandbox_image`
+5. Execute the command and capture output
+6. Return TestResult with success based on exit code 0
+7. Handle execution errors (missing command, other exceptions) by returning failure TestResult

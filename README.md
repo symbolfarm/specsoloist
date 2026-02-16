@@ -108,6 +108,25 @@ export SPECSOLOIST_LLM_PROVIDER="gemini"  # or "anthropic"
 export SPEC_LLM_MODEL="gemini-2.0-flash"  # optional
 ```
 
+## Sandboxed Execution (Docker)
+
+For safety, SpecSoloist can run generated code and tests inside an isolated Docker container.
+
+1.  **Build the sandbox image**:
+    ```bash
+    docker build -t specsoloist-sandbox -f docker/sandbox.Dockerfile .
+    ```
+
+2.  **Enable sandboxing**:
+    ```bash
+    export SPECSOLOIST_SANDBOX=true
+    # Optional: override the image (default: specsoloist-sandbox)
+    # export SPECSOLOIST_SANDBOX_IMAGE="my-custom-image"
+    ```
+
+3.  **Run tests**:
+    `sp test my_module` will now wrap execution in `docker run`.
+
 For Anthropic:
 
 ```bash

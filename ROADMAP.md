@@ -158,7 +158,7 @@ All modules have requirements-oriented specs in `score/`. All validated via quin
 - [x] **`server.py` spec**: Add spec for the MCP server so the quine is fully complete
 - [x] **Naming consistency**: Align quine output names (`composer`, `conductor`)
 - [ ] **Arrangement System**: Implement the Arrangement (makefile) system to decouple build config from specs
-- [ ] **Sandboxed Execution**: Run generated code in Docker/Wasm containers for safety
+- [x] **Sandboxed Execution**: Run generated code in Docker/Wasm containers for safety
 - [ ] **Quine diff report**: Implement the quine_diff tool for semantic fidelity analysis
 
 ## Phase 8: Developer Experience (Future)

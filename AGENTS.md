@@ -95,6 +95,10 @@ src/spechestra/        # Orchestration package - high-level workflows
   composer.py          # SpecComposer: Plain English -> specs
   conductor.py         # SpecConductor: Parallel builds + perform
 
+docker/                # Dockerfiles for framework and sandboxed execution
+  specsoloist.Dockerfile
+  sandbox.Dockerfile
+
 tests/                 # pytest tests (52 tests)
 
 score/                 # The Score - SpecSoloist's own specs (The Quine)

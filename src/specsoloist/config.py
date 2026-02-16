@@ -29,6 +29,8 @@ class SpecSoloistConfig:
     root_dir: str = "."
     src_dir: str = "src"
     build_dir: str = "build"
+    sandbox: bool = False
+    sandbox_image: str = "specsoloist-sandbox"
 
     languages: Dict[str, LanguageConfig] = field(default_factory=lambda: {
         "python": LanguageConfig(
@@ -61,6 +63,8 @@ class SpecSoloistConfig:
         provider = os.environ.get("SPECSOLOIST_LLM_PROVIDER", "gemini")
         model = os.environ.get("SPECSOLOIST_LLM_MODEL")
         src_dir = os.environ.get("SPECSOLOIST_SRC_DIR", "src")
+        sandbox = os.environ.get("SPECSOLOIST_SANDBOX", "false").lower() == "true"
+        sandbox_image = os.environ.get("SPECSOLOIST_SANDBOX_IMAGE", "python:3.11-slim")
 
         if provider == "anthropic":
             api_key = os.environ.get("ANTHROPIC_API_KEY")
@@ -73,6 +77,8 @@ class SpecSoloistConfig:
             llm_model=model,
             src_dir=src_dir,
             api_key=api_key,
+            sandbox=sandbox,
+            sandbox_image=sandbox_image,
         )
 
     def create_provider(self) -> LLMProvider:
