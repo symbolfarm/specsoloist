@@ -151,18 +151,19 @@ All modules have requirements-oriented specs in `score/`. All validated via quin
 
 ---
 
-## Phase 7: Robustness & Polish (Next)
+## Phase 7: Robustness & Polish (Completed)
 
 - [x] **Agent-first `sp fix`**: Self-healing command using native subagents
 - [x] **Fix agent**: `.claude/agents/fix.md` and `.gemini/agents/fix.md` — analyze test failures, patch code, re-test
-- [x] **`server.py` spec**: Add spec for the MCP server so the quine is fully complete
 - [x] **Naming consistency**: Align quine output names (`composer`, `conductor`)
 - [x] **Arrangement System**: Implement the Arrangement (makefile) system to decouple build config from specs
 - [x] **Sandboxed Execution**: Run generated code in Docker/Wasm containers for safety
-- [ ] **Quine diff report**: Implement the quine_diff tool for semantic fidelity analysis
+- [x] **Drop MCP server**: `specsoloist-mcp` removed; agent-first CLI is the better abstraction
 
 ## Phase 8: Developer Experience (Future)
 
+- [ ] **Quine diff report**: Implement the `quine_diff` tool for semantic fidelity analysis
+- [ ] **SKILLS.md**: Adopt the standard for user-invocable slash commands (distinct from `.claude/agents/` spawnable subagents)
 - [ ] **Interactive Mode**: Terminal UI for reviewing/approving specs and architecture
 - [ ] **VS Code Extension**: Live preview while editing specs
 - [ ] **Visual Spec Editor**: GUI for defining requirements
@@ -178,3 +179,4 @@ All modules have requirements-oriented specs in `score/`. All validated via quin
 - [x] Fix ruff lint errors as they arise
 - [x] Keep self-hosting specs in sync with implementation
 - [x] 59 original tests passing, 563 quine tests passing
+

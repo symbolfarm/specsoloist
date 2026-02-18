@@ -112,9 +112,6 @@ def main():
     respec_parser.add_argument("--model", help="LLM model override (with --no-agent)")
     respec_parser.add_argument("--auto-accept", action="store_true", help="Skip interactive review")
 
-    # mcp (hidden, for backwards compatibility)
-    subparsers.add_parser("mcp", help="Start MCP server (for AI agents)")
-
     args = parser.parse_args()
 
     if args.command is None:
@@ -156,8 +153,6 @@ def main():
             cmd_perform(core, args.workflow, args.inputs)
         elif args.command == "respec":
             cmd_respec(core, args.file, args.test, args.out, args.no_agent, args.model, args.auto_accept)
-        elif args.command == "mcp":
-            cmd_mcp()
     except KeyboardInterrupt:
         ui.print_warning("\nOperation cancelled by user.")
         sys.exit(130)
@@ -788,12 +783,6 @@ def _respec_with_llm(core: SpecSoloistCore, file_path: str, test_path: str, out_
         ui.print_info("Use --out <path> to save to file.")
 
 
-def cmd_mcp():
-    """Start the MCP server."""
-    from .server import main as mcp_main
-    mcp_main()
-
-
 def _detect_agent_cli() -> str | None:
     """Detect which agent CLI is available (claude preferred over gemini)."""
     import shutil
@@ -858,7 +847,8 @@ def _discover_arrangement(core):
             with open(path) as f:
                 content = f.read()
             return parser.parse_arrangement(content)
-        except Exception:
+        except Exception as e:
+            ui.print_warning(f"Could not parse arrangement.yaml: {e}")
             return None
     return None
 

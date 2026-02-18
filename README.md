@@ -169,28 +169,6 @@ export ANTHROPIC_API_KEY="your_key_here"
 export SPECSOLOIST_LLM_MODEL="claude-sonnet-4-20250514"  # optional
 ```
 
-## Agent Integration (MCP)
-
-SpecSoloist can run as an MCP server for Claude Desktop or other AI agents:
-
-Add to your `claude_desktop_config.json`:
-
-```json
-{
-  "mcpServers": {
-    "specsoloist": {
-      "command": "uv",
-      "args": ["run", "specsoloist-mcp"],
-      "env": {
-        "GEMINI_API_KEY": "..."
-      }
-    }
-  }
-}
-```
-
-Or use the CLI: `sp mcp`
-
 ## Native Subagents (Claude & Gemini)
 
 For the full agentic experience, SpecSoloist provides native subagent definitions for Claude Code and Gemini CLI. These allow the AI to delegate tasks to specialized agents:
