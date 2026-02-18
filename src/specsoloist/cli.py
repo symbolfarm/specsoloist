@@ -54,6 +54,7 @@ def main():
     compile_parser.add_argument("name", help="Spec name to compile")
     compile_parser.add_argument("--model", help="Override LLM model")
     compile_parser.add_argument("--no-tests", action="store_true", help="Skip test generation")
+    compile_parser.add_argument("--arrangement", metavar="FILE", help="Path to arrangement YAML file")
 
     # test
     test_parser = subparsers.add_parser("test", help="Run tests for a spec")
@@ -74,6 +75,7 @@ def main():
     build_parser.add_argument("--workers", type=int, default=4, help="Max parallel workers (default: 4)")
     build_parser.add_argument("--model", help="Override LLM model")
     build_parser.add_argument("--no-tests", action="store_true", help="Skip test generation")
+    build_parser.add_argument("--arrangement", metavar="FILE", help="Path to arrangement YAML file")
 
     # compose
     compose_parser = subparsers.add_parser("compose", help="Draft architecture and specs from natural language")
@@ -93,6 +95,7 @@ def main():
     conduct_parser.add_argument("--parallel", action="store_true", help="Compile independent specs concurrently")
     conduct_parser.add_argument("--workers", type=int, default=4, help="Max parallel workers (default: 4)")
     conduct_parser.add_argument("--model", help="Override LLM model")
+    conduct_parser.add_argument("--arrangement", metavar="FILE", help="Path to arrangement YAML file (used with --no-agent)")
 
     # perform
     perform_parser = subparsers.add_parser("perform", help="Execute an orchestration workflow")
@@ -137,18 +140,18 @@ def main():
         elif args.command == "graph":
             cmd_graph(core)
         elif args.command == "compile":
-            cmd_compile(core, args.name, args.model, not args.no_tests)
+            cmd_compile(core, args.name, args.model, not args.no_tests, args.arrangement)
         elif args.command == "test":
             cmd_test(core, args.name)
         elif args.command == "fix":
             cmd_fix(core, args.name, args.no_agent, args.auto_accept, args.model)
         elif args.command == "build":
-            cmd_build(core, args.incremental, args.parallel, args.workers, args.model, not args.no_tests)
+            cmd_build(core, args.incremental, args.parallel, args.workers, args.model, not args.no_tests, args.arrangement)
         elif args.command == "compose":
             cmd_compose(core, args.request, args.no_agent, args.auto_accept, args.model)
         elif args.command == "conduct":
             cmd_conduct(core, args.src_dir, args.no_agent, args.auto_accept,
-                        args.incremental, args.parallel, args.workers, args.model)
+                        args.incremental, args.parallel, args.workers, args.model, args.arrangement)
         elif args.command == "perform":
             cmd_perform(core, args.workflow, args.inputs)
         elif args.command == "respec":
@@ -275,10 +278,13 @@ def cmd_graph(core: SpecSoloistCore):
     ui.print_info("Paste this into https://mermaid.live to visualize.")
 
 
-def cmd_compile(core: SpecSoloistCore, name: str, model: str, generate_tests: bool):
+def cmd_compile(core: SpecSoloistCore, name: str, model: str, generate_tests: bool,
+                arrangement_arg: str | None = None):
     _check_api_key()
-    
+
     ui.print_header("Compiling Spec", name)
+
+    arrangement = _resolve_arrangement(core, arrangement_arg)
 
     # Validate first
     validation = core.validate_spec(name)
@@ -291,7 +297,7 @@ def cmd_compile(core: SpecSoloistCore, name: str, model: str, generate_tests: bo
     try:
         # Compile code
         with ui.spinner(f"Compiling [bold]{name}[/] implementation..."):
-            result = core.compile_spec(name, model=model)
+            result = core.compile_spec(name, model=model, arrangement=arrangement)
         ui.print_success(result)
 
         # Generate tests
@@ -299,7 +305,7 @@ def cmd_compile(core: SpecSoloistCore, name: str, model: str, generate_tests: bo
             spec = core.parser.parse_spec(name)
             if spec.metadata.type != "typedef":
                 with ui.spinner(f"Generating tests for [bold]{name}[/]..."):
-                    result = core.compile_tests(name, model=model)
+                    result = core.compile_tests(name, model=model, arrangement=arrangement)
                 ui.print_success(result)
             else:
                 ui.print_info("Skipping tests for typedef spec")
@@ -369,7 +375,8 @@ def _fix_with_llm(core: SpecSoloistCore, name: str, model: str | None = None):
             sys.exit(1)
 
 
-def cmd_build(core: SpecSoloistCore, incremental: bool, parallel: bool, workers: int, model: str, generate_tests: bool):
+def cmd_build(core: SpecSoloistCore, incremental: bool, parallel: bool, workers: int, model: str,
+              generate_tests: bool, arrangement_arg: str | None = None):
     _check_api_key()
 
     specs = core.list_specs()
@@ -386,13 +393,16 @@ def cmd_build(core: SpecSoloistCore, incremental: bool, parallel: bool, workers:
 
     ui.print_header("Building Project", f"{len(specs)} specs {mode_str}")
 
+    arrangement = _resolve_arrangement(core, arrangement_arg)
+
     with ui.spinner("Compiling project..."):
         result = core.compile_project(
             model=model,
             generate_tests=generate_tests,
             incremental=incremental,
             parallel=parallel,
-            max_workers=workers
+            max_workers=workers,
+            arrangement=arrangement,
         )
 
     # Summary Table
@@ -545,13 +555,15 @@ def _compose_with_llm(core: SpecSoloistCore, request: str, auto_accept: bool):
 
 
 def cmd_conduct(core: SpecSoloistCore, src_dir: str | None, no_agent: bool, auto_accept: bool,
-                 incremental: bool, parallel: bool, workers: int, model: str | None = None):
+                 incremental: bool, parallel: bool, workers: int, model: str | None = None,
+                 arrangement_arg: str | None = None):
     """Orchestrate project build."""
 
     ui.print_header("Conducting Build", src_dir or "project specs")
 
     if no_agent:
-        _conduct_with_llm(core, incremental, parallel, workers)
+        arrangement = _resolve_arrangement(core, arrangement_arg)
+        _conduct_with_llm(core, incremental, parallel, workers, arrangement=arrangement)
     else:
         _conduct_with_agent(src_dir, auto_accept, model=model)
 
@@ -617,19 +629,21 @@ def _conduct_with_agent(src_dir: str | None, auto_accept: bool, model: str | Non
         sys.exit(1)
 
 
-def _conduct_with_llm(core: SpecSoloistCore, incremental: bool, parallel: bool, workers: int):
+def _conduct_with_llm(core: SpecSoloistCore, incremental: bool, parallel: bool, workers: int,
+                      arrangement=None):
     """Direct LLM build (single-shot compilation, no agent iteration)."""
     _check_api_key()
 
     ui.print_info("Using direct LLM calls (no agent)...")
 
-    conductor = SpecConductor(core.project_dir)
+    conductor = SpecConductor(core.root_dir)
 
     with ui.spinner("Orchestrating build..."):
         result = conductor.build(
             incremental=incremental,
             parallel=parallel,
-            max_workers=workers
+            max_workers=workers,
+            arrangement=arrangement,
         )
 
     table = ui.create_table(["Result", "Spec", "Details"], title="Conductor Report")
@@ -816,6 +830,49 @@ def _run_agent_oneshot(agent: str, prompt: str, auto_accept: bool, model: str | 
 
     if result.returncode != 0:
         raise RuntimeError(f"Agent exited with code {result.returncode}")
+
+
+def _load_arrangement(path: str):
+    """Load and parse an Arrangement from a YAML file."""
+    try:
+        with open(path) as f:
+            content = f.read()
+        from .parser import SpecParser
+        parser = SpecParser(os.getcwd())
+        return parser.parse_arrangement(content)
+    except FileNotFoundError:
+        ui.print_error(f"Arrangement file not found: {path}")
+        sys.exit(1)
+    except Exception as e:
+        ui.print_error(f"Failed to load arrangement: {e}")
+        sys.exit(1)
+
+
+def _discover_arrangement(core):
+    """Auto-discover arrangement.yaml in the current working directory."""
+    path = os.path.join(os.getcwd(), "arrangement.yaml")
+    if os.path.exists(path):
+        from .parser import SpecParser
+        parser = SpecParser(os.getcwd())
+        try:
+            with open(path) as f:
+                content = f.read()
+            return parser.parse_arrangement(content)
+        except Exception:
+            return None
+    return None
+
+
+def _resolve_arrangement(core, arrangement_arg):
+    """Resolve arrangement: explicit file > auto-discovered > None."""
+    if arrangement_arg:
+        arr = _load_arrangement(arrangement_arg)
+        ui.print_info(f"Using arrangement: [bold]{arrangement_arg}[/]")
+        return arr
+    arr = _discover_arrangement(core)
+    if arr:
+        ui.print_info("Using auto-discovered [bold]arrangement.yaml[/]")
+    return arr
 
 
 def _check_api_key():

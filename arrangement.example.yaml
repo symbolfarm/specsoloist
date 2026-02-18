@@ -1,0 +1,35 @@
+# arrangement.example.yaml
+#
+# An Arrangement bridges a Score (specs) to a concrete build environment.
+# Copy this file to arrangement.yaml and customise it for your project.
+#
+# Usage:
+#   sp compile myspec --arrangement arrangement.yaml
+#   sp build --arrangement arrangement.yaml
+#   sp conduct --no-agent --arrangement arrangement.yaml
+#
+# Or place arrangement.yaml in your project root and it will be auto-discovered.
+
+target_language: python
+
+output_paths:
+  implementation: src/mymodule.py
+  tests: tests/test_mymodule.py
+
+environment:
+  tools:
+    - uv
+    - ruff
+    - pytest
+  setup_commands:
+    - uv sync
+
+build_commands:
+  compile: ""               # Leave empty for interpreted languages
+  lint: uv run ruff check .
+  test: uv run pytest
+
+constraints:
+  - Must pass ruff with 0 errors
+  - Must use type hints for all public function signatures
+  - Must use Google-style docstrings
