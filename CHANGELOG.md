@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.3.1] - 2026-02-18
+
+### Fixed
+- Updated keywords (removed `mcp`, added `agents`, `claude`, `gemini`)
+- Removed misleading "(used with --no-agent)" from `sp conduct --arrangement` help text
+
 ## [0.3.0] - 2026-02-18
 
 ### Added

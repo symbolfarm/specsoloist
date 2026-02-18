@@ -95,7 +95,7 @@ def main():
     conduct_parser.add_argument("--parallel", action="store_true", help="Compile independent specs concurrently")
     conduct_parser.add_argument("--workers", type=int, default=4, help="Max parallel workers (default: 4)")
     conduct_parser.add_argument("--model", help="Override LLM model")
-    conduct_parser.add_argument("--arrangement", metavar="FILE", help="Path to arrangement YAML file (used with --no-agent)")
+    conduct_parser.add_argument("--arrangement", metavar="FILE", help="Path to arrangement YAML file")
 
     # perform
     perform_parser = subparsers.add_parser("perform", help="Execute an orchestration workflow")

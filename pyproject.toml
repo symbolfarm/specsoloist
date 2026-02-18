@@ -1,6 +1,6 @@
 [project]
 name = "specsoloist"
-version = "0.3.0"
+version = "0.3.1"
 description = "Spec-as-Source Framework: AI-driven development where specifications are the source of truth."
 readme = "README.md"
 license = "MIT"
@@ -8,7 +8,7 @@ requires-python = ">=3.10"
 authors = [
     { name = "Toby Lightheart", email = "code@symbolfarm.com" }
 ]
-keywords = ["ai", "llm", "code-generation", "specifications", "mcp"]
+keywords = ["ai", "llm", "code-generation", "specifications", "agents", "claude", "gemini"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
