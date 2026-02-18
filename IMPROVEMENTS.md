@@ -1,7 +1,9 @@
 # SpecSoloist — Product & Technical Improvement Notes
 
 > Brainstorm document. Not a roadmap — just thinking out loud about where this could go.
-> Last updated: 2026-02-18
+> Last updated: 2026-02-19
+>
+> **v0.3.2 (2026-02-19):** All of Section 0 shipped. Also fix 1c (pytest warnings).
 
 ---
 
@@ -488,23 +490,24 @@ Rough priority ordering given current state of the project:
 
 | Priority | Item | Why |
 |----------|------|-----|
-| ★★★ | Fix `sp lift` → `sp respec` in docs | Users reading docs hit a broken command |
-| ★★★ | Execute `setup_commands` or remove the field | Silently broken contract |
-| ★★★ | Scope `bypassPermissions` to quine only | Security/safety; one incident already |
-| ★★★ | `--no-color` / Rich CI fix | Spinners render as garbage in GitHub Actions |
-| ★★★ | Fix quine naming mismatch | Correctness; blocks quine_diff |
-| ★★★ | Fix pytest warnings in runner.py | Noise in every test run |
-| ★★★ | `sp doctor` | #1 new-user pain point |
-| ★★★ | Write Arrangement + sandbox + agents docs | Three shipped features with zero docs |
-| ★★★ | TypeScript support end-to-end + validated example | Biggest audience expansion |
-| ★★☆ | `sp status` | High utility, manifest data already exists |
-| ★★☆ | `sp validate` quality hints | Improves compile quality significantly |
-| ★★☆ | `quine_diff` — compile from existing spec | Spec already written, just needs `sp compile` |
-| ★★☆ | Fix or remove `sp perform` / implement `validate_inputs` | Placeholder code in production |
-| ★★☆ | `--quiet` / `--json` output flags | Makes tool scriptable |
-| ★★☆ | OpenAI provider | Unlocks a large existing user base |
-| ★★☆ | Homebrew formula | Low effort, broad reach |
-| ★☆☆ | Watch mode | Convenience; needs watchdog dep |
-| ★☆☆ | VS Code extension | High impact but significant effort |
-| ★☆☆ | Spec registry | Requires infrastructure; too early |
-| ★☆☆ | Multi-language quine | Great story, not urgent |
+| ✅ done | Fix `sp lift` → `sp respec` in docs (0a) | Users reading docs hit a broken command |
+| ✅ done | Execute `setup_commands` or remove the field (0e) | Silently broken contract |
+| ✅ done | Scope `bypassPermissions` to quine only (0f) | Security/safety; one incident already |
+| ✅ done | `NO_COLOR` / Rich CI fix (0c) | Spinners render as garbage in GitHub Actions |
+| ✅ done | Fix pytest warnings in runner.py (1c) | Noise in every test run |
+| ✅ done | `validate_inputs()` raises `NotImplementedError` (0b) | Silent broken promise |
+| ✅ done | Write Arrangement + agents docs (0d) | Two shipped features with zero docs |
+| ★★★ | Fix quine naming mismatch (1d) | Correctness; blocks quine_diff |
+| ★★★ | `sp doctor` (1a) | #1 new-user pain point |
+| ★★★ | TypeScript support end-to-end + validated example (5a) | Biggest audience expansion |
+| ★★☆ | `sp status` (1b) | High utility, manifest data already exists |
+| ★★☆ | `sp validate` quality hints (4d) | Improves compile quality significantly |
+| ★★☆ | `quine_diff` — compile from existing spec (3a) | Spec already written, just needs `sp compile` |
+| ★★☆ | Fix or remove `sp perform` (1f) | Placeholder code in production |
+| ★★☆ | `--quiet` / `--json` output flags (1g) | Makes tool scriptable |
+| ★★☆ | OpenAI provider (6a) | Unlocks a large existing user base |
+| ★★☆ | Homebrew formula (8a) | Low effort, broad reach |
+| ★☆☆ | Watch mode (2a) | Convenience; needs watchdog dep |
+| ★☆☆ | VS Code extension (9a) | High impact but significant effort |
+| ★☆☆ | Spec registry (9b) | Requires infrastructure; too early |
+| ★☆☆ | Multi-language quine (5b) | Great story, not urgent |

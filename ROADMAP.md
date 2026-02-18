@@ -179,4 +179,5 @@ All modules have requirements-oriented specs in `score/`. All validated via quin
 - [x] Fix ruff lint errors as they arise
 - [x] Keep self-hosting specs in sync with implementation
 - [x] 59 original tests passing, 563 quine tests passing
+- [x] **v0.3.2 patch** — fix setup_commands execution, bypassPermissions scope, NO_COLOR support, validate_inputs NotImplementedError, pytest warnings, stale CLI docs, new arrangement/agents guides
 
