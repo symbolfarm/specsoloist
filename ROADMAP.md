@@ -157,7 +157,7 @@ All modules have requirements-oriented specs in `score/`. All validated via quin
 - [x] **Fix agent**: `.claude/agents/fix.md` and `.gemini/agents/fix.md` — analyze test failures, patch code, re-test
 - [x] **`server.py` spec**: Add spec for the MCP server so the quine is fully complete
 - [x] **Naming consistency**: Align quine output names (`composer`, `conductor`)
-- [ ] **Arrangement System**: Implement the Arrangement (makefile) system to decouple build config from specs
+- [x] **Arrangement System**: Implement the Arrangement (makefile) system to decouple build config from specs
 - [x] **Sandboxed Execution**: Run generated code in Docker/Wasm containers for safety
 - [ ] **Quine diff report**: Implement the quine_diff tool for semantic fidelity analysis
 
@@ -177,4 +177,4 @@ All modules have requirements-oriented specs in `score/`. All validated via quin
 
 - [x] Fix ruff lint errors as they arise
 - [x] Keep self-hosting specs in sync with implementation
-- [x] 52 original tests passing, 563 quine tests passing
+- [x] 59 original tests passing, 563 quine tests passing

@@ -108,6 +108,40 @@ export SPECSOLOIST_LLM_PROVIDER="gemini"  # or "anthropic"
 export SPEC_LLM_MODEL="gemini-2.0-flash"  # optional
 ```
 
+## Arrangement Files
+
+An **Arrangement** is SpecSoloist's makefile — it bridges language-agnostic specs to a concrete build environment by specifying the target language, output paths, build commands, and constraints.
+
+Copy `arrangement.example.yaml` and customise it for your project:
+
+```yaml
+target_language: python
+output_paths:
+  implementation: src/mymodule.py
+  tests: tests/test_mymodule.py
+environment:
+  tools: [uv, ruff, pytest]
+  setup_commands: [uv sync]
+build_commands:
+  lint: uv run ruff check .
+  test: uv run pytest
+constraints:
+  - Must use type hints for all public function signatures
+```
+
+**Usage:**
+
+```bash
+# Explicit path
+sp compile myspec --arrangement arrangement.yaml
+sp build --arrangement arrangement.yaml
+sp conduct --no-agent --arrangement arrangement.yaml
+
+# Auto-discovery: place arrangement.yaml in your project root
+# and it will be picked up automatically
+sp compile myspec
+```
+
 ## Sandboxed Execution (Docker)
 
 For safety, SpecSoloist can run generated code and tests inside an isolated Docker container.
