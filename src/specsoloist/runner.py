@@ -5,7 +5,7 @@ Test execution and result handling.
 import os
 import subprocess
 from dataclasses import dataclass
-from typing import Optional
+from typing import List, Optional
 
 from .config import SpecSoloistConfig, LanguageConfig
 
@@ -13,6 +13,7 @@ from .config import SpecSoloistConfig, LanguageConfig
 @dataclass
 class TestResult:
     """Result of a test run."""
+    __test__ = False  # prevent pytest collection
     success: bool
     output: str
     return_code: int = 0
@@ -22,6 +23,7 @@ class TestRunner:
     """
     Handles execution of tests for different languages.
     """
+    __test__ = False  # prevent pytest collection
 
     def __init__(self, build_dir: str, config: Optional[SpecSoloistConfig] = None):
         """
@@ -33,6 +35,7 @@ class TestRunner:
         """
         self.build_dir = os.path.abspath(build_dir)
         self.config = config
+        self.setup_commands: List[str] = []
 
     def _get_lang_config(self, language: Optional[str]) -> LanguageConfig:
         """Helper to get language config from SpecSoloistConfig."""
@@ -122,6 +125,32 @@ class TestRunner:
             f.write(content)
         return target_path
 
+    def _run_setup_commands(self) -> TestResult:
+        """Run setup_commands before tests. Returns failure TestResult on first error."""
+        for cmd in self.setup_commands:
+            try:
+                result = subprocess.run(
+                    cmd,
+                    shell=True,
+                    cwd=self.build_dir,
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                )
+                if result.returncode != 0:
+                    return TestResult(
+                        success=False,
+                        output=f"Setup command failed: {cmd}\n{result.stdout}{result.stderr}",
+                        return_code=result.returncode,
+                    )
+            except Exception as e:
+                return TestResult(
+                    success=False,
+                    output=f"Setup command error: {cmd}\n{e}",
+                    return_code=-1,
+                )
+        return TestResult(success=True, output="", return_code=0)
+
     def run_tests(self, module_name: str, language: str = "python") -> TestResult:
         """
         Runs the test command for a module based on its language configuration.
@@ -135,6 +164,10 @@ class TestRunner:
                 output=f"Test file not found at {test_path}. Compile first.",
                 return_code=-1
             )
+
+        setup_result = self._run_setup_commands()
+        if not setup_result.success:
+            return setup_result
 
         # Prepare environment
         env = os.environ.copy()

@@ -136,8 +136,10 @@ class InterfaceSchema(BaseModel):
 
     def validate_inputs(self, inputs: Dict[str, Any]) -> None:
         """Runtime validation of input dictionary against schema."""
-        # This is a placeholder for runtime validation logic
-        pass
+        raise NotImplementedError(
+            "validate_inputs() is not yet implemented. "
+            "Workflow step input validation is a planned feature."
+        )
 
 
 class BundleSchema(BaseModel):

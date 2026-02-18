@@ -280,6 +280,7 @@ def cmd_compile(core: SpecSoloistCore, name: str, model: str, generate_tests: bo
     ui.print_header("Compiling Spec", name)
 
     arrangement = _resolve_arrangement(core, arrangement_arg)
+    _apply_arrangement(core, arrangement)
 
     # Validate first
     validation = core.validate_spec(name)
@@ -312,7 +313,10 @@ def cmd_compile(core: SpecSoloistCore, name: str, model: str, generate_tests: bo
 
 def cmd_test(core: SpecSoloistCore, name: str):
     ui.print_header("Running Tests", name)
-    
+
+    arrangement = _resolve_arrangement(core, None)
+    _apply_arrangement(core, arrangement)
+
     with ui.spinner(f"Running tests for [bold]{name}[/]..."):
         result = core.run_tests(name)
     
@@ -389,6 +393,7 @@ def cmd_build(core: SpecSoloistCore, incremental: bool, parallel: bool, workers:
     ui.print_header("Building Project", f"{len(specs)} specs {mode_str}")
 
     arrangement = _resolve_arrangement(core, arrangement_arg)
+    _apply_arrangement(core, arrangement)
 
     with ui.spinner("Compiling project..."):
         result = core.compile_project(
@@ -618,7 +623,7 @@ def _conduct_with_agent(src_dir: str | None, auto_accept: bool, model: str | Non
         )
 
     try:
-        _run_agent_oneshot(agent, prompt, auto_accept, model=model)
+        _run_agent_oneshot(agent, prompt, auto_accept, model=model, is_quine=is_quine)
     except Exception as e:
         ui.print_error(f"Agent error: {e}")
         sys.exit(1)
@@ -793,7 +798,8 @@ def _detect_agent_cli() -> str | None:
     return None
 
 
-def _run_agent_oneshot(agent: str, prompt: str, auto_accept: bool, model: str | None = None):
+def _run_agent_oneshot(agent: str, prompt: str, auto_accept: bool, model: str | None = None,
+                       is_quine: bool = False):
     """Run an agent CLI in one-shot mode."""
     import subprocess
 
@@ -802,8 +808,8 @@ def _run_agent_oneshot(agent: str, prompt: str, auto_accept: bool, model: str | 
         cmd = ["claude", "-p", prompt, "--verbose"]
         if model:
             cmd.extend(["--model", model])
-        if auto_accept:
-            # Use bypassPermissions for fully automated quine runs
+        if auto_accept and is_quine:
+            # bypassPermissions only for quine runs (fully automated, no user present)
             cmd.extend(["--permission-mode", "bypassPermissions"])
         result = subprocess.run(cmd, capture_output=False, text=True)
     elif agent == "gemini":
@@ -851,6 +857,12 @@ def _discover_arrangement(core):
             ui.print_warning(f"Could not parse arrangement.yaml: {e}")
             return None
     return None
+
+
+def _apply_arrangement(core, arrangement):
+    """Apply arrangement settings to core (e.g. setup_commands)."""
+    if arrangement and arrangement.environment and arrangement.environment.setup_commands:
+        core.runner.setup_commands = arrangement.environment.setup_commands
 
 
 def _resolve_arrangement(core, arrangement_arg):

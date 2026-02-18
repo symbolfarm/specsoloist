@@ -1,6 +1,6 @@
-# The Specular Workflow
+# The SpecSoloist Workflow
 
-Using Specular requires a shift in mindset: **You are no longer a Coder; you are an Architect.**
+Using SpecSoloist requires a shift in mindset: **You are no longer a Coder; you are an Architect.**
 
 Instead of writing logic, you define constraints and behaviors. This guide outlines the recommended workflow for building scalable systems.
 
@@ -26,27 +26,27 @@ Once a component exists, you enter the daily development loop. You rarely touch 
 1.  Open `auth.spec.md`.
 2.  Add a new function signature to **Interface Specification**.
 3.  Add a **Functional Requirement** (e.g., `FR-05: The system shall hash passwords using bcrypt`).
-4.  Run `specular compile auth`.
-5.  Run `specular test auth`. (Specular generates new tests for the new requirements).
+4.  Run `sp compile auth`.
+5.  Run `sp test auth`. (SpecSoloist generates new tests for the new requirements).
 
 ### Scenario B: Fixing a Bug
-1.  You run `specular test` and see a failure.
+1.  You run `sp test` and see a failure.
 2.  **Do not edit the code.**
-3.  Run `specular fix auth`.
+3.  Run `sp fix auth`.
 4.  The agent analyzes the failure, reads the spec, and patches the code.
 5.  *If it fails repeatedly:* Your spec is likely ambiguous. **Refine the spec** (e.g., add a constraint or clarify an edge case).
 
 ## 3. The Hybrid Reality
 
-For large projects, you don't have to use Specular for 100% of the code.
+For large projects, you don't have to use SpecSoloist for 100% of the code.
 
-*   **Specular**: Use it for "pure" logic, data models, complex algorithms, and utilities.
+*   **SpecSoloist**: Use it for "pure" logic, data models, complex algorithms, and utilities.
 *   **Hand-Written**: Use manual code for "glue," framework boilerplate (like FastAPI setup or React routing), or highly visual UI components.
 
-Specular generates standard Python/TypeScript files in `build/`. You can import them into your hand-written `main.py` just like any other library.
+SpecSoloist generates standard Python/TypeScript files in your configured output directory. You can import them into your hand-written `main.py` just like any other library.
 
 !!! warning "Do not edit build artifacts"
-    If you manually edit a file in `build/`, Specular will overwrite your changes the next time you compile. If you need manual control, move the file out of `build/` and stop managing it with Specular.
+    If you manually edit a generated file, SpecSoloist will overwrite your changes the next time you compile. If you need manual control, move the file out of the build directory and stop managing it with SpecSoloist.
 
 ## 4. Best Practices
 

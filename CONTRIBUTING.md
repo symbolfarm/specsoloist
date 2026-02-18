@@ -31,7 +31,11 @@ When making changes, ensure these files stay consistent:
 
 | When you change... | Also update... |
 |--------------------|----------------|
-| CLI commands | `README.md` (CLI Reference table) |
+| CLI commands | `README.md` (CLI Reference table), `docs/reference/cli.md` |
+| CLI flags or behaviour | `docs/reference/cli.md` |
+| Arrangement system | `docs/guide/arrangement.md` |
+| Agent behaviour or subagents | `docs/guide/agents.md` |
+| Workflow or iteration loop | `docs/guide/workflow.md` |
 | Specs in `score/` | Verify round-trip: regenerate code, run tests |
 | Complete a roadmap phase | `ROADMAP.md` |
 | Project structure | `AGENTS.md` (Project Structure section) |

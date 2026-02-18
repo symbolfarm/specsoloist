@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.3.2] - 2026-02-18
+
+### Fixed
+- `setup_commands` in Arrangement now executed before running tests (was silently ignored)
+- `validate_inputs()` now raises `NotImplementedError` instead of silently doing nothing
+- `--permission-mode bypassPermissions` scoped to quine runs only (was applied to all `--auto-accept` commands)
+- `NO_COLOR` env var now respected by Rich console output
+- Pytest collection warnings for `TestResult`/`TestRunner` classes suppressed via `__test__ = False`
+- `sp lift` corrected to `sp respec` in CLI reference docs
+- `docs/guide/workflow.md` updated from old "Specular"/"specular" naming
+
+### Added
+- `docs/guide/arrangement.md` — guide for the Arrangement system (previously undocumented)
+- `docs/guide/agents.md` — guide for native subagents (previously undocumented)
+- `sp test` now auto-discovers `arrangement.yaml` and respects its `setup_commands`
+
 ## [0.3.1] - 2026-02-18
 
 ### Fixed

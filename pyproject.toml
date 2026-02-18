@@ -1,6 +1,6 @@
 [project]
 name = "specsoloist"
-version = "0.3.1"
+version = "0.3.2"
 description = "Spec-as-Source Framework: AI-driven development where specifications are the source of truth."
 readme = "README.md"
 license = "MIT"

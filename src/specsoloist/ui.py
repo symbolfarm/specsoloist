@@ -2,6 +2,7 @@
 UI module for Specular CLI using Rich.
 """
 
+import os
 from typing import List, Optional
 from rich.console import Console
 from rich.table import Table
@@ -20,7 +21,7 @@ theme = Theme({
     "dim": "dim",
 })
 
-console = Console(theme=theme)
+console = Console(theme=theme, no_color="NO_COLOR" in os.environ)
 
 def print_header(title: str, subtitle: str = ""):
     """Print a styled header."""
