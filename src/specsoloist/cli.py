@@ -102,6 +102,30 @@ def main():
     perform_parser.add_argument("workflow", help="Workflow spec name")
     perform_parser.add_argument("inputs", help="JSON inputs for the workflow")
 
+    # diff
+    diff_parser = subparsers.add_parser(
+        "diff",
+        help="Compare two build output directories semantically"
+    )
+    diff_parser.add_argument("left", help="Left directory (e.g. src/ or build/run1/)")
+    diff_parser.add_argument("right", help="Right directory (e.g. build/quine/src/ or build/run2/)")
+    diff_parser.add_argument(
+        "--label-left", default=None, metavar="LABEL",
+        help="Human-readable label for the left directory (default: directory name)"
+    )
+    diff_parser.add_argument(
+        "--label-right", default=None, metavar="LABEL",
+        help="Human-readable label for the right directory (default: directory name)"
+    )
+    diff_parser.add_argument(
+        "--report", default="build/diff-report.json", metavar="PATH",
+        help="Path to write the JSON diff report (default: build/diff-report.json)"
+    )
+    diff_parser.add_argument(
+        "--runs", type=int, default=None, metavar="N",
+        help="Compare the last N build runs recorded in build/runs/ (overrides left/right)"
+    )
+
     # respec
     respec_parser = subparsers.add_parser("respec", help="Reverse engineer code to spec")
     respec_parser.add_argument("file", help="Path to source file")
@@ -151,6 +175,9 @@ def main():
                         args.incremental, args.parallel, args.workers, args.model, args.arrangement)
         elif args.command == "perform":
             cmd_perform(core, args.workflow, args.inputs)
+        elif args.command == "diff":
+            cmd_diff(core, args.left, args.right, args.label_left, args.label_right,
+                     args.report, args.runs)
         elif args.command == "respec":
             cmd_respec(core, args.file, args.test, args.out, args.no_agent, args.model, args.auto_accept)
     except KeyboardInterrupt:
@@ -722,6 +749,59 @@ def cmd_perform(core: SpecSoloistCore, workflow: str, inputs_json: str):
         # Print traceback for debugging
         import traceback
         traceback.print_exc()
+        sys.exit(1)
+
+
+def cmd_diff(
+    core: SpecSoloistCore,
+    left: str,
+    right: str,
+    label_left: str | None,
+    label_right: str | None,
+    report: str,
+    runs: int | None,
+):
+    """Compare two build output directories semantically."""
+    from .build_diff import run_diff, list_build_runs
+
+    if runs is not None:
+        # Compare the last N recorded runs in build/runs/
+        build_runs_dir = os.path.join(os.getcwd(), "build", "runs")
+        all_runs = list_build_runs(build_runs_dir)
+        if len(all_runs) < 2:
+            ui.print_error(
+                f"Need at least 2 recorded runs in {build_runs_dir}; "
+                f"found {len(all_runs)}. Run 'sp conduct' with run archiving enabled first."
+            )
+            sys.exit(1)
+        selected = all_runs[-runs:] if runs <= len(all_runs) else all_runs
+        if len(selected) < 2:
+            ui.print_error(f"Not enough runs to compare (found {len(selected)}).")
+            sys.exit(1)
+        left = selected[-2].path
+        right = selected[-1].path
+        label_left = label_left or selected[-2].run_id
+        label_right = label_right or selected[-1].run_id
+
+    left_abs = os.path.abspath(left)
+    right_abs = os.path.abspath(right)
+    label_left = label_left or os.path.basename(left_abs.rstrip("/"))
+    label_right = label_right or os.path.basename(right_abs.rstrip("/"))
+
+    if not os.path.isdir(left_abs):
+        ui.print_error(f"Left directory not found: {left_abs}")
+        sys.exit(1)
+    if not os.path.isdir(right_abs):
+        ui.print_error(f"Right directory not found: {right_abs}")
+        sys.exit(1)
+
+    report_abs = os.path.abspath(report)
+
+    ui.print_header("Build Diff", f"{label_left}  →  {label_right}")
+
+    summary = run_diff(left_abs, right_abs, report_abs, label_left, label_right)
+
+    if summary.failed > 0 or summary.missing_right > 0:
         sys.exit(1)
 
 
