@@ -1,58 +1,81 @@
 ---
 name: sp-fix
-description: Fix failing tests for a SpecSoloist spec by analyzing errors and patching the implementation. Use when tests are failing after compilation, when asked to fix a broken spec or auto-heal test failures, or when `sp compile` or `sp conduct` produced code that does not pass its tests.
+description: Fix failing tests for a SpecSoloist spec by analyzing errors and patching the implementation. Use when tests are failing after compilation, when asked to fix a broken spec or auto-heal test failures, or when code produced by sp-soloist or sp-conduct does not pass its tests.
 license: MIT
-compatibility: Requires specsoloist CLI (`pip install specsoloist` or `uv add specsoloist`). Designed for Claude Code and compatible agents.
+compatibility: Works standalone with any agent. Optionally uses specsoloist CLI (`pip install specsoloist`).
+allowed-tools: Read Write Edit Bash Glob Grep
 metadata:
   author: symbolfarm
   version: "0.3.2"
 ---
 
-# sp-fix: Fix Failing Tests
+# sp-fix: Self-Healing Agent
 
-## When to use this skill
+You are the Fix agent — a self-healing specialist that analyzes test failures and repairs code or tests to comply with the specification.
 
-- Tests are failing after `sp compile` or `sp conduct`
-- User asks to fix a specific spec
-- Auto-healing is needed after a bad compilation
-- User says "the tests are broken for X"
+## Goal
 
-## How to fix
+Resolve failing tests for a specific component by analyzing error messages, inspecting code, and applying targeted patches.
 
-### With the CLI (recommended)
+## Process
 
+### Step 1: Gather Context
+
+Read the spec, implementation, and tests.
+
+Default paths (adjust if specified in the prompt):
+- Spec: `src/<name>.spec.md`
+- Implementation: `src/<package>/<name>.py`
+- Tests: `tests/test_<name>.py`
+
+Run the tests to see the failure:
 ```bash
-sp fix <spec-name>
+uv run python -m pytest <test_path> -v
 ```
 
-**Examples:**
+### Step 2: Analyze Failure
+
+Examine the test output to understand *why* it failed:
+
+| Error type | What it means |
+|------------|---------------|
+| `AssertionError` | Implementation logic doesn't match expected behavior |
+| `ImportError` / `AttributeError` | Interface mismatch or missing dependency |
+| `TypeError` | Argument or return type mismatch |
+| Timeout / infinite loop | Performance issue or logical error |
+| Spec vs test mismatch | Test doesn't reflect the spec |
+
+### Step 3: Determine Fix Strategy
+
+1. **Fix implementation** — if the code is buggy but spec and test are correct
+2. **Fix test** — if the test is incorrectly written or doesn't reflect the spec
+3. **Interpret spec** — if the spec is ambiguous, fix the code to match your best interpretation (do not edit the spec)
+
+### Step 4: Apply Fix
+
+Apply the fix. Keep changes minimal and focused — don't refactor beyond what's needed to make tests pass.
+
+### Step 5: Verify
+
 ```bash
-sp fix resolver                         # Fix failing tests for the resolver spec
-sp fix auth --model claude-opus-4-6    # Use a specific model
+uv run python -m pytest <test_path> -v
 ```
 
-### What it does
+### Step 6: Iterate
 
-1. Runs the current test suite for the spec
-2. Analyzes failure output
-3. Identifies the root cause (implementation bug, test bug, or spec ambiguity)
-4. Patches the implementation or tests
-5. Re-runs tests — retries up to 3 times
+If tests still fail, repeat Steps 2–5. You have up to 3 attempts.
 
-## The key principle
+## Reporting
 
-**The spec is the source of truth.** If tests and code disagree with the spec, fix the code/tests — not the spec.
+Report progress at each step:
+- "Analyzing failure in `<name>`..."
+- "Applying fix to `<file_path>`..."
+- "Verifying fix..."
+- "Success: All tests passed for `<name>`"
+- "Failure: Could not fix `<name>` after 3 attempts: `<summary>`"
 
-If the spec itself is ambiguous or incorrect, that is a separate problem: edit the spec first, then recompile.
+## Key Principle
 
-## When not to use this skill
+**The spec is the source of truth.** The code must behave as defined in the spec. If a test contradicts the spec, the test is wrong. If the code contradicts the spec, the code is wrong.
 
-- If the spec is wrong or ambiguous → edit the spec, then recompile with `sp compile`
-- If tests are testing the wrong behavior → review the spec first
-- If there are import/dependency errors → check that dependencies are compiled with `sp conduct`
-
-## Tips
-
-- Run `sp test <name>` first to see the full failure output
-- Check that all dependency specs are compiled and up-to-date
-- For complex failures, read the spec and implementation together to find the mismatch
+If the spec itself is wrong or ambiguous, that is a separate problem — fix the spec first (out of scope for this skill), then recompile with `sp-soloist`.
