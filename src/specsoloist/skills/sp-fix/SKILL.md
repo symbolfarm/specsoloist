@@ -1,9 +1,11 @@
 ---
 name: sp-fix
-description: >
-  Fix failing tests for a SpecSoloist spec. Use when tests are failing after
-  compilation, when asked to fix a broken spec, or to auto-heal implementation
-  errors. Runs `sp fix <name>` which analyzes failures and patches code iteratively.
+description: Fix failing tests for a SpecSoloist spec by analyzing errors and patching the implementation. Use when tests are failing after compilation, when asked to fix a broken spec or auto-heal test failures, or when `sp compile` or `sp conduct` produced code that does not pass its tests.
+license: MIT
+compatibility: Requires specsoloist CLI (`pip install specsoloist` or `uv add specsoloist`). Designed for Claude Code and compatible agents.
+metadata:
+  author: symbolfarm
+  version: "0.3.2"
 ---
 
 # sp-fix: Fix Failing Tests
@@ -25,8 +27,8 @@ sp fix <spec-name>
 
 **Examples:**
 ```bash
-sp fix resolver                          # Fix failing tests for the resolver spec
-sp fix auth --model claude-opus-4-6     # Use a specific model
+sp fix resolver                         # Fix failing tests for the resolver spec
+sp fix auth --model claude-opus-4-6    # Use a specific model
 ```
 
 ### What it does
@@ -41,7 +43,7 @@ sp fix auth --model claude-opus-4-6     # Use a specific model
 
 **The spec is the source of truth.** If tests and code disagree with the spec, fix the code/tests — not the spec.
 
-If the spec itself is ambiguous or incorrect, that's a separate problem: edit the spec first, then recompile.
+If the spec itself is ambiguous or incorrect, that is a separate problem: edit the spec first, then recompile.
 
 ## When not to use this skill
 

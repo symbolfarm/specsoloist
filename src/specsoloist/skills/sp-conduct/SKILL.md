@@ -1,9 +1,11 @@
 ---
 name: sp-conduct
-description: >
-  Build SpecSoloist specs into working code. Use when asked to compile specs, build
-  a project from its spec files, or orchestrate spec compilation. Runs `sp conduct`
-  which spawns soloist agents to compile each spec in dependency order.
+description: Compile all SpecSoloist specs into working code by orchestrating soloist agents in dependency order. Use when asked to build a project, compile specs, conduct the build, or generate code from existing spec files.
+license: MIT
+compatibility: Requires specsoloist CLI (`pip install specsoloist` or `uv add specsoloist`). Designed for Claude Code and compatible agents.
+metadata:
+  author: symbolfarm
+  version: "0.3.2"
 ---
 
 # sp-conduct: Orchestrate Spec Compilation
@@ -41,7 +43,7 @@ The conductor:
 ```bash
 sp conduct --parallel --workers 4    # Compile independent specs in parallel
 sp conduct --incremental             # Only recompile changed specs
-sp conduct --arrangement arr.yaml   # Use a custom arrangement file
+sp conduct --arrangement arr.yaml    # Use a custom arrangement file
 ```
 
 ## Output

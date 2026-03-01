@@ -1,9 +1,11 @@
 ---
 name: sp-compose
-description: >
-  Turn a plain English description into SpecSoloist spec files. Use when asked to
-  design a system, architect a new feature, or create specifications from a natural
-  language description. Runs `sp compose "<description>"` when the CLI is available.
+description: Draft architecture and spec files from a plain English description using SpecSoloist. Use when asked to design a system, create specs for a new feature, architect a project, or turn a natural language request into working specifications.
+license: MIT
+compatibility: Requires specsoloist CLI (`pip install specsoloist` or `uv add specsoloist`). Designed for Claude Code and compatible agents.
+metadata:
+  author: symbolfarm
+  version: "0.3.2"
 ---
 
 # sp-compose: Compose Specs from Natural Language
@@ -13,7 +15,7 @@ description: >
 - User wants to design a new system or application from scratch
 - User asks to "spec out" a feature or component
 - User describes what they want to build in plain English
-- User wants an architecture before writing any code
+- User wants an architecture drafted before writing any code
 
 ## How to compose
 
@@ -40,8 +42,8 @@ If `sp` is not installed, follow the compose workflow manually:
 
 1. Identify the components (data types, functions, modules)
 2. Map dependencies between them
-3. Create a `.spec.md` file for each component using the spec format
-4. Each spec needs: YAML frontmatter (`name`, `type`, `description`), an `# Overview` section, and relevant sections for the type (`# Behavior`, `# Examples`, etc.)
+3. Create a `.spec.md` file for each component using the SpecSoloist spec format
+4. Each spec needs: YAML frontmatter (`name`, `type`, `description`), an `# Overview` section, and type-appropriate sections (`# Behavior`, `# Examples`, etc.)
 
 ## Output
 
@@ -54,5 +56,5 @@ If `sp` is not installed, follow the compose workflow manually:
 ## Tips
 
 - Be descriptive: more detail in your request → better specs
-- Review and edit generated specs before conducting
+- Review and edit the generated specs before conducting
 - Run `sp graph` to visualize the dependency order

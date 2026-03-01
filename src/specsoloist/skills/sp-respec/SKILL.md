@@ -1,9 +1,11 @@
 ---
 name: sp-respec
-description: >
-  Extract requirements from existing source code and express them as SpecSoloist
-  spec files. Use when asked to spec out existing code, reverse-engineer a module,
-  or migrate an implementation to spec-as-source. Runs `sp respec <file>`.
+description: Extract requirements from existing source code and write them as a SpecSoloist spec file. Use when asked to spec out a file, reverse-engineer a module, document existing code as specs, or migrate an implementation to spec-as-source development.
+license: MIT
+compatibility: Requires specsoloist CLI (`pip install specsoloist` or `uv add specsoloist`). Designed for Claude Code and compatible agents.
+metadata:
+  author: symbolfarm
+  version: "0.3.2"
 ---
 
 # sp-respec: Extract Requirements from Code
@@ -58,4 +60,4 @@ A validated `.spec.md` file that:
 
 - Include the test file — tests are requirements expressed as code
 - Review the generated spec to ensure it captures intent, not implementation
-- Use `sp compile` on the result to verify it's complete enough to regenerate code
+- Use `sp compile` on the result to verify it is complete enough to regenerate the code
