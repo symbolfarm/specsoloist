@@ -1,17 +1,10 @@
 ---
 name: user_service
 type: module
-language_target: python
 status: stable
 dependencies:
-  - name: User
-    from: types.spec.md
-  - name: UserCreateRequest
-    from: types.spec.md
-  - name: ValidationError
-    from: types.spec.md
-  - name: validate_user_create
-    from: validation.spec.md
+  - types
+  - validation
 ---
 
 # 1. Overview
@@ -20,23 +13,25 @@ Handles user creation with validation and provides user lookup functionality.
 
 # 2. Interface Specification
 
-## 2.1 Inputs
+```yaml:functions
+create_user:
+  inputs:
+    request: {type: ref, ref: types/UserCreateRequest}
+  outputs:
+    result:
+      type: union
+      of:
+        - {type: ref, ref: types/User}
+        - {type: array, items: {type: ref, ref: types/ValidationError}}
+  behavior: "Validates the request and creates a new user if valid, otherwise returns errors."
 
-### `create_user(request: UserCreateRequest) -> Union[User, List[ValidationError]]`
-| Name | Type | Description |
-|------|------|-------------|
-| `request` | `UserCreateRequest` | User creation request |
-
-### `get_user(user_id: str) -> Optional[User]`
-| Name | Type | Description |
-|------|------|-------------|
-| `user_id` | `str` | User's unique identifier |
-
-## 2.2 Outputs
-| Type | Description |
-|------|-------------|
-| `Union[User, List[ValidationError]]` | Created user or validation errors |
-| `Optional[User]` | User if found, None otherwise |
+get_user:
+  inputs:
+    user_id: {type: string, format: uuid}
+  outputs:
+    user: {type: optional, of: {type: ref, ref: types/User}}
+  behavior: "Returns the user if found, or null if no user exists with the given ID."
+```
 
 # 3. Functional Requirements (Behavior)
 *   **FR-01**: `create_user` shall validate the request using `validate_user_create`.

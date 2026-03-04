@@ -1,28 +1,36 @@
 ---
 name: model
-type: class
-language_target: python
+type: bundle
 status: stable
-dependencies: []
 ---
 
 # 1. Overview
-A simple Multi-Layer Perceptron (MLP) for regression tasks.
-It maps a 10-dimensional input vector to a scalar output.
+A simple Multi-Layer Perceptron (MLP) for regression tasks that maps a 10-dimensional input vector to a scalar output.
 
 # 2. Interface Specification
 
-## 2.1 Class `SimpleMLP`
-Inherits from `torch.nn.Module`.
+```yaml:functions
+get_model:
+  inputs:
+    input_dim:
+      type: integer
+      default: 10
+    hidden_dim:
+      type: integer
+      default: 32
+    output_dim:
+      type: integer
+      default: 1
+  outputs:
+    model:
+      type: object
+      description: "An object implementing a forward-pass interface for a neural network."
+  behavior: "Creates and returns a neural network model."
+```
 
-### `__init__(input_dim: int = 10, hidden_dim: int = 32, output_dim: int = 1)`
-*   `input_dim`: Size of input features.
-*   `hidden_dim`: Size of hidden layer.
-*   `output_dim`: Size of output.
-
-### `forward(x: torch.Tensor) -> torch.Tensor`
-*   `x`: Input tensor of shape `(batch_size, input_dim)`.
-*   **Returns**: Output tensor of shape `(batch_size, output_dim)`.
+## 2.1 Model Interface
+The returned model object must provide:
+*   **forward(input_vector)**: Receives a vector (or batch of vectors) and returns the scalar output (or batch of scalar outputs).
 
 # 3. Functional Requirements (Behavior)
 *   **FR-01**: The network shall have 3 linear layers.

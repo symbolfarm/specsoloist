@@ -7,11 +7,10 @@ tags:
   - pure
 ---
 
-# Overview
-
+# 1. Overview
 Computes the factorial of a non-negative integer. The factorial of n (written n!) is the product of all positive integers less than or equal to n.
 
-# Interface
+# 2. Interface Specification
 
 ```yaml:schema
 inputs:
@@ -19,38 +18,33 @@ inputs:
     type: integer
     minimum: 0
     maximum: 20
-    description: The non-negative integer to compute factorial of
+    description: "The non-negative integer to compute factorial of"
 outputs:
   result:
     type: integer
     minimum: 1
 ```
 
-# Behavior
+# 3. Functional Requirements (Behavior)
+- **FR-01**: Return 1 when n is 0 (base case: 0! = 1).
+- **FR-02**: Return the product of all positive integers from 1 up to n for n > 0.
+- **FR-03**: Raise an error for negative inputs.
+- **FR-04**: Raise an error for inputs exceeding 20 to prevent overflow in restricted environments.
 
-- **[FR-01]**: Return 1 when n is 0 (base case: 0! = 1)
-- **[FR-02]**: Return n × factorial(n-1) for n > 0
-- **[FR-03]**: Reject negative inputs with an error
+# 4. Non-Functional Requirements (Constraints)
+- **NFR-Purity**: Must be a pure function with no side effects.
+- **NFR-Performance**: Implementation should favor iterative approach over deep recursion.
 
-# Constraints
+# 5. Design Contract
+- **Pre-condition**: n is an integer where 0 <= n <= 20.
+- **Post-condition**: result is equal to the mathematical factorial n!.
 
-- **[NFR-01]**: Must be pure (no side effects, no state)
-- **[NFR-02]**: Must not use recursion deeper than n (iterative preferred)
-
-# Contract
-
-- **Pre**: n >= 0 and n <= 20
-- **Post**: result = n!
-- **Invariant**: Same input always produces same output
-
-# Examples
-
-| n | result | Notes |
-|---|--------|-------|
-| 0 | 1 | Base case |
-| 1 | 1 | 1! = 1 |
-| 5 | 120 | 5! = 5×4×3×2×1 |
-| 10 | 3628800 | |
-| 20 | 2432902008176640000 | Maximum supported |
-| -1 | *Error* | Negative not allowed |
-| 21 | *Error* | Exceeds maximum |
+# 6. Test Scenarios
+| Scenario | Input | Expected Output |
+|----------|-------|-----------------|
+| Base case | `n: 0` | `1` |
+| Small integer | `n: 1` | `1` |
+| Typical case | `n: 5` | `120` |
+| Maximum supported | `n: 20` | `2432902008176640000` |
+| Negative input | `n: -1` | `Error` |
+| Out of range | `n: 21` | `Error` |

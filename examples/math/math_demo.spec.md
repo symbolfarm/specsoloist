@@ -1,7 +1,6 @@
 ---
 name: math_demo
 type: module
-language_target: python
 status: draft
 ---
 
@@ -23,21 +22,21 @@ outputs:
 ```
 
 ## 2.1 Inputs
-### `run(operation: str, n: int) -> any`
+### `run(operation, n)`
 *   Standard entry point for the module.
 *   `operation`: Either "factorial" or "is_prime".
 *   `n`: The input number.
 
-### `factorial(n: int) -> int`
+### `factorial(n)`
 *   `n`: The non-negative integer to calculate the factorial of.
 
-### `is_prime(n: int) -> bool`
+### `is_prime(n)`
 *   `n`: The integer to check for primality.
 
 
 ## 2.2 Outputs
 *   `factorial`: Returns the factorial as an integer.
-*   `is_prime`: Returns True if n is prime, False otherwise.
+*   `is_prime`: Returns true if n is prime, false otherwise.
 
 # 3. Functional Requirements (Behavior)
 *   **FR-01**: `factorial` shall return 1 for input 0.

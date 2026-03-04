@@ -1,13 +1,9 @@
 ---
 name: validation
 type: module
-language_target: python
 status: stable
 dependencies:
-  - name: ValidationError
-    from: types.spec.md
-  - name: UserCreateRequest
-    from: types.spec.md
+  - types
 ---
 
 # 1. Overview
@@ -16,27 +12,28 @@ email addresses, passwords, and user creation requests.
 
 # 2. Interface Specification
 
-## 2.1 Inputs
+```yaml:functions
+validate_email:
+  inputs:
+    email: {type: string}
+  outputs:
+    errors: {type: array, items: {type: ref, ref: types/ValidationError}}
+  behavior: "Validates an email address and returns a list of errors (empty if valid)."
 
-### `validate_email(email: str) -> List[ValidationError]`
-| Name | Type | Description |
-|------|------|-------------|
-| `email` | `str` | Email address to validate |
+validate_password:
+  inputs:
+    password: {type: string}
+  outputs:
+    errors: {type: array, items: {type: ref, ref: types/ValidationError}}
+  behavior: "Validates a password for length and complexity requirements."
 
-### `validate_password(password: str) -> List[ValidationError]`
-| Name | Type | Description |
-|------|------|-------------|
-| `password` | `str` | Password to validate |
-
-### `validate_user_create(request: UserCreateRequest) -> List[ValidationError]`
-| Name | Type | Description |
-|------|------|-------------|
-| `request` | `UserCreateRequest` | User creation request to validate |
-
-## 2.2 Outputs
-| Type | Description |
-|------|-------------|
-| `List[ValidationError]` | List of validation errors (empty if valid) |
+validate_user_create:
+  inputs:
+    request: {type: ref, ref: types/UserCreateRequest}
+  outputs:
+    errors: {type: array, items: {type: ref, ref: types/ValidationError}}
+  behavior: "Performs full validation on a user creation request."
+```
 
 # 3. Functional Requirements (Behavior)
 

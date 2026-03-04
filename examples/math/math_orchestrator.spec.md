@@ -1,6 +1,9 @@
 ---
 name: math_orchestrator
-type: orchestrator
+type: workflow
+status: draft
+dependencies:
+  - math_demo
 ---
 
 # 1. Overview
@@ -13,18 +16,22 @@ inputs:
   start_val:
     type: integer
     minimum: 0
-steps:
-  - name: calc_fact
-    spec: math_demo
-    inputs:
-      operation: factorial
-      n: inputs.start_val
-  - name: check_prime
-    spec: math_demo
-    checkpoint: true
-    inputs:
-      operation: is_prime
-      n: calc_fact.outputs.result
+```
+
+# 3. Steps
+
+```yaml:steps
+- name: calc_fact
+  spec: math_demo
+  inputs:
+    operation: factorial
+    n: inputs.start_val
+- name: check_prime
+  spec: math_demo
+  checkpoint: true
+  inputs:
+    operation: is_prime
+    n: calc_fact.outputs.result
 ```
 
 # 3. Functional Requirements

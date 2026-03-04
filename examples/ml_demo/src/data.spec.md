@@ -1,29 +1,37 @@
 ---
 name: data
-type: class
-language_target: python
+type: bundle
 status: stable
-dependencies: []
 ---
 
 # 1. Overview
-A synthetic dataset generator for regression testing.
-Generates data `y = 2x + noise`.
+A synthetic dataset generator for machine learning regression tasks.
+Generates data based on the linear relationship `y = 2x + noise`.
 
 # 2. Interface Specification
 
-## 2.1 Class `SyntheticDataset`
-Inherits from `torch.utils.data.Dataset`.
+```yaml:functions
+get_dataset:
+  inputs:
+    size:
+      type: integer
+      default: 100
+      description: "Number of samples to generate"
+    input_dim:
+      type: integer
+      default: 10
+      description: "Dimension of input features"
+  outputs:
+    dataset:
+      type: object
+      description: "An object implementing a standard dataset interface (length and indexed access)"
+  behavior: "Creates and returns a dataset of synthetic inputs and targets."
+```
 
-### `__init__(size: int = 100, input_dim: int = 10)`
-*   `size`: Number of samples to generate.
-*   `input_dim`: Dimension of input features.
-
-### `__len__() -> int`
-*   Returns the total size of the dataset.
-
-### `__getitem__(idx: int) -> Tuple[torch.Tensor, torch.Tensor]`
-*   Returns the `(input, target)` pair at the given index.
+## 2.1 Dataset Interface
+The returned dataset object must provide:
+*   **length**: Returns the total number of samples.
+*   **item(index)**: Returns the input feature vector and target value at the given index.
 
 # 3. Functional Requirements (Behavior)
 *   **FR-01**: Data shall be generated using `torch.randn` for inputs.

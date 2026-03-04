@@ -1,9 +1,7 @@
 ---
 name: types
 type: typedef
-language_target: python
 status: stable
-dependencies: []
 ---
 
 # 1. Overview
@@ -12,38 +10,26 @@ multiple modules and represent the core domain entities.
 
 # 2. Interface Specification
 
-## 2.1 Types
+```yaml:types
+User:
+  properties:
+    id: {type: string, format: uuid}
+    email: {type: string, format: email}
+    name: {type: string}
+    created_at: {type: string, format: date-time}
+    is_active: {type: boolean, default: true}
 
-### User
-A registered user in the system.
+UserCreateRequest:
+  properties:
+    email: {type: string, format: email}
+    name: {type: string}
+    password: {type: string}
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | `str` | Unique identifier (UUID format) |
-| `email` | `str` | User's email address |
-| `name` | `str` | User's display name |
-| `created_at` | `datetime` | Account creation timestamp |
-| `is_active` | `bool` | Whether the account is active |
-
-### UserCreateRequest
-Request payload for creating a new user.
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `email` | `str` | User's email address |
-| `name` | `str` | User's display name |
-| `password` | `str` | Plain text password (will be hashed) |
-
-### ValidationError
-Represents a validation failure.
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `field` | `str` | Name of the invalid field |
-| `message` | `str` | Human-readable error message |
-
-## 2.2 Outputs
-N/A - This is a type definition module.
+ValidationError:
+  properties:
+    field: {type: string}
+    message: {type: string}
+```
 
 # 3. Functional Requirements (Behavior)
 *   **FR-01**: All types shall be implemented as Python dataclasses with type hints.

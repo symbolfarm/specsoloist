@@ -7,37 +7,38 @@ tags:
   - core
 ---
 
-# Overview
+# 1. Overview
+Represents a user account in the system with a unique identifier, email address, display name, and timestamps.
 
-Represents a user account in the system. Users have a unique identifier, email address, display name, and timestamps for auditing.
-
-# Schema
+# 2. Interface Specification
 
 ```yaml:schema
 properties:
   id:
     type: string
     format: uuid
-    description: Unique identifier, assigned at creation
+    description: "Unique identifier, assigned at creation"
   email:
     type: string
     format: email
-    description: Primary email address, must be unique
+    description: "Primary email address, must be unique"
   name:
     type: string
     minLength: 1
     maxLength: 100
-    description: Display name
+    description: "Display name"
   role:
     type: string
     enum: [user, admin, guest]
-    description: Access level
+    description: "Access level"
   created_at:
-    type: datetime
-    description: When the account was created
+    type: string
+    format: date-time
+    description: "When the account was created (ISO 8601)"
   updated_at:
-    type: datetime
-    description: When the account was last modified
+    type: string
+    format: date-time
+    description: "When the account was last modified (ISO 8601)"
 required:
   - id
   - email

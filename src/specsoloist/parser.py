@@ -76,6 +76,11 @@ class SpecParser:
 
     def get_spec_path(self, name: str) -> str:
         """Resolves a spec name to its full path."""
+        # If it's already an absolute path or a path to a spec file that exists, use it directly
+        if os.path.isabs(name) or (name.endswith(".spec.md") and os.path.exists(name)):
+            return name
+            
+        # Otherwise, resolve it within the src_dir
         if not name.endswith(".spec.md"):
             name += ".spec.md"
         return os.path.join(self.src_dir, name)

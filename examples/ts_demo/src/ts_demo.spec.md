@@ -1,21 +1,28 @@
 ---
 name: ts_demo
 type: module
-language_target: typescript
 status: draft
 ---
 
 # 1. Overview
-A simple TypeScript demonstration module that provides basic string manipulation utilities.
+A demonstration module providing basic string manipulation utilities.
 
 # 2. Interface Specification
 
-## 2.1 Inputs
+```yaml:schema
+inputs:
+  input:
+    type: string
+outputs:
+  result:
+    type: string
+```
 
-### `reverseString(input: string): string`
+## 2.1 Inputs
+### `reverseString(input)`
 *   `input`: The string to reverse.
 
-### `toCapitalCase(input: string): string`
+### `toCapitalCase(input)`
 *   `input`: The string to capitalize.
 
 ## 2.2 Outputs
