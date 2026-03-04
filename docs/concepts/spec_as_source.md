@@ -1,6 +1,6 @@
 # Spec-as-Source
 
-In Specular, **The Specification is the Source of Truth**. 
+In SpecSoloist, **The Specification is the Source of Truth**. 
 
 ### The Lifecycle
 
@@ -11,7 +11,7 @@ In Specular, **The Specification is the Source of Truth**.
 
 ### Markdown Structure
 
-Specular uses a specific SRS (Software Requirements Specification) format:
+SpecSoloist uses a specific SRS (Software Requirements Specification) format:
 
 -   **Frontmatter**: YAML metadata (name, type, language, dependencies).
 -   **Overview**: Purpose and context.

@@ -3,21 +3,21 @@
 ## Installation
 
 ```bash
-pip install specular-ai
+pip install specsoloist-ai
 ```
 
 Or for development:
 
 ```bash
-git clone https://github.com/symbolfarm/specular.git
-cd specular
+git clone https://github.com/symbolfarm/specsoloist.git
+cd specsoloist
 uv sync
 ```
 
 ## Quick Start
 
 ### 1. Set your API key
-Specular defaults to Google Gemini.
+SpecSoloist defaults to Google Gemini.
 
 ```bash
 export GEMINI_API_KEY="your-key-here"
@@ -25,20 +25,20 @@ export GEMINI_API_KEY="your-key-here"
 
 ### 2. Create a new spec
 ```bash
-specular create calculator "A simple calculator with add and multiply"
+specsoloist create calculator "A simple calculator with add and multiply"
 ```
 
 ### 3. Compile to code
 ```bash
-specular compile calculator
+specsoloist compile calculator
 ```
 
 ### 4. Run tests
 ```bash
-specular test calculator
+specsoloist test calculator
 ```
 
 ### 5. Auto-fix if needed
 ```bash
-specular fix calculator
+specsoloist fix calculator
 ```

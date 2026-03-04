@@ -1,6 +1,6 @@
 # Spec Template
 
-When you run `specular create`, it generates a file based on this standard template.
+When you run `specsoloist create`, it generates a file based on this standard template.
 
 ```markdown
 ---

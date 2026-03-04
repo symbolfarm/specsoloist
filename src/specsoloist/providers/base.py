@@ -10,7 +10,7 @@ class LLMProvider(Protocol):
     Protocol defining the interface for LLM providers.
 
     Any LLM provider (Gemini, Anthropic, OpenAI, local models, etc.)
-    must implement this interface to be used with Specular.
+    must implement this interface to be used with SpecSoloist.
     """
 
     def generate(

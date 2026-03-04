@@ -2,7 +2,7 @@
 
 This example demonstrates a basic Python library.
 
-[View the Spec in the repository](https://github.com/symbolfarm/specular/blob/main/src/math_demo.spec.md)
+[View the Spec in the repository](https://github.com/symbolfarm/specsoloist/blob/main/src/math_demo.spec.md)
 
 ### Key Features
 -   Pure functions.

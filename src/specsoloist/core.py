@@ -1,5 +1,5 @@
 """
-SpecularCore: The main orchestrator for spec-driven development.
+SpecSoloistCore: The main orchestrator for spec-driven development.
 
 This module provides the high-level API for compiling specs to code.
 It delegates to specialized modules for parsing, compilation, and testing.

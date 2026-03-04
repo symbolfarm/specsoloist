@@ -37,7 +37,7 @@ venv.bak/
 # Project Specific
 test_env/
 test_env_pytest/
-.specular/
+.specsoloist/
 
 # IDEs
 .vscode/
@@ -47,3 +47,5 @@ test_env_pytest/
 __pycache__/
 *.py[cod]
 *$py.class
+.uv/
+.uv-cache/

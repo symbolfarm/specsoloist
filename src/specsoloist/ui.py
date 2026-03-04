@@ -1,5 +1,5 @@
 """
-UI module for Specular CLI using Rich.
+UI module for SpecSoloist CLI using Rich.
 """
 
 import os
@@ -11,7 +11,7 @@ from rich.text import Text
 from rich.theme import Theme
 from rich.status import Status
 
-# Custom theme for Specular
+# Custom theme for SpecSoloist
 theme = Theme({
     "info": "cyan",
     "warning": "yellow",

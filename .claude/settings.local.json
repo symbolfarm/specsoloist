@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find:*)",
+      "Bash(uv run python:*)",
+      "Bash(uv pip install:*)",
+      "Bash(uv run ruff:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(uv run sp conduct --help:*)",
+      "Bash(uv run sp compose --help:*)",
+      "Bash(uv run:*)",
+      "Bash(ls:*)",
+      "Bash(git show:*)",
+      "Bash(git -C /home/toby/_code/symbolfarm/specsoloist status)",
+      "Bash(git -C /home/toby/_code/symbolfarm/specsoloist diff)",
+      "Bash(git -C /home/toby/_code/symbolfarm/specsoloist log --oneline -5)",
+      "Bash(git -C /home/toby/_code/symbolfarm/specsoloist add src/specsoloist/cli.py tests/test_arrangement.py arrangement.example.yaml)",
+      "Bash(git -C:*)",
+      "Bash(python -m pytest:*)",
+      "Bash(grep:*)",
+      "Bash(uv build:*)",
+      "Bash(python3:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

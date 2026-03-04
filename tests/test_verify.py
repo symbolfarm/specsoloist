@@ -1,11 +1,37 @@
 import os
 import pytest
+import tempfile
 from specsoloist.core import SpecSoloistCore
 from specsoloist.schema import InterfaceSchema
 
 @pytest.fixture
 def core():
-    return SpecSoloistCore(".")
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        # Create a mock src directory and spec file
+        src_dir = os.path.join(tmp_dir, "src")
+        os.makedirs(src_dir)
+        
+        math_spec_path = os.path.join(src_dir, "math_demo.spec.md")
+        with open(math_spec_path, "w") as f:
+            f.write("""---
+name: math_demo
+type: module
+---
+# 1. Overview
+A math demo.
+
+# 2. Interface Specification
+```yaml:schema
+inputs:
+  operation: {type: string}
+  n: {type: integer}
+outputs:
+  result: {type: string}
+```
+""")
+        
+        # Yield the core pointing to this temp directory
+        yield SpecSoloistCore(tmp_dir)
 
 def test_extract_schema(core):
     """Test that schema is correctly extracted from math_demo.spec.md"""

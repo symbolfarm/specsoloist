@@ -381,7 +381,7 @@ already exists — a wrapper image for the CLI itself is a small step from there
 ### 8c. `.specsoloist/` project directory
 
 Currently build artifacts are scattered:
-- `.specular-manifest.json` in project root
+- `.specsoloist-manifest.json` in project root
 - `.spechestra/traces/` for workflow traces
 - `build/quine/` for quine output
 

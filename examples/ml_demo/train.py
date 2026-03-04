@@ -1,6 +1,6 @@
 """
 Manual training loop (The "Experiment").
-Imports Specular-generated components.
+Imports SpecSoloist-generated components.
 """
 import sys
 import os
@@ -13,13 +13,13 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 
 # Import generated components
-# Note: These will only exist after `specular compile` is run!
+# Note: These will only exist after `specsoloist compile` is run!
 try:
     from model import SimpleMLP
     from data import SyntheticDataset
 except ImportError:
     print("Error: Generated modules not found.")
-    print("Please run: specular build")
+    print("Please run: specsoloist build")
     sys.exit(1)
 
 def train():

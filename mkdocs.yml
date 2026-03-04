@@ -1,7 +1,7 @@
-site_name: Specular
+site_name: SpecSoloist
 site_description: Spec-as-Source AI coding framework
 site_author: Toby Lightheart
-repo_url: https://github.com/symbolfarm/specular
+repo_url: https://github.com/symbolfarm/specsoloist
 
 theme:
   name: material

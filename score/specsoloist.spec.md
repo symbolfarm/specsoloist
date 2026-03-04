@@ -124,8 +124,8 @@ The module is organized into specialized components:
 
 ### `from_env(root_dir: str = ".") -> SpecSoloistConfig`
 *   Class method to load config from environment variables:
-    - `SPECULAR_LLM_PROVIDER`: "gemini" or "anthropic"
-    - `SPECULAR_LLM_MODEL`: Model identifier
+    - `SPECSOLOIST_LLM_PROVIDER`: "gemini" or "anthropic"
+    - `SPECSOLOIST_LLM_MODEL`: Model identifier
     - `GEMINI_API_KEY` / `ANTHROPIC_API_KEY`: API keys
 
 ### `create_provider() -> LLMProvider`
@@ -170,7 +170,7 @@ The module is organized into specialized components:
 *   Initializes an empty manifest.
 
 ### `load(build_dir: str) -> BuildManifest`
-*   Class method to load manifest from `.specular-manifest.json`.
+*   Class method to load manifest from `.specsoloist-manifest.json`.
 *   Returns empty manifest if file doesn't exist or is corrupted.
 
 ### `save(build_dir: str)`
@@ -244,7 +244,7 @@ The module is organized into specialized components:
 *   **FR-20**: `compile_project` shall compile all specs in dependency order, passing import context.
 
 ## Incremental Builds
-*   **FR-21**: The system shall track spec content hashes and build metadata in `.specular-manifest.json`.
+*   **FR-21**: The system shall track spec content hashes and build metadata in `.specsoloist-manifest.json`.
 *   **FR-22**: When `incremental=True`, only specs with changed content, changed deps, or rebuilt deps shall be recompiled.
 *   **FR-23**: The manifest shall persist across builds and recover gracefully from corruption.
 
@@ -284,7 +284,7 @@ The module is organized into specialized components:
 | Run passing tests | Valid code + tests | `{"success": True, ...}` | Output contains "passed" |
 | Run failing tests | Buggy code | `{"success": False, ...}` | Output contains error |
 | Attempt fix | Failing tests | Files patched, status message | Only named files changed |
-| Config from env | `SPECULAR_LLM_PROVIDER=anthropic` | Config with anthropic provider | Env override works |
+| Config from env | `SPECSOLOIST_LLM_PROVIDER=anthropic` | Config with anthropic provider | Env override works |
 | Provider injection | Mock provider assigned | Mock used for generation | Supports testing |
 | Build order | A depends on B | `["B", "A"]` | Dependencies first |
 | Circular dependency | A -> B -> C -> A | `CircularDependencyError` | Reports cycle path |

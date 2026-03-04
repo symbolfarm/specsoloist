@@ -1,6 +1,6 @@
 # User Project Example
 
-This example demonstrates Specular's multi-spec dependency system.
+This example demonstrates SpecSoloist's multi-spec dependency system.
 
 ## Structure
 
@@ -24,9 +24,9 @@ user_service ←──┘
 ## Building
 
 ```python
-from specsoloist import SpecularCore
+from specsoloist import SpecSoloistCore
 
-core = SpecularCore("examples/user_project")
+core = SpecSoloistCore("examples/user_project")
 
 # Preview build order
 order = core.get_build_order()
@@ -42,5 +42,5 @@ print(f"Failed: {result.specs_failed}")
 
 1. **Typedef specs** - `types.spec.md` uses `type: typedef` and generates only dataclasses
 2. **Dependency declarations** - Specs declare dependencies in YAML frontmatter
-3. **Automatic build order** - Specular computes topological sort
+3. **Automatic build order** - SpecSoloist computes topological sort
 4. **Import context** - Dependencies are passed to the LLM for correct imports

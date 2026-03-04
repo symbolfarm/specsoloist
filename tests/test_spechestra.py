@@ -4,7 +4,6 @@ Tests for Spechestra (SpecComposer and SpecConductor).
 
 import os
 import tempfile
-import pytest
 
 from spechestra import SpecComposer, SpecConductor
 from spechestra.composer import Architecture, ComponentDef, CompositionResult

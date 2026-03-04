@@ -1,8 +1,8 @@
 # TS Demo (TypeScript)
 
-This example demonstrates how Specular handles the Node.js ecosystem.
+This example demonstrates how SpecSoloist handles the Node.js ecosystem.
 
-[View the Spec in the repository](https://github.com/symbolfarm/specular/blob/main/examples/ts_demo/src/ts_demo.spec.md)
+[View the Spec in the repository](https://github.com/symbolfarm/specsoloist/blob/main/examples/ts_demo/src/ts_demo.spec.md)
 
 ### Key Features
 -   Type-safe interfaces.

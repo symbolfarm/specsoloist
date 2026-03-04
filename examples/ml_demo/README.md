@@ -1,6 +1,6 @@
 # Machine Learning Demo
 
-This example demonstrates the **Hybrid Workflow** for ML research using Specular.
+This example demonstrates the **Hybrid Workflow** for ML research using SpecSoloist.
 
 1.  **Infrastructure (Specs)**: The Model architecture and Data pipeline are defined in rigorous specs (`src/*.spec.md`). This ensures reproducibility and shape correctness.
 2.  **Experiment (Manual)**: The training loop (`train.py`) is written manually, allowing for rapid experimentation with hyperparameters and logging.
@@ -17,10 +17,10 @@ This example requires `torch`. It is isolated from the main package.
     ```
 
 2.  **Compile Infrastructure**:
-    Use Specular to generate the PyTorch code for the model and dataset.
+    Use SpecSoloist to generate the PyTorch code for the model and dataset.
     ```bash
     # From project root
-    specular build --root examples/ml_demo
+    sp build --root examples/ml_demo
     ```
 
 3.  **Run Experiment**:

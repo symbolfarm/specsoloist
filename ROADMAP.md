@@ -24,7 +24,7 @@
 
 ## Phase 2b: Build Optimization (Completed)
 - [x] **Incremental Builds**: Only recompile specs that have changed.
-- [x] **Build Caching**: Track file hashes and build manifest (`.specular-manifest.json`).
+- [x] **Build Caching**: Track file hashes and build manifest (`.specsoloist-manifest.json`).
 - [x] **Parallel Compilation**: Compile independent specs concurrently using `ThreadPoolExecutor`.
 
 ## Phase 2c: Release Prep (Completed)

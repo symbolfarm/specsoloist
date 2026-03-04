@@ -13,7 +13,6 @@ import pytest
 
 from specsoloist.build_diff import (
     BuildRun,
-    DiffResult,
     DiffSummary,
     compare_directories,
     compare_files,
@@ -323,7 +322,7 @@ class TestCompareDirectories:
 
 class TestRecordBuildRun:
     def test_creates_run_meta_json(self, tmp_path):
-        run = record_build_run(str(tmp_path))
+        record_build_run(str(tmp_path))
         meta_file = tmp_path / "run_meta.json"
         assert meta_file.exists()
 
@@ -348,7 +347,7 @@ class TestRecordBuildRun:
         assert "-" in run.run_id
 
     def test_extra_meta_stored(self, tmp_path):
-        run = record_build_run(str(tmp_path), meta={"env": "ci", "version": "1.0"})
+        record_build_run(str(tmp_path), meta={"env": "ci", "version": "1.0"})
         meta_file = tmp_path / "run_meta.json"
         data = json.loads(meta_file.read_text())
         assert data["env"] == "ci"
@@ -361,7 +360,6 @@ class TestRecordBuildRun:
     def test_iso8601_timestamp(self, tmp_path):
         run = record_build_run(str(tmp_path))
         # Should be parseable as ISO-8601
-        from datetime import datetime
         # Just check it doesn't raise
         assert "T" in run.timestamp
 
@@ -401,13 +399,13 @@ class TestListBuildRuns:
 
         run1_dir = tmp_path / "run1"
         run1_dir.mkdir()
-        r1 = record_build_run(str(run1_dir))
+        record_build_run(str(run1_dir))
 
         time.sleep(0.01)  # ensure different timestamps
 
         run2_dir = tmp_path / "run2"
         run2_dir.mkdir()
-        r2 = record_build_run(str(run2_dir))
+        record_build_run(str(run2_dir))
 
         runs = list_build_runs(str(tmp_path))
         assert len(runs) == 2

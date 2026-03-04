@@ -4,7 +4,7 @@ This example demonstrates the **Hybrid Workflow** for Machine Learning research.
 
 In research, you need **Reproducibility** for your infrastructure (data loaders, model definitions) but **Flexibility** for your experiments (training loops, logging).
 
-[View the Code in the repository](https://github.com/symbolfarm/specular/blob/main/examples/ml_demo)
+[View the Code in the repository](https://github.com/symbolfarm/specsoloist/blob/main/examples/ml_demo)
 
 ### The Architecture
 
