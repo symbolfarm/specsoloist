@@ -105,14 +105,14 @@ You can configure SpecSoloist via environment variables or a `.env` file:
 
 ```bash
 export SPECSOLOIST_LLM_PROVIDER="gemini"  # or "anthropic"
-export SPEC_LLM_MODEL="gemini-2.0-flash"  # optional
+export SPECSOLOIST_LLM_MODEL="gemini-2.0-flash"  # optional
 ```
 
 ## Arrangement Files
 
 An **Arrangement** is SpecSoloist's makefile — it bridges language-agnostic specs to a concrete build environment by specifying the target language, output paths, build commands, and constraints.
 
-Copy `arrangement.example.yaml` and customise it for your project:
+See `arrangements/arrangement.python.yaml` for a complete example:
 
 ```yaml
 target_language: python

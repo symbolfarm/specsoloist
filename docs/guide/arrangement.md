@@ -19,9 +19,9 @@ sp test mymodule   # also picks up arrangement.yaml automatically
 ```yaml
 # arrangement.yaml
 
-language: python
+target_language: python
 
-output:
+output_paths:
   implementation: src/mypackage/{name}.py   # {name} is the spec name
   tests: tests/test_{name}.py
 
@@ -31,10 +31,9 @@ environment:
     - pytest
   setup_commands:
     # These run in the build directory before each test run
-    - uv pip install -e .
-    - uv pip install pytest
+    - uv sync
 
-build:
+build_commands:
   lint: uv run ruff check src/
   test: uv run python -m pytest {file} -v
 ```
@@ -43,13 +42,13 @@ build:
 
 | Field | Description |
 | --- | --- |
-| `language` | Target language (e.g. `python`, `typescript`) |
-| `output.implementation` | Path template for generated implementation files |
-| `output.tests` | Path template for generated test files |
+| `target_language` | Target language (e.g. `python`, `typescript`) |
+| `output_paths.implementation` | Path template for generated implementation files |
+| `output_paths.tests` | Path template for generated test files |
 | `environment.tools` | List of tools the agent should use (informational) |
 | `environment.setup_commands` | Shell commands run before each test invocation |
-| `build.lint` | Command to lint the generated code |
-| `build.test` | Command template to run tests (`{file}` is the test path) |
+| `build_commands.lint` | Command to lint the generated code |
+| `build_commands.test` | Command template to run tests (`{file}` is the test path) |
 
 ## setup_commands
 
@@ -58,7 +57,7 @@ build:
 ```yaml
 environment:
   setup_commands:
-    - uv pip install -e ".[dev]"
+    - uv sync
 ```
 
 Commands run in order. If any command fails, the test run is aborted and the failure is reported.
@@ -66,9 +65,9 @@ Commands run in order. If any command fails, the test run is aborted and the fai
 ## Example: A TypeScript Project
 
 ```yaml
-language: typescript
+target_language: typescript
 
-output:
+output_paths:
   implementation: src/{name}.ts
   tests: tests/{name}.test.ts
 
@@ -79,9 +78,9 @@ environment:
   setup_commands:
     - npm install
 
-build:
+build_commands:
   lint: npx eslint src/
-  test: npx jest {file}
+  test: npx vitest run {file}
 ```
 
-See `arrangement.example.yaml` in the project root for a complete reference example.
+See `arrangements/arrangement.python.yaml` in the project root for a complete reference example.

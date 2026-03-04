@@ -62,4 +62,7 @@ Commands that support `--no-agent` (compose, respec) default to agent-based exec
 
 ## API key checking
 
-Before any LLM operation, validates that the appropriate API key environment variable is set based on the configured provider (GEMINI_API_KEY or ANTHROPIC_API_KEY).
+Before any LLM operation, validates that the appropriate API key environment variable is set based on the configured provider (GEMINI_API_KEY or ANTHROPIC_API_KEY). Config is loaded from environment variables:
+- `SPECSOLOIST_LLM_PROVIDER`: "gemini" or "anthropic"
+- `SPECSOLOIST_LLM_MODEL`: Model identifier
+- `GEMINI_API_KEY` or `ANTHROPIC_API_KEY`: Required for LLM access

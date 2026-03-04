@@ -267,11 +267,14 @@ The module is organized into specialized components:
 # 5. Design Contract
 
 *   **Invariant**: An API key must be available (via config or environment) before any LLM operation.
-*   **Invariant**: The `build/` directory is the only location where generated code is written.
-*   **Pre-condition**: Spec names can be provided with or without `.spec.md` extension (system normalizes).
+*   **Invariant**: Generated code is written to the paths defined by the active Arrangement, or `build/` by default.
+*   **Pre-condition**: Spec names can be provided as:
+    - Simple names (e.g., `auth` -> `src/auth.spec.md`)
+    - Relative paths with extensions (e.g., `examples/math/factorial.spec.md`)
+    - Absolute paths (e.g., `/home/user/my.spec.md`)
 *   **Pre-condition**: Specs must pass validation before compilation.
-*   **Post-condition**: After `compile_spec`, a `.py` file exists in `build/` with the module name.
-*   **Post-condition**: After `compile_tests`, a `test_*.py` file exists in `build/`.
+*   **Post-condition**: After `compile_spec`, implementation files exist at the configured output paths.
+*   **Post-condition**: After `compile_tests`, test files exist at the configured output paths.
 
 # 6. Test Scenarios
 | Scenario | Input | Expected Output | Notes |

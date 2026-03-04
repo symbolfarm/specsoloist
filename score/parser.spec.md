@@ -71,7 +71,9 @@ Main class for spec file operations. Initialized with a source directory path an
 Resolve a spec name to its full file path.
 
 **Behavior:**
-- If `name` does not end with `.spec.md`, appends that suffix.
+- If `name` is an absolute path, returns it directly.
+- If `name` ends with `.spec.md` and exists on disk as a relative path, returns it directly.
+- Otherwise, if `name` does not end with `.spec.md`, appends that suffix.
 - Returns the absolute path by joining `src_dir` with the resulting filename.
 
 ### list_specs() -> list of strings
