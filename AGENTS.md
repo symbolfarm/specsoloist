@@ -118,15 +118,22 @@ score/                 # The Score - SpecSoloist's own specs (The Quine)
   conductor.spec.md    # Build orchestration
   arrangement.spec.md  # Build configuration schema
 
-.claude/agents/        # Native subagents for Claude Code
+src/specsoloist/skills/  # Cross-platform skill definitions (agentskills format)
+  sp-compose/SKILL.md    # Same five agents, platform-neutral
+  sp-conduct/SKILL.md    # Skills are the source of truth for agent behavior;
+  sp-respec/SKILL.md     # native agent files below are platform-specific wrappers
+  sp-soloist/SKILL.md    # (different tool names per platform, Gemini adds max_turns)
+  sp-fix/SKILL.md
+
+.claude/agents/        # Native subagents for Claude Code (Claude tool names)
   compose.md           # Draft architecture from natural language
   conductor.md         # Orchestrate builds, spawn soloists
   respec.md            # Extract requirements from code -> spec
   soloist.md           # Read spec, write code directly
   fix.md               # Analyze failures, patch code, re-test
 
-.gemini/agents/        # Native subagents for Gemini CLI
-  compose.md           # (same as Claude, different tool names)
+.gemini/agents/        # Native subagents for Gemini CLI (Gemini tool names)
+  compose.md
   conductor.md
   respec.md
   soloist.md

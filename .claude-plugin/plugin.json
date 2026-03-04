@@ -1,0 +1,15 @@
+{
+  "name": "specsoloist-skills",
+  "version": "0.3.2",
+  "description": "SpecSoloist agent skills for spec-as-source development: compose, conduct, respec, fix, and soloist workflows.",
+  "author": "Toby Lightheart",
+  "repository": "https://github.com/symbolfarm/specsoloist",
+  "license": "MIT",
+  "skills": [
+    "src/specsoloist/skills/sp-compose",
+    "src/specsoloist/skills/sp-conduct",
+    "src/specsoloist/skills/sp-respec",
+    "src/specsoloist/skills/sp-fix",
+    "src/specsoloist/skills/sp-soloist"
+  ]
+}

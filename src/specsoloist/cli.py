@@ -102,6 +102,30 @@ def main():
     perform_parser.add_argument("workflow", help="Workflow spec name")
     perform_parser.add_argument("inputs", help="JSON inputs for the workflow")
 
+    # diff
+    diff_parser = subparsers.add_parser(
+        "diff",
+        help="Compare two build output directories semantically"
+    )
+    diff_parser.add_argument("left", help="Left directory (e.g. src/ or build/run1/)")
+    diff_parser.add_argument("right", help="Right directory (e.g. build/quine/src/ or build/run2/)")
+    diff_parser.add_argument(
+        "--label-left", default=None, metavar="LABEL",
+        help="Human-readable label for the left directory (default: directory name)"
+    )
+    diff_parser.add_argument(
+        "--label-right", default=None, metavar="LABEL",
+        help="Human-readable label for the right directory (default: directory name)"
+    )
+    diff_parser.add_argument(
+        "--report", default="build/diff-report.json", metavar="PATH",
+        help="Path to write the JSON diff report (default: build/diff-report.json)"
+    )
+    diff_parser.add_argument(
+        "--runs", type=int, default=None, metavar="N",
+        help="Compare the last N build runs recorded in build/runs/ (overrides left/right)"
+    )
+
     # respec
     respec_parser = subparsers.add_parser("respec", help="Reverse engineer code to spec")
     respec_parser.add_argument("file", help="Path to source file")
@@ -112,11 +136,26 @@ def main():
     respec_parser.add_argument("--model", help="LLM model override (with --no-agent)")
     respec_parser.add_argument("--auto-accept", action="store_true", help="Skip interactive review")
 
+    # install-skills
+    install_skills_parser = subparsers.add_parser(
+        "install-skills",
+        help="Install SpecSoloist agent skills to your project or global skills directory"
+    )
+    install_skills_parser.add_argument(
+        "--target", default=".claude/skills",
+        help="Target directory for skills (default: .claude/skills)"
+    )
+
     args = parser.parse_args()
 
     if args.command is None:
         parser.print_help()
         sys.exit(0)
+
+    # Commands that don't need a project context
+    if args.command == "install-skills":
+        cmd_install_skills(args.target)
+        return
 
     # Initialize core
     try:
@@ -151,6 +190,9 @@ def main():
                         args.incremental, args.parallel, args.workers, args.model, args.arrangement)
         elif args.command == "perform":
             cmd_perform(core, args.workflow, args.inputs)
+        elif args.command == "diff":
+            cmd_diff(core, args.left, args.right, args.label_left, args.label_right,
+                     args.report, args.runs)
         elif args.command == "respec":
             cmd_respec(core, args.file, args.test, args.out, args.no_agent, args.model, args.auto_accept)
     except KeyboardInterrupt:
@@ -725,6 +767,59 @@ def cmd_perform(core: SpecSoloistCore, workflow: str, inputs_json: str):
         sys.exit(1)
 
 
+def cmd_diff(
+    core: SpecSoloistCore,
+    left: str,
+    right: str,
+    label_left: str | None,
+    label_right: str | None,
+    report: str,
+    runs: int | None,
+):
+    """Compare two build output directories semantically."""
+    from .build_diff import run_diff, list_build_runs
+
+    if runs is not None:
+        # Compare the last N recorded runs in build/runs/
+        build_runs_dir = os.path.join(os.getcwd(), "build", "runs")
+        all_runs = list_build_runs(build_runs_dir)
+        if len(all_runs) < 2:
+            ui.print_error(
+                f"Need at least 2 recorded runs in {build_runs_dir}; "
+                f"found {len(all_runs)}. Run 'sp conduct' with run archiving enabled first."
+            )
+            sys.exit(1)
+        selected = all_runs[-runs:] if runs <= len(all_runs) else all_runs
+        if len(selected) < 2:
+            ui.print_error(f"Not enough runs to compare (found {len(selected)}).")
+            sys.exit(1)
+        left = selected[-2].path
+        right = selected[-1].path
+        label_left = label_left or selected[-2].run_id
+        label_right = label_right or selected[-1].run_id
+
+    left_abs = os.path.abspath(left)
+    right_abs = os.path.abspath(right)
+    label_left = label_left or os.path.basename(left_abs.rstrip("/"))
+    label_right = label_right or os.path.basename(right_abs.rstrip("/"))
+
+    if not os.path.isdir(left_abs):
+        ui.print_error(f"Left directory not found: {left_abs}")
+        sys.exit(1)
+    if not os.path.isdir(right_abs):
+        ui.print_error(f"Right directory not found: {right_abs}")
+        sys.exit(1)
+
+    report_abs = os.path.abspath(report)
+
+    ui.print_header("Build Diff", f"{label_left}  →  {label_right}")
+
+    summary = run_diff(left_abs, right_abs, report_abs, label_left, label_right)
+
+    if summary.failed > 0 or summary.missing_right > 0:
+        sys.exit(1)
+
+
 def cmd_respec(core: SpecSoloistCore, file_path: str, test_path: str, out_path: str, no_agent: bool, model: str, auto_accept: bool):
     """Reverse engineer code to spec."""
 
@@ -786,6 +881,62 @@ def _respec_with_llm(core: SpecSoloistCore, file_path: str, test_path: str, out_
     else:
         ui.console.print(ui.Panel(spec_content, title="Generated Spec", border_style="blue"))
         ui.print_info("Use --out <path> to save to file.")
+
+
+def cmd_install_skills(target: str):
+    """Install SpecSoloist agent skills to a target directory."""
+    import shutil
+
+    skills_src = _find_skills_dir()
+    if not skills_src:
+        ui.print_error("Skills directory not found. Ensure specsoloist is properly installed.")
+        sys.exit(1)
+
+    target_abs = os.path.abspath(target)
+    os.makedirs(target_abs, exist_ok=True)
+
+    installed = []
+    for entry in os.listdir(skills_src):
+        src = os.path.join(skills_src, entry)
+        dst = os.path.join(target_abs, entry)
+        if os.path.isdir(src) and os.path.exists(os.path.join(src, "SKILL.md")):
+            if os.path.exists(dst):
+                shutil.rmtree(dst)
+            shutil.copytree(src, dst)
+            installed.append(entry)
+            ui.print_success(f"Installed: [bold]{entry}[/]")
+
+    if not installed:
+        ui.print_warning("No skills found to install.")
+        return
+
+    ui.print_success(f"Installed {len(installed)} skills to: [bold]{target_abs}[/]")
+    ui.print_info("Skills are now available in your agent's skills directory.")
+
+
+def _find_skills_dir() -> str | None:
+    """Find the bundled skills directory."""
+    # Try importlib.resources (works for both installed and editable installs)
+    try:
+        import importlib.resources as pkg_resources
+        skills_ref = pkg_resources.files('specsoloist').joinpath('skills')
+        skills_path = str(skills_ref)
+        if os.path.isdir(skills_path):
+            return skills_path
+    except Exception:
+        pass
+
+    # Fallback: relative to this file (development installs without importlib support)
+    candidates = [
+        os.path.join(os.path.dirname(__file__), 'skills'),           # src/specsoloist/skills/
+        os.path.join(os.path.dirname(__file__), '..', '..', 'skills'),  # repo root skills/
+    ]
+    for candidate in candidates:
+        abs_path = os.path.abspath(candidate)
+        if os.path.isdir(abs_path):
+            return abs_path
+
+    return None
 
 
 def _detect_agent_cli() -> str | None:

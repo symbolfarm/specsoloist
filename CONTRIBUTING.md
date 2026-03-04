@@ -34,7 +34,7 @@ When making changes, ensure these files stay consistent:
 | CLI commands | `README.md` (CLI Reference table), `docs/reference/cli.md` |
 | CLI flags or behaviour | `docs/reference/cli.md` |
 | Arrangement system | `docs/guide/arrangement.md` |
-| Agent behaviour or subagents | `docs/guide/agents.md` |
+| Agent behaviour or subagents | `docs/guide/agents.md`, AND update all three forms: `src/specsoloist/skills/sp-<name>/SKILL.md`, `.claude/agents/<name>.md`, `.gemini/agents/<name>.md` |
 | Workflow or iteration loop | `docs/guide/workflow.md` |
 | Specs in `score/` | Verify round-trip: regenerate code, run tests |
 | Complete a roadmap phase | `ROADMAP.md` |

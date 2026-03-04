@@ -13,13 +13,36 @@ When you run `sp conduct`, `sp compose`, `sp fix`, or `sp respec`, SpecSoloist d
 
 ## Available Agents
 
-| Agent | File | Role |
+| Agent | Role |
+| --- | --- |
+| **compose** | Draft architecture and specs from natural language |
+| **conductor** | Orchestrate builds, resolve dependencies, spawn soloists |
+| **soloist** | Compile a single spec into working code and tests |
+| **respec** | Reverse-engineer existing code into specs |
+| **fix** | Analyze test failures, patch code, re-test |
+
+Each agent exists in three forms:
+
+| Form | Location | Format | Used by |
+| --- | --- | --- | --- |
+| Skill | `src/specsoloist/skills/sp-<name>/SKILL.md` | agentskills | Any agent framework |
+| Claude agent | `.claude/agents/<name>.md` | Claude Code | Claude Code |
+| Gemini agent | `.gemini/agents/<name>.md` | Gemini CLI | Gemini CLI |
+
+### Skills vs Native Agents
+
+Skills are the cross-platform source of truth for *what an agent should do*. Native agent files (`.claude/agents/`, `.gemini/agents/`) express the same behavior with platform-specific wrappers — different tool names, and Gemini adds `max_turns`.
+
+They cannot be mechanically unified because tool names differ per platform:
+
+| Action | Claude Code | Gemini CLI |
 | --- | --- | --- |
-| **compose** | `.claude/agents/compose.md` | Draft architecture and specs from natural language |
-| **conductor** | `.claude/agents/conductor.md` | Orchestrate builds, resolve dependencies, spawn soloists |
-| **soloist** | `.claude/agents/soloist.md` | Compile a single spec into working code and tests |
-| **respec** | `.claude/agents/respec.md` | Reverse-engineer existing code into specs |
-| **fix** | `.claude/agents/fix.md` | Analyze test failures, patch code, re-test |
+| Read a file | `Read` | `read_file` |
+| Write a file | `Write` | `write_file` |
+| Run a shell command | `Bash` | `run_shell_command` |
+| Spawn a subagent | `Task` (`subagent_type: <name>`) | platform-specific |
+
+When you change agent behavior, update all three: the skill and both native agent files. See [Contributing](../../CONTRIBUTING.md) for the full sync checklist.
 
 ## How sp Commands Use Agents
 
