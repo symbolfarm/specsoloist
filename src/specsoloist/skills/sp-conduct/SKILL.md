@@ -23,9 +23,15 @@ Compile all specs in a project directory into working code, respecting dependenc
 
 **IMPORTANT**: You may be regenerating code that already exists (quine/round-trip validation). This is intentional — you are recompiling to verify specs are complete. Do NOT skip compilation because code exists.
 
-Check if the prompt specifies an output directory. If not specified, use defaults:
-- Implementation: `src/<package>/`
+Check if the prompt specifies an **Arrangement** file. If provided, read it. The arrangement defines:
+- `target_language`: Use this to tell soloists what language to write.
+- `output_paths`: Use these templates (e.g. `src/{name}.py`) to calculate the exact paths for soloists.
+- `build_commands`: Use `test` for the final verification step.
+
+If no arrangement is specified, use defaults:
+- Implementation: `src/specsoloist/` or `src/spechestra/`
 - Tests: `tests/`
+- Language: `python`
 
 After each major step, report progress so the user can track what's happening.
 

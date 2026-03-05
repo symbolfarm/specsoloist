@@ -607,10 +607,11 @@ def cmd_conduct(core: SpecSoloistCore, src_dir: str | None, no_agent: bool, auto
         arrangement = _resolve_arrangement(core, arrangement_arg)
         _conduct_with_llm(core, incremental, parallel, workers, arrangement=arrangement)
     else:
-        _conduct_with_agent(src_dir, auto_accept, model=model)
+        _conduct_with_agent(src_dir, auto_accept, model=model, arrangement_arg=arrangement_arg)
 
 
-def _conduct_with_agent(src_dir: str | None, auto_accept: bool, model: str | None = None):
+def _conduct_with_agent(src_dir: str | None, auto_accept: bool, model: str | None = None,
+                        arrangement_arg: str | None = None):
     """Use an AI agent CLI for multi-step orchestrated build."""
     agent = _detect_agent_cli()
     if not agent:
@@ -654,9 +655,15 @@ def _conduct_with_agent(src_dir: str | None, auto_accept: bool, model: str | Non
         prompt = (
             f"conduct: Read all *.spec.md files in {spec_dir}, resolve their dependency order, "
             f"then compile each spec into working code by spawning soloist subagents. "
-            f"Write implementations to the appropriate src/ paths and tests to tests/. "
-            f"Run the full test suite when done."
         )
+        
+        if arrangement_arg:
+            prompt += f"\n\n**Arrangement**: Use the arrangement file at '{arrangement_arg}' for build configuration. "
+            prompt += "Ensure soloists are aware of the target language and output paths defined in this arrangement."
+        else:
+            prompt += "Write implementations to the appropriate src/ paths and tests to tests/. "
+            
+        prompt += "\nRun the full test suite when done."
 
     if model:
         prompt += (
@@ -959,8 +966,8 @@ def _run_agent_oneshot(agent: str, prompt: str, auto_accept: bool, model: str | 
         cmd = ["claude", "-p", prompt, "--verbose"]
         if model:
             cmd.extend(["--model", model])
-        if auto_accept and is_quine:
-            # bypassPermissions only for quine runs (fully automated, no user present)
+        if auto_accept:
+            # bypassPermissions for automated runs
             cmd.extend(["--permission-mode", "bypassPermissions"])
         result = subprocess.run(cmd, capture_output=False, text=True)
     elif agent == "gemini":
