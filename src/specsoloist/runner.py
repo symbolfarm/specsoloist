@@ -85,6 +85,7 @@ class TestRunner:
     def write_code(self, module_name: str, content: str, language: str = "python") -> str:
         """Writes implementation code to the build directory."""
         path = self.get_code_path(module_name, language)
+        os.makedirs(os.path.dirname(path), exist_ok=True)
         with open(path, 'w') as f:
             f.write(content)
         return path
@@ -92,6 +93,7 @@ class TestRunner:
     def write_tests(self, module_name: str, content: str, language: str = "python") -> str:
         """Writes test code to the build directory."""
         path = self.get_test_path(module_name, language)
+        os.makedirs(os.path.dirname(path), exist_ok=True)
         with open(path, 'w') as f:
             f.write(content)
         return path
