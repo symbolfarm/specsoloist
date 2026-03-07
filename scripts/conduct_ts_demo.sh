@@ -28,8 +28,10 @@ if [ ! -w "$HOME" ] || ( [ -d "$HOME/.npm" ] && [ ! -w "$HOME/.npm" ] ); then
 fi
 
 export PYTHONPATH="src"
+export SPECSOLOIST_AGENT="${SPECSOLOIST_AGENT:-gemini}"
 
 echo "Using uv: $($UV_BIN --version)"
+echo "Using agent: $SPECSOLOIST_AGENT"
 echo "Starting TypeScript demo build..."
 
 $UV_BIN run python -m specsoloist.cli conduct examples/ts_demo/src/ \

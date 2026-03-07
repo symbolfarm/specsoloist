@@ -949,6 +949,14 @@ def _find_skills_dir() -> str | None:
 def _detect_agent_cli() -> str | None:
     """Detect which agent CLI is available (claude preferred over gemini)."""
     import shutil
+    
+    # Check for override
+    override = os.environ.get("SPECSOLOIST_AGENT")
+    if override in ["claude", "gemini"]:
+        if shutil.which(override):
+            return override
+        ui.print_warning(f"Requested agent '{override}' not found on PATH. Falling back to detection.")
+
     if shutil.which("claude"):
         return "claude"
     if shutil.which("gemini"):
