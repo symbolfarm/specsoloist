@@ -46,6 +46,9 @@ properties:
         items:
           type: string
         description: Commands to run to prepare the environment before building.
+      config_files:
+        type: object
+        description: Dictionary of file names to their required content (e.g., package.json, tsconfig.json).
 
   build_commands:
     type: object

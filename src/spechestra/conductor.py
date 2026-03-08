@@ -124,8 +124,9 @@ class SpecConductor:
         Returns:
             BuildResult with compilation status.
         """
-        # Note: compile_project in core needs to be updated to accept arrangement
-        # Or we can loop and call compile_spec individually if arrangement is provided
+        if arrangement:
+            self._provision_environment(arrangement)
+
         return self._core.compile_project(
             specs=specs,
             generate_tests=True,
@@ -134,6 +135,38 @@ class SpecConductor:
             max_workers=max_workers,
             arrangement=arrangement
         )
+
+    def _provision_environment(self, arrangement: Arrangement):
+        """Create config files and run setup commands if needed."""
+        if not arrangement.environment:
+            return
+
+        # 1. Create config files
+        for filename, content in arrangement.environment.config_files.items():
+            # Use runner's build_dir as base (redirection already handled in CLI for src_dir)
+            target_path = os.path.join(self._core.runner.build_dir, filename)
+            
+            if not os.path.exists(target_path):
+                from specsoloist import ui
+                ui.print_info(f"Provisionsing config file: {filename}")
+                os.makedirs(os.path.dirname(target_path), exist_ok=True)
+                # Handle placeholders
+                project_name = os.path.basename(self.project_dir)
+                formatted_content = content.replace("{project_name}", project_name)
+                
+                with open(target_path, 'w') as f:
+                    f.write(formatted_content)
+
+        # 2. Run setup commands if files were missing
+        # For now, we always run them if provided, but in a real build we might optimize
+        if arrangement.environment.setup_commands:
+            from specsoloist import ui
+            ui.print_info("Running environment setup commands...")
+            for cmd in arrangement.environment.setup_commands:
+                # We use the core runner to execute commands in the correct context
+                result = self._core.runner.run_custom_test(f"cd {self._core.runner.build_dir} && {cmd}")
+                if not result.success:
+                    ui.print_warning(f"Setup command failed: {cmd}\n{result.output}")
 
     def get_build_order(self, specs: Optional[List[str]] = None) -> List[str]:
         """

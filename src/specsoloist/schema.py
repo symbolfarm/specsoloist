@@ -93,6 +93,7 @@ class ArrangementEnvironment(BaseModel):
     """Environment settings for the build."""
     tools: List[str] = Field(default_factory=list)
     setup_commands: List[str] = Field(default_factory=list)
+    config_files: Dict[str, str] = Field(default_factory=dict)
 
 
 class ArrangementBuildCommands(BaseModel):
