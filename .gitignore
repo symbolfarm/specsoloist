@@ -49,3 +49,16 @@ __pycache__/
 *$py.class
 .uv/
 .uv-cache/
+
+# Node.js / TypeScript
+node_modules/
+.npm-cache/
+dist/
+*.log
+
+# Generated Example Artifacts (excluding specs)
+examples/ts_demo/package.json
+examples/ts_demo/tsconfig.json
+examples/ts_demo/src/*.ts
+examples/ts_demo/tests/
+examples/ts_demo/node_modules/
