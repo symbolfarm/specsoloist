@@ -368,7 +368,8 @@ class SpecSoloistCore:
 
         # Determine output path and language
         if arrangement:
-            output_path = arrangement.output_paths.implementation
+            module_name = self.parser.get_module_name(name)
+            output_path = arrangement.output_paths.implementation.format(name=module_name)
             # Ensure output path is relative to project root or absolute as intended
             # For now, we'll write it directly using runner.write_file if it's a specific path
             full_path = self.runner.write_file(output_path, code)
@@ -402,7 +403,8 @@ class SpecSoloistCore:
         code = compiler.compile_tests(spec, model=model, arrangement=arrangement)
 
         if arrangement:
-            output_path = arrangement.output_paths.tests
+            module_name = self.parser.get_module_name(name)
+            output_path = arrangement.output_paths.tests.format(name=module_name)
             full_path = self.runner.write_file(output_path, code)
             return f"Generated tests at {full_path}"
         else:
@@ -582,12 +584,14 @@ class SpecSoloistCore:
 
             # Determine output files
             if arrangement:
-                output_files = [
-                    os.path.basename(arrangement.output_paths.implementation)
-                ]
+                module_name = self.parser.get_module_name(spec_name)
+                impl_path = arrangement.output_paths.implementation.format(name=module_name)
+                output_files = [os.path.basename(impl_path)]
+                
                 if generate_tests and spec.metadata.type != "typedef":
                     self.compile_tests(spec_name, model=model, arrangement=arrangement)
-                    output_files.append(os.path.basename(arrangement.output_paths.tests))
+                    test_path = arrangement.output_paths.tests.format(name=module_name)
+                    output_files.append(os.path.basename(test_path))
             else:
                 code_path = os.path.basename(self.runner.get_code_path(spec_name, language=lang))
                 output_files = [code_path]

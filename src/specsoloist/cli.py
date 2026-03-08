@@ -605,7 +605,7 @@ def cmd_conduct(core: SpecSoloistCore, src_dir: str | None, no_agent: bool, auto
 
     if no_agent:
         arrangement = _resolve_arrangement(core, arrangement_arg)
-        _conduct_with_llm(core, incremental, parallel, workers, arrangement=arrangement)
+        _conduct_with_llm(core, src_dir, incremental, parallel, workers, arrangement=arrangement)
     else:
         _conduct_with_agent(src_dir, auto_accept, model=model, arrangement_arg=arrangement_arg)
 
@@ -678,14 +678,29 @@ def _conduct_with_agent(src_dir: str | None, auto_accept: bool, model: str | Non
         sys.exit(1)
 
 
-def _conduct_with_llm(core: SpecSoloistCore, incremental: bool, parallel: bool, workers: int,
+def _conduct_with_llm(core: SpecSoloistCore, src_dir: str | None, incremental: bool, parallel: bool, workers: int,
                       arrangement=None):
     """Direct LLM build (single-shot compilation, no agent iteration)."""
     _check_api_key()
 
     ui.print_info("Using direct LLM calls (no agent)...")
 
+    # If src_dir is provided, we should use it for spec discovery
+    # SpecConductor uses its internal core for compilation, but we want it
+    # to find specs in src_dir if specified.
+    
     conductor = SpecConductor(core.root_dir)
+    
+    # We need to tell the conductor's parser where to look if src_dir is specific
+    if src_dir:
+        # Resolve the absolute path to the directory containing 'src'
+        # e.g. if src_dir is 'examples/ts_demo/src/', project_base is 'examples/ts_demo/'
+        project_base = os.path.abspath(os.path.join(src_dir, ".."))
+        
+        conductor.parser.src_dir = os.path.abspath(src_dir)
+        conductor.resolver.parser.src_dir = os.path.abspath(src_dir)
+        # Redirect the runner to write relative to the project base
+        conductor._core.runner.build_dir = project_base
 
     with ui.spinner("Orchestrating build..."):
         result = conductor.build(
