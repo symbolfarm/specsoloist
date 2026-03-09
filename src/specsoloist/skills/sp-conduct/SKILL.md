@@ -71,9 +71,12 @@ For each dependency level:
 
 **Report**: "Compiling Level N (<count> specs)..."
 
-Spawn `sp-soloist` subagents — one per spec in the level, in parallel where possible.
+Compile each spec using the best available method for your platform:
 
-**IMPORTANT**: Include exact output paths in every soloist prompt — soloists default to `src/` if paths are missing, which can overwrite original source during quine runs.
+- **Claude Code**: Spawn `sp-soloist` subagents via the Task tool — one per spec in the level, in parallel where possible.
+- **Gemini CLI**: Compile specs directly using your own tools (read/write/shell), or delegate to the `soloist` agent if available. Due to experimental agent limits, soloist may not be available as a subagent; fall back to direct compilation.
+
+**IMPORTANT**: Include exact output paths in every prompt — soloists (and direct compilation) default to `src/` if paths are missing, which can overwrite original source during quine runs.
 
 Prompt template for each soloist:
 ```
@@ -84,9 +87,8 @@ Run tests with: PYTHONPATH=<output_dir_parent> uv run python -m pytest <test_pat
 Do NOT write to any other directory.
 ```
 
-- Spawn all soloists for a given level before waiting for results
-- Wait for all specs in a level to complete before starting the next level
-- Report progress as soloists complete
+- Compile all specs in a level before moving to the next
+- Report progress as each spec completes
 
 ### Step 4: Handle Failures
 

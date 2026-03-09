@@ -2,7 +2,7 @@
 
 This file provides context for AI agents working with SpecSoloist, whether developing the framework itself or using it as a tool.
 
-> **Note**: `CLAUDE.md` and `GEMINI.md` are symlinks to this file. This ensures all AI agents receive the same context regardless of which file their tooling reads.
+> **Note**: The canonical file is `AGENTS.md`. `CLAUDE.md` and `GEMINI.md` are symlinks to it — edit `AGENTS.md` directly. This ensures all AI agents receive the same context regardless of which file their tooling reads.
 
 ---
 
@@ -161,7 +161,9 @@ src/specsoloist/skills/  # Cross-platform skill definitions (agentskills format)
 
 ### Native Subagent Architecture
 
-SpecSoloist uses **native subagents** for Claude Code and Gemini CLI:
+SpecSoloist uses **native subagents** for Claude Code and Gemini CLI. The architecture differs by platform:
+
+**Claude Code** (`.claude/agents/`): The conductor spawns soloists as parallel Task subagents:
 
 ```
 sp conduct score/
@@ -186,7 +188,9 @@ sp conduct score/
    Report results
 ```
 
-Each soloist reads the spec file, writes implementation code directly, writes tests, runs them, and fixes issues — up to 3 retries.
+**Gemini CLI** (`.gemini/agents/`): Due to the experimental agents subagent limit, the conductor compiles specs directly using its own tools (read/write/shell), optionally delegating to `generalist` for complex specs. The `soloist` agent definition exists for standalone use but is not spawned as a subagent by the conductor.
+
+Each soloist (or the conductor directly) reads the spec file, writes implementation code, writes tests, runs them, and fixes issues — up to 3 retries.
 
 ### Before Committing
 
