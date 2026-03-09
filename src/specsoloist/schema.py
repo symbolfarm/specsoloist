@@ -83,10 +83,31 @@ class BundleType(BaseModel):
     description: Optional[str] = None
 
 
+class ArrangementOutputPathOverride(BaseModel):
+    """Per-spec output path overrides (either field may be omitted to fall back to the default)."""
+    implementation: Optional[str] = None
+    tests: Optional[str] = None
+
+
 class ArrangementOutputPaths(BaseModel):
-    """Output paths for implementation and tests."""
+    """Output paths for implementation and tests, with optional per-spec overrides."""
     implementation: str
     tests: str
+    overrides: Dict[str, ArrangementOutputPathOverride] = Field(default_factory=dict)
+
+    def resolve_implementation(self, name: str) -> str:
+        """Return the implementation path for a spec, checking per-spec overrides first."""
+        override = self.overrides.get(name)
+        if override and override.implementation:
+            return override.implementation
+        return self.implementation.format(name=name)
+
+    def resolve_tests(self, name: str) -> str:
+        """Return the tests path for a spec, checking per-spec overrides first."""
+        override = self.overrides.get(name)
+        if override and override.tests:
+            return override.tests
+        return self.tests.format(name=name)
 
 
 class ArrangementEnvironment(BaseModel):

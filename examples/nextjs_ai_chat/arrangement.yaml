@@ -9,6 +9,13 @@ target_language: typescript
 output_paths:
   implementation: src/{name}.ts
   tests: tests/{name}.test.ts
+  overrides:
+    chat_route:
+      implementation: src/app/api/chat/route.ts
+      tests: tests/chat_route.test.ts
+    use_chat_messages:
+      implementation: src/hooks/useChatMessages.ts
+      tests: tests/useChatMessages.test.ts
 
 environment:
   tools:
@@ -67,6 +74,6 @@ build_commands:
 constraints:
   - Must follow strict TypeScript mode
   - Must use ES6 modules (import/export)
-  - Use the `ai` package (Vercel AI SDK) only inside ai_client.ts — never in chat_ui.ts
-  - chat_ui.ts imports from ai_client only
+  - Use the `ai` package (Vercel AI SDK) only inside ai_client.ts — never in other files
+  - chat_route and use_chat_messages import from ai_client only
   - Route handlers use Next.js App Router conventions (export async function POST)

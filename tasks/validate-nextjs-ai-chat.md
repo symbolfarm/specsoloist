@@ -106,23 +106,19 @@ sp conduct specs/ --arrangement arrangement.yaml --auto-accept
 
 Dependency order: `vercel_ai_interface` → `ai_client` → `chat_ui`
 
-Expected output locations (per arrangement):
+Expected output locations (per arrangement, including overrides):
 - `src/vercel_ai_interface.ts` (may be minimal — just type re-exports)
 - `src/ai_client.ts`
-- `src/chat_ui.ts` (but note: `chat_ui.spec.md` specifies different output paths — see below)
+- `src/app/api/chat/route.ts` (override for `chat_route`)
+- `src/hooks/useChatMessages.ts` (override for `use_chat_messages`)
 - `tests/vercel_ai_interface.test.ts`
 - `tests/ai_client.test.ts`
-- `tests/chat_ui.test.ts`
+- `tests/chat_route.test.ts`
+- `tests/useChatMessages.test.ts`
 
-**Important:** `chat_ui.spec.md` specifies specific output paths inside the Next.js
-app router structure (`src/app/api/chat/route.ts` and `src/hooks/useChatMessages.ts`).
-The arrangement's `output_paths.implementation: src/{name}.ts` pattern conflicts with this.
-You will need to resolve this mismatch — either:
-- Update `chat_ui.spec.md` to note the arrangement output path (and describe the Next.js
-  path in the implementation notes instead), or
-- Add per-spec output path overrides to the arrangement if that feature exists, or
-- Document the discrepancy and use the arrangement path, leaving the Next.js-specific
-  structure as a manual step after `sp conduct`
+**Output paths:** `chat_route` and `use_chat_messages` use per-spec output path overrides
+already configured in `arrangement.yaml`. The conductor will read these and tell each
+soloist exactly where to write its output file — no manual path resolution needed.
 
 ### 4. Run tests
 
@@ -172,4 +168,4 @@ Once tests pass, write `examples/nextjs_ai_chat/README.md` documenting:
 3. `npx vitest run` in `examples/nextjs_ai_chat/` passes with 0 failures.
 4. `examples/nextjs_ai_chat/README.md` exists and documents all the points above.
 5. Any changes to specs or arrangement are committed; generated `src/`/`tests/` files are gitignored.
-6. The output-path mismatch for `chat_ui` is either resolved or clearly documented.
+6. Generated `src/` and `tests/` files are gitignored (not committed).

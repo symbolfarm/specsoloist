@@ -15,6 +15,7 @@ from specsoloist.runner import TestRunner
 from specsoloist.schema import (
     Arrangement,
     ArrangementBuildCommands,
+    ArrangementOutputPathOverride,
     ArrangementOutputPaths,
 )
 
@@ -168,3 +169,139 @@ def test_arrangement_compile_project_with_arrangement():
         assert "math_utils" in result.specs_compiled
         assert os.path.exists(impl_path)
         assert os.path.exists(tests_path)
+
+
+# ---------------------------------------------------------------------------
+# Per-spec output path overrides
+# ---------------------------------------------------------------------------
+
+def test_resolve_implementation_uses_default():
+    """resolve_implementation returns the formatted default when no override exists."""
+    paths = ArrangementOutputPaths(
+        implementation="src/{name}.py",
+        tests="tests/test_{name}.py",
+    )
+    assert paths.resolve_implementation("mymod") == "src/mymod.py"
+
+
+def test_resolve_tests_uses_default():
+    paths = ArrangementOutputPaths(
+        implementation="src/{name}.py",
+        tests="tests/test_{name}.py",
+    )
+    assert paths.resolve_tests("mymod") == "tests/test_mymod.py"
+
+
+def test_resolve_implementation_uses_override():
+    """resolve_implementation returns the override path when one is set for the spec."""
+    paths = ArrangementOutputPaths(
+        implementation="src/{name}.ts",
+        tests="tests/{name}.test.ts",
+        overrides={
+            "chat_route": ArrangementOutputPathOverride(
+                implementation="src/app/api/chat/route.ts"
+            )
+        },
+    )
+    assert paths.resolve_implementation("chat_route") == "src/app/api/chat/route.ts"
+    # Other specs still use the default
+    assert paths.resolve_implementation("ai_client") == "src/ai_client.ts"
+
+
+def test_resolve_tests_uses_override():
+    paths = ArrangementOutputPaths(
+        implementation="src/{name}.ts",
+        tests="tests/{name}.test.ts",
+        overrides={
+            "chat_route": ArrangementOutputPathOverride(
+                tests="tests/chat_route.test.ts"
+            )
+        },
+    )
+    assert paths.resolve_tests("chat_route") == "tests/chat_route.test.ts"
+    assert paths.resolve_tests("ai_client") == "tests/ai_client.test.ts"
+
+
+def test_partial_override_falls_back_for_missing_field():
+    """If only implementation is overridden, tests still fall back to the default."""
+    paths = ArrangementOutputPaths(
+        implementation="src/{name}.ts",
+        tests="tests/{name}.test.ts",
+        overrides={
+            "chat_route": ArrangementOutputPathOverride(
+                implementation="src/app/api/chat/route.ts"
+                # no tests override
+            )
+        },
+    )
+    assert paths.resolve_implementation("chat_route") == "src/app/api/chat/route.ts"
+    assert paths.resolve_tests("chat_route") == "tests/chat_route.test.ts"
+
+
+def test_arrangement_override_round_trips_through_yaml():
+    """Overrides survive a round-trip through YAML parsing."""
+    yaml_content = """\
+target_language: typescript
+output_paths:
+  implementation: src/{name}.ts
+  tests: tests/{name}.test.ts
+  overrides:
+    chat_route:
+      implementation: src/app/api/chat/route.ts
+      tests: tests/chat_route.test.ts
+build_commands:
+  test: npx vitest run
+"""
+    parser = SpecParser(".")
+    arrangement = parser.parse_arrangement(yaml_content)
+
+    assert arrangement.output_paths.resolve_implementation("chat_route") == "src/app/api/chat/route.ts"
+    assert arrangement.output_paths.resolve_tests("chat_route") == "tests/chat_route.test.ts"
+    assert arrangement.output_paths.resolve_implementation("ai_client") == "src/ai_client.ts"
+
+
+def test_override_path_used_when_compiling(tmp_path):
+    """compile_spec writes to the override path, not the default template path."""
+    core = SpecSoloistCore(str(tmp_path))
+    core.create_spec("mymod", "Does something.")
+    core._provider = MockProvider(lambda p: "def run(): pass")
+
+    override_path = str(tmp_path / "special" / "mymod_custom.py")
+    arr = Arrangement(
+        target_language="python",
+        output_paths=ArrangementOutputPaths(
+            implementation=str(tmp_path / "src" / "{name}.py"),
+            tests=str(tmp_path / "tests" / "test_{name}.py"),
+            overrides={
+                "mymod": ArrangementOutputPathOverride(implementation=override_path)
+            },
+        ),
+        build_commands=ArrangementBuildCommands(test="echo test"),
+    )
+
+    result = core.compile_spec("mymod", arrangement=arr)
+
+    assert os.path.exists(override_path)
+    assert not os.path.exists(str(tmp_path / "src" / "mymod.py"))
+
+
+def test_compiler_context_includes_overrides():
+    """_build_arrangement_context mentions per-spec overrides."""
+    arr = Arrangement(
+        target_language="typescript",
+        output_paths=ArrangementOutputPaths(
+            implementation="src/{name}.ts",
+            tests="tests/{name}.test.ts",
+            overrides={
+                "chat_route": ArrangementOutputPathOverride(
+                    implementation="src/app/api/chat/route.ts"
+                )
+            },
+        ),
+        build_commands=ArrangementBuildCommands(test="npx vitest run"),
+    )
+    compiler = SpecCompiler(provider=None, global_context="")
+    context = compiler._build_arrangement_context(arr)
+
+    assert "chat_route" in context
+    assert "src/app/api/chat/route.ts" in context

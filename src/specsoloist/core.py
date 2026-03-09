@@ -369,9 +369,7 @@ class SpecSoloistCore:
         # Determine output path and language
         if arrangement:
             module_name = self.parser.get_module_name(name)
-            output_path = arrangement.output_paths.implementation.format(name=module_name)
-            # Ensure output path is relative to project root or absolute as intended
-            # For now, we'll write it directly using runner.write_file if it's a specific path
+            output_path = arrangement.output_paths.resolve_implementation(module_name)
             full_path = self.runner.write_file(output_path, code)
             return f"Compiled to {full_path}"
         else:
@@ -404,7 +402,7 @@ class SpecSoloistCore:
 
         if arrangement:
             module_name = self.parser.get_module_name(name)
-            output_path = arrangement.output_paths.tests.format(name=module_name)
+            output_path = arrangement.output_paths.resolve_tests(module_name)
             full_path = self.runner.write_file(output_path, code)
             return f"Generated tests at {full_path}"
         else:
@@ -585,12 +583,12 @@ class SpecSoloistCore:
             # Determine output files
             if arrangement:
                 module_name = self.parser.get_module_name(spec_name)
-                impl_path = arrangement.output_paths.implementation.format(name=module_name)
+                impl_path = arrangement.output_paths.resolve_implementation(module_name)
                 output_files = [os.path.basename(impl_path)]
-                
+
                 if generate_tests and spec.metadata.type != "typedef":
                     self.compile_tests(spec_name, model=model, arrangement=arrangement)
-                    test_path = arrangement.output_paths.tests.format(name=module_name)
+                    test_path = arrangement.output_paths.resolve_tests(module_name)
                     output_files.append(os.path.basename(test_path))
             else:
                 code_path = os.path.basename(self.runner.get_code_path(spec_name, language=lang))
@@ -752,8 +750,8 @@ class SpecSoloistCore:
 
         # 2. Gather context
         if arrangement:
-            code_content = self.runner.read_file(arrangement.output_paths.implementation) or ""
-            test_content = self.runner.read_file(arrangement.output_paths.tests) or ""
+            code_content = self.runner.read_file(arrangement.output_paths.resolve_implementation(module_name)) or ""
+            test_content = self.runner.read_file(arrangement.output_paths.resolve_tests(module_name)) or ""
         else:
             code_content = self.runner.read_code(module_name, language=lang) or ""
             test_content = self.runner.read_tests(module_name, language=lang) or ""

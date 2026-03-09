@@ -20,7 +20,8 @@
       "Bash(python -m pytest:*)",
       "Bash(grep:*)",
       "Bash(uv build:*)",
-      "Bash(python3:*)"
+      "Bash(python3:*)",
+      "Bash(gemini:*)"
     ],
     "deny": [],
     "ask": []

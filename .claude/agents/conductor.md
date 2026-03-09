@@ -29,9 +29,20 @@ Compile all specs in a project directory into working code, respecting dependenc
 
 **IMPORTANT**: You may be regenerating code that already exists (this is a quine/round-trip validation). This is intentional - you are duplicating code to verify specs are complete. Do NOT skip compilation because code exists.
 
-Check if the prompt specifies an **Arrangement** file. If provided, use its `Read` tool to examine it. The arrangement defines:
+Check if the prompt specifies an **Arrangement** file. If provided, use the `Read` tool to examine it. The arrangement defines:
 - `target_language`: Use this to tell soloists what language to write.
-- `output_paths`: Use these templates (e.g. `src/{name}.py`) to calculate the exact paths for soloists.
+- `output_paths.implementation` / `output_paths.tests`: Default path templates (e.g. `src/{name}.py`). Substitute `{name}` with the spec's module name to get the actual path.
+- `output_paths.overrides`: Optional per-spec path overrides. Before calculating a path for any spec, check whether its name appears in `overrides`. If it does, use the override path instead of the default template. Example:
+  ```yaml
+  output_paths:
+    implementation: src/{name}.ts
+    tests: tests/{name}.test.ts
+    overrides:
+      chat_route:
+        implementation: src/app/api/chat/route.ts
+      use_chat_messages:
+        implementation: src/hooks/useChatMessages.ts
+  ```
 - `build_commands`: Use `test` for the final verification step.
 
 If no arrangement is specified, use default paths:

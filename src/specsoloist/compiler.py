@@ -174,6 +174,14 @@ Your task is to implement the workflow described in the following specification.
         context = [f"# Build Arrangement ({arrangement.target_language})"]
         context.append(f"- Output Implementation: `{arrangement.output_paths.implementation}`")
         context.append(f"- Output Tests: `{arrangement.output_paths.tests}`")
+        if arrangement.output_paths.overrides:
+            context.append("\n## Per-Spec Output Path Overrides")
+            context.append("The following specs use custom output paths instead of the default pattern:")
+            for spec_name, override in arrangement.output_paths.overrides.items():
+                if override.implementation:
+                    context.append(f"- `{spec_name}` implementation: `{override.implementation}`")
+                if override.tests:
+                    context.append(f"- `{spec_name}` tests: `{override.tests}`")
 
         if arrangement.constraints:
             context.append("\n## Environment Constraints")
