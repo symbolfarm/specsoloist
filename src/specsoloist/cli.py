@@ -10,6 +10,8 @@ Usage:
     sp test <name>              Run tests for a spec
     sp fix <name>               Auto-fix failing tests
     sp build                    Compile all specs
+    sp doctor                   Check environment health
+    sp status                   Show compilation state of each spec
 """
 
 import argparse
@@ -155,6 +157,12 @@ def main():
         help="Target directory for skills (default: .claude/skills)"
     )
 
+    # doctor
+    subparsers.add_parser("doctor", help="Check environment health (API keys, CLIs, tools)")
+
+    # status
+    subparsers.add_parser("status", help="Show compilation state of each spec")
+
     args = parser.parse_args()
 
     if args.command is None:
@@ -167,6 +175,9 @@ def main():
         return
     if args.command == "install-skills":
         cmd_install_skills(args.target)
+        return
+    if args.command == "doctor":
+        cmd_doctor()
         return
 
     # Initialize core
@@ -207,6 +218,8 @@ def main():
                      args.report, args.runs)
         elif args.command == "respec":
             cmd_respec(core, args.file, args.test, args.out, args.no_agent, args.model, args.auto_accept)
+        elif args.command == "status":
+            cmd_status(core)
     except KeyboardInterrupt:
         ui.print_warning("\nOperation cancelled by user.")
         sys.exit(130)
@@ -264,12 +277,65 @@ def cmd_create(core: SpecSoloistCore, name: str, description: str, spec_type: st
         sys.exit(1)
 
 
+def _check_spec_quality(spec_content: str, spec_type: str) -> list[str]:
+    """Return a list of quality warning strings for the given spec markdown."""
+    warnings = []
+
+    # No test scenarios section
+    if "## Test Scenarios" not in spec_content:
+        warnings.append("No test scenarios found — soloists compile better with concrete examples")
+
+    # No schema block (only for bundle and function types)
+    if spec_type in ("bundle", "function"):
+        if "```yaml:schema" not in spec_content:
+            warnings.append("No schema block — interface contract is underspecified")
+
+    # Very short description — extract from metadata line "description:"
+    import re
+    desc_match = re.search(r'^description:\s*(.+)$', spec_content, re.MULTILINE)
+    if desc_match:
+        desc = desc_match.group(1).strip()
+        if len(desc) < 10:
+            warnings.append(f"Description is very short ({len(desc)} chars) — aim for at least 10 characters")
+    else:
+        warnings.append("Description is very short (0 chars) — aim for at least 10 characters")
+
+    # Fewer than 2 rows in test scenarios table
+    if "## Test Scenarios" in spec_content:
+        # Find the section content after the heading
+        section = spec_content.split("## Test Scenarios", 1)[1]
+        # Count table rows (lines starting with | that aren't header or separator)
+        table_rows = [
+            line for line in section.splitlines()
+            if line.strip().startswith("|")
+            and not re.match(r'^\s*\|[-| ]+\|\s*$', line)
+        ]
+        # Subtract 1 for the header row
+        data_rows = max(0, len(table_rows) - 1)
+        if data_rows < 2:
+            warnings.append(
+                f"Only {data_rows} example(s) in test scenarios — at least 2 examples help soloists generalise"
+            )
+
+    return warnings
+
+
 def cmd_validate(core: SpecSoloistCore, name: str):
     ui.print_header("Validating Spec", name)
     result = core.validate_spec(name)
-    
+
     if result["valid"]:
         ui.print_success(f"{name} is VALID")
+        # Emit quality hints
+        try:
+            spec_content = core.read_spec(name)
+            parsed = core.parser.parse_spec(name)
+            spec_type = parsed.metadata.type
+        except Exception:
+            spec_content = ""
+            spec_type = "bundle"
+        for warning in _check_spec_quality(spec_content, spec_type):
+            ui.console.print(f"[warning]⚠[/] {warning}")
     else:
         ui.print_error(f"{name} is INVALID")
         for error in result["errors"]:
@@ -921,6 +987,162 @@ def _respec_with_llm(core: SpecSoloistCore, file_path: str, test_path: str, out_
     else:
         ui.console.print(ui.Panel(spec_content, title="Generated Spec", border_style="blue"))
         ui.print_info("Use --out <path> to save to file.")
+
+
+def cmd_doctor():
+    """Check environment health and report status for each item."""
+    import shutil
+    import subprocess
+
+    ui.print_header("SpecSoloist Doctor", "Environment health check")
+
+    critical_failure = False
+
+    # Python version
+    py = sys.version_info
+    py_str = f"{py.major}.{py.minor}.{py.micro}"
+    if py >= (3, 10):
+        ui.console.print(f"[success]✓[/] Python {py_str} (meets >=3.10 requirement)")
+    else:
+        ui.console.print(f"[error]✗[/] Python {py_str} — requires Python >=3.10")
+        critical_failure = True
+
+    # API keys
+    has_anthropic = "ANTHROPIC_API_KEY" in os.environ
+    has_gemini = "GEMINI_API_KEY" in os.environ
+
+    if has_anthropic:
+        ui.console.print("[success]✓[/] ANTHROPIC_API_KEY set")
+    else:
+        ui.console.print("[warning]~[/] ANTHROPIC_API_KEY not set")
+
+    if has_gemini:
+        ui.console.print("[success]✓[/] GEMINI_API_KEY set")
+    else:
+        ui.console.print("[warning]~[/] GEMINI_API_KEY not set")
+
+    if not has_anthropic and not has_gemini:
+        ui.console.print("[error]✗[/] No API key set — at least one of ANTHROPIC_API_KEY or GEMINI_API_KEY is required")
+        critical_failure = True
+
+    # Agent CLIs
+    claude_path = shutil.which("claude")
+    gemini_path = shutil.which("gemini")
+
+    if claude_path:
+        try:
+            ver = subprocess.run(
+                ["claude", "--version"], capture_output=True, text=True, timeout=5
+            )
+            ver_str = ver.stdout.strip() or ver.stderr.strip()
+            ui.console.print(f"[success]✓[/] claude CLI found ({ver_str or claude_path})")
+        except Exception:
+            ui.console.print(f"[success]✓[/] claude CLI found ({claude_path})")
+    else:
+        ui.console.print("[warning]~[/] claude CLI not found")
+
+    if gemini_path:
+        ui.console.print(f"[success]✓[/] gemini CLI found ({gemini_path})")
+    else:
+        ui.console.print("[warning]~[/] gemini CLI not found")
+
+    if not claude_path and not gemini_path:
+        ui.console.print("[warning]~[/] No agent CLI found — direct LLM mode still works (--no-agent)")
+
+    # uv
+    if shutil.which("uv"):
+        ui.console.print("[success]✓[/] uv found")
+    else:
+        ui.console.print("[warning]~[/] uv not found — needed for Python test execution")
+
+    # Docker
+    if shutil.which("docker"):
+        ui.console.print("[success]✓[/] Docker found")
+    else:
+        ui.console.print("[dim]~  Docker not found (sandbox mode unavailable)[/]")
+
+    # Spec count
+    spec_count = 0
+    for search_dir in ("src", "specs"):
+        abs_dir = os.path.join(os.getcwd(), search_dir)
+        if os.path.isdir(abs_dir):
+            for root, _dirs, files in os.walk(abs_dir):
+                spec_count += sum(1 for f in files if f.endswith(".spec.md"))
+
+    if spec_count > 0:
+        ui.console.print(f"[success]✓[/] {spec_count} spec(s) found")
+    else:
+        ui.console.print("[dim]~  0 specs found — run 'sp init' to create a project[/]")
+
+    ui.console.print()
+    if critical_failure:
+        ui.print_error("One or more critical checks failed.")
+        sys.exit(1)
+    else:
+        ui.print_success("All critical checks passed.")
+
+
+def cmd_status(core: SpecSoloistCore):
+    """Show compilation state of each spec from the build manifest."""
+    from datetime import datetime, timezone
+
+    manifest = core._get_manifest()
+    specs = core.list_specs()
+
+    if not specs:
+        ui.print_warning("No specs found.")
+        ui.print_info("Create one with: sp create <name> '<description>'")
+        return
+
+    table = ui.create_table(["Spec", "Compiled", "Tests", "Last Built"], title="Spec Status")
+
+    now = datetime.now(timezone.utc)
+
+    def _rel_time(iso_str: str) -> str:
+        try:
+            dt = datetime.fromisoformat(iso_str)
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+            delta = now - dt
+            seconds = int(delta.total_seconds())
+            if seconds < 60:
+                return f"{seconds}s ago"
+            if seconds < 3600:
+                return f"{seconds // 60}m ago"
+            if seconds < 86400:
+                return f"{seconds // 3600}h ago"
+            return f"{seconds // 86400}d ago"
+        except Exception:
+            return "unknown"
+
+    for spec_file in specs:
+        name = spec_file.replace(".spec.md", "")
+        info = manifest.get_spec_info(name)
+
+        if info is None:
+            table.add_row(name, "[red]✗[/]", "[red]✗[/]", "never")
+            continue
+
+        # Check implementation file on disk
+        impl_exists = any(
+            os.path.exists(f) for f in info.output_files
+            if not os.path.basename(f).startswith("test_")
+        )
+        compiled_cell = "[green]✓[/]" if impl_exists else "[red]✗[/]"
+
+        # Check test file on disk
+        test_files = [f for f in info.output_files if os.path.basename(f).startswith("test_")]
+        if test_files and os.path.exists(test_files[0]):
+            tests_cell = "[green]✓[/]"
+        elif test_files:
+            tests_cell = "[red]FAIL[/]"
+        else:
+            tests_cell = "[red]✗[/]"
+
+        last_built = _rel_time(info.built_at)
+        table.add_row(name, compiled_cell, tests_cell, last_built)
+
+    ui.console.print(table)
 
 
 _INIT_ARRANGEMENT = """\

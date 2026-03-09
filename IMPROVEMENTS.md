@@ -67,7 +67,7 @@ Safer alternatives:
 
 ## 1. Quick Wins (Low effort, high value)
 
-### 1a. `sp doctor` — Pre-flight diagnostic command
+### 1a. `sp doctor` — Pre-flight diagnostic command ✅ Done
 
 The most common failure mode for new users is a missing API key or no agent CLI installed.
 A single command that checks everything would eliminate this entire class of support issues:
@@ -85,7 +85,7 @@ sp doctor
   ✓ 4 specs found in src/
 ```
 
-### 1b. `sp status` — Show compilation state of each spec
+### 1b. `sp status` — Show compilation state of each spec ✅ Done
 
 Right now there's no way to see at a glance what's compiled, stale, or broken:
 
@@ -274,7 +274,7 @@ Format: a `version` field in frontmatter, stored in the manifest.
 Bundles are great for small groups of functions but get unwieldy at 15+ items.
 Consider a `section` divider within bundles, or a size heuristic that suggests splitting.
 
-### 4d. `sp validate` quality checks (beyond structure)
+### 4d. `sp validate` quality checks (beyond structure) ✅ Done
 
 Currently validates spec *structure* (required fields, valid type, etc.).
 Add quality hints:
