@@ -12,9 +12,9 @@ def tmp_cwd(tmp_path, monkeypatch):
     return tmp_path
 
 
-def run_init(name: str) -> subprocess.CompletedProcess:
+def run_init(name: str, *extra_args: str) -> subprocess.CompletedProcess:
     return subprocess.run(
-        [sys.executable, "-m", "specsoloist.cli", "init", name],
+        [sys.executable, "-m", "specsoloist.cli", "init", name, *extra_args],
         capture_output=True,
         text=True,
     )
@@ -54,3 +54,20 @@ class TestSpInit:
         assert (tmp_cwd / "foo" / "specs").is_dir()
         assert (tmp_cwd / "foo" / "arrangement.yaml").exists()
         assert (tmp_cwd / "foo" / ".gitignore").exists()
+
+    def test_typescript_arrangement(self, tmp_cwd):
+        result = run_init("tsproject", "--arrangement", "typescript")
+        assert result.returncode == 0
+        content = (tmp_cwd / "tsproject" / "arrangement.yaml").read_text()
+        assert "target_language: typescript" in content
+        assert "vitest" in content
+        assert "tsconfig.json" in content
+
+    def test_python_is_default(self, tmp_cwd):
+        run_init("pyproject")
+        content = (tmp_cwd / "pyproject" / "arrangement.yaml").read_text()
+        assert "target_language: python" in content
+
+    def test_invalid_arrangement_rejected(self, tmp_cwd):
+        result = run_init("bad", "--arrangement", "ruby")
+        assert result.returncode != 0

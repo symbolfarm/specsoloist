@@ -1,0 +1,9 @@
+[project]
+name = "fasthtml-app"
+version = "0.1.0"
+requires-python = ">=3.10"
+dependencies = [
+    "python-fasthtml>=0.12",
+    "pytest>=7.0",
+    "httpx>=0.24",       # required by starlette TestClient
+]

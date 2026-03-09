@@ -140,6 +140,10 @@ def main():
     # init
     init_parser = subparsers.add_parser("init", help="Scaffold a new SpecSoloist project")
     init_parser.add_argument("name", help="Project directory name to create")
+    init_parser.add_argument(
+        "--arrangement", choices=["python", "typescript"], default="python",
+        help="Arrangement template to use (default: python)"
+    )
 
     # install-skills
     install_skills_parser = subparsers.add_parser(
@@ -159,7 +163,7 @@ def main():
 
     # Commands that don't need a project context
     if args.command == "init":
-        cmd_init(args.name)
+        cmd_init(args.name, args.arrangement)
         return
     if args.command == "install-skills":
         cmd_install_skills(args.target)
@@ -951,6 +955,70 @@ constraints:
   - Must use type hints for all public function signatures
 """
 
+_INIT_ARRANGEMENT_TYPESCRIPT = """\
+# arrangement.yaml (TypeScript)
+#
+# Bridges your specs to a TypeScript/Node.js build environment.
+# Run: sp conduct specs/ --arrangement arrangement.yaml
+#
+# See: https://github.com/symbolfarm/specsoloist
+
+target_language: typescript
+
+output_paths:
+  implementation: src/{name}.ts
+  tests: tests/{name}.test.ts
+
+environment:
+  tools:
+    - npm
+    - npx
+    - tsx
+    - vitest
+  config_files:
+    package.json: |
+      {
+        "name": "{project_name}",
+        "version": "0.1.0",
+        "scripts": {
+          "test": "vitest",
+          "build": "tsc --noEmit"
+        },
+        "devDependencies": {
+          "typescript": "^5.0.0",
+          "vitest": "^1.0.0",
+          "tsx": "^4.0.0",
+          "@types/node": "^20.0.0"
+        }
+      }
+    tsconfig.json: |
+      {
+        "compilerOptions": {
+          "target": "ES2020",
+          "module": "ESNext",
+          "moduleResolution": "node",
+          "strict": true,
+          "esModuleInterop": true,
+          "skipLibCheck": true,
+          "outDir": "./dist"
+        },
+        "include": ["src/**/*"],
+        "exclude": ["node_modules", "tests"]
+      }
+  setup_commands:
+    - npm install --no-package-lock
+
+build_commands:
+  compile: npx tsc --noEmit
+  lint: ""
+  test: npx vitest run {file}
+
+constraints:
+  - Must follow strict TypeScript mode
+  - Must use ES6 modules (import/export)
+  - Must include type definitions for all exports
+"""
+
 _INIT_GITIGNORE = """\
 # Build artifacts
 build/
@@ -983,7 +1051,7 @@ dist/
 """
 
 
-def cmd_init(name: str):
+def cmd_init(name: str, arrangement: str = "python"):
     """Scaffold a new SpecSoloist project directory."""
     project_dir = os.path.abspath(name)
 
@@ -993,13 +1061,16 @@ def cmd_init(name: str):
 
     os.makedirs(os.path.join(project_dir, "specs"))
 
+    arrangement_content = (
+        _INIT_ARRANGEMENT_TYPESCRIPT if arrangement == "typescript" else _INIT_ARRANGEMENT
+    )
     with open(os.path.join(project_dir, "arrangement.yaml"), "w") as f:
-        f.write(_INIT_ARRANGEMENT)
+        f.write(arrangement_content)
 
     with open(os.path.join(project_dir, ".gitignore"), "w") as f:
         f.write(_INIT_GITIGNORE)
 
-    ui.print_success(f"Created project: [bold]{name}/[/]")
+    ui.print_success(f"Created project: [bold]{name}/[/]  [{arrangement}]")
     ui.print_step("  specs/            ← put your .spec.md files here")
     ui.print_step("  arrangement.yaml  ← build configuration")
     ui.print_step("  .gitignore")
