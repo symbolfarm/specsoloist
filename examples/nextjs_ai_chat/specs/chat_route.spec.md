@@ -1,10 +1,14 @@
 ---
 name: chat_route
-type: bundle
+type: module
 status: draft
 dependencies:
   - ai_client
 ---
+
+# Overview
+
+Next.js App Router route handler for the `/api/chat` streaming endpoint.
 
 # POST /api/chat — Route Handler
 

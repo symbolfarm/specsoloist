@@ -1,10 +1,14 @@
 ---
 name: app
-type: bundle
+type: module
 status: draft
 dependencies:
   - fasthtml_interface
 ---
+
+# Overview
+
+A minimal todo list web app built with FastHTML and HTMX.
 
 # FastHTML Todo App
 

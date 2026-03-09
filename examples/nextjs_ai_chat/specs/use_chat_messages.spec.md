@@ -1,10 +1,14 @@
 ---
 name: use_chat_messages
-type: bundle
+type: module
 status: draft
 dependencies:
   - ai_client
 ---
+
+# Overview
+
+Client-side React hook managing chat message state and streaming.
 
 # `useChatMessages()` — React Hook
 

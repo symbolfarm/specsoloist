@@ -32,7 +32,15 @@ Compile all specs in a project directory into working code, respecting dependenc
 
 **Check for Arrangement**: Look for an `arrangement.yaml` or `arrangement.md` file in the project directory. If found, read it. This file defines the 'makefile' for the project, including:
 - `target_language`: The language to use (e.g., python, typescript)
-- `output_paths`: Where to write implementation and tests
+- `output_paths.implementation` / `output_paths.tests`: Default path templates (e.g. `src/{name}.py`). Substitute `{name}` with the spec's module name to get the actual path.
+- `output_paths.overrides`: Optional per-spec path overrides. **Before calculating the output path for any spec, check whether its name appears in `overrides`.** If it does, use the override path instead of the default template. Example:
+  ```yaml
+  output_paths:
+    implementation: src/{name}.ts
+    overrides:
+      chat_route:
+        implementation: src/app/api/chat/route.ts
+  ```
 - `build_commands`: Commands for linting and testing
 - `constraints`: Specific rules the soloist must follow
 - `environment.config_files`: Config files to write before compilation (e.g., package.json, tsconfig.json)
