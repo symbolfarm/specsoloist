@@ -142,6 +142,65 @@ sp conduct --no-agent --arrangement arrangement.yaml
 sp compile myspec
 ```
 
+## External Dependencies
+
+Specs describe *your* code. External libraries are inputs to the build. There are three patterns depending on how well the LLM knows the library:
+
+### 1. Well-known libraries — constraints only
+
+For React, pytest, lodash, etc. the soloist already knows the API. Just mention it in the arrangement or spec constraints:
+
+```yaml
+constraints:
+  - Use React hooks (useState, useEffect) for state management
+  - Use Tailwind CSS for styling
+```
+
+### 2. Obscure or new libraries — interface spec
+
+For newer libraries (e.g. FastHTML) where LLMs may hallucinate the API, write a `type` spec capturing the subset you actually use. Your other specs list it as a dependency, giving every soloist accurate documentation:
+
+```markdown
+---
+name: fasthtml_interface
+type: type
+status: stable
+---
+# FastHTML Interface Contract
+
+The subset of FastHTML used in this project.
+
+## Components
+- `Div(**attrs, *children)` — renders a div
+- `Form(hx_post, hx_swap, *children)` — HTMX-enabled form
+- `Input(name, type, placeholder)` — form input
+
+## App
+- `@rt(path)` — route decorator
+- `serve()` — start dev server
+```
+
+### 3. Complex SDKs — adapter spec
+
+For SDKs with many moving parts (e.g. Vercel AI SDK), write a thin adapter spec that wraps the SDK. Everything else in your project depends on *your adapter*, not the SDK directly. If you swap the underlying SDK, only the adapter spec changes:
+
+```markdown
+---
+name: ai_client
+type: bundle
+dependencies: []
+---
+# AI Client
+
+Wraps the Vercel AI SDK for this project.
+
+## `streamChat(messages, options)`
+Streams a chat completion using `streamText()` from the `ai` package.
+Returns an AI SDK `StreamingTextResponse`.
+```
+
+See `examples/` for concrete interface and adapter spec examples.
+
 ## Sandboxed Execution (Docker)
 
 For safety, SpecSoloist can run generated code and tests inside an isolated Docker container.

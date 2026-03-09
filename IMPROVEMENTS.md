@@ -121,21 +121,42 @@ The quine generates `speccomposer.py` / `specconductor.py` but the originals are
 This is a correctness issue for quine validation — right now the quine passes but produces
 differently-named files, which makes semantic comparison harder.
 
-### 1e. `sp init` — Scaffold a new project
+### 1e. `sp init` — Scaffold a new project ★★★ (raised priority)
 
 ```bash
 sp init my-project
+sp init my-project --arrangement typescript   # pick a template
 ```
 
 Creates:
 ```
 my-project/
-  src/            # where specs go
+  specs/          # where specs go
   arrangement.yaml
   .gitignore
 ```
 
+This is the natural entry point for using SpecSoloist within an existing project
+(e.g. importing it into a FastHTML or Next.js app for spec-driven development).
 Currently new users have to discover the directory convention by reading docs.
+
+### 1h. Interface and adapter spec examples
+
+SpecSoloist has no documented pattern for external dependencies. Three patterns exist
+and should be illustrated with real examples:
+
+1. **Constraints only** — for well-known libraries (React, pytest); just mention in arrangement
+2. **Interface spec** — for obscure/new libraries (FastHTML, custom SDKs); write a `type`
+   spec describing the subset of the external API you use, so soloists have accurate docs
+3. **Adapter spec** — for complex SDKs (Vercel AI); wrap the SDK in a spec'd adapter so
+   the rest of your project is isolated from the SDK's API surface
+
+Concrete examples to add:
+- `examples/fasthtml/` — Python FastHTML app with an `fasthtml_interface.spec.md`
+- `examples/nextjs-ai-chat/` — Next.js app with an `ai_client.spec.md` adapter wrapping Vercel AI SDK
+
+These are higher-value examples than the current math/string demos and directly address
+the real-world use case of adopting SpecSoloist in an existing project.
 
 ### 1f. Remove `sp perform` or finish it
 
@@ -498,6 +519,8 @@ Rough priority ordering given current state of the project:
 | ✅ done | Write Arrangement + agents docs (0d) | Two shipped features with zero docs |
 | ★★★ | Fix quine naming mismatch (1d) | Correctness; blocks quine_diff |
 | ★★★ | `sp doctor` (1a) | #1 new-user pain point |
+| ★★★ | `sp init` — scaffold new project (1e) | Entry point for real-world adoption |
+| ★★★ | Interface & adapter spec examples (1h) | Documents external dependency patterns; adds real-world examples |
 | ✅ done | TypeScript conduct validated via ts_demo (5a) | Working end-to-end with Gemini CLI |
 | ★★☆ | `sp status` (1b) | High utility, manifest data already exists |
 | ★★☆ | `sp validate` quality hints (4d) | Improves compile quality significantly |

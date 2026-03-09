@@ -162,6 +162,8 @@ All modules have requirements-oriented specs in `score/`. All validated via quin
 
 ## Phase 8: Developer Experience (Future)
 
+- [ ] **`sp init`**: Scaffold a new project (`specs/`, `arrangement.yaml`, `.gitignore`) — top priority for real-world adoption
+- [ ] **Interface & adapter spec examples**: Add `examples/fasthtml/` and `examples/nextjs-ai-chat/` demonstrating the three external dependency patterns (constraints, interface spec, adapter spec)
 - [ ] **Quine diff report**: Implement the `quine_diff` tool for semantic fidelity analysis
 - [ ] **SKILLS.md**: Adopt the standard for user-invocable slash commands (distinct from `.claude/agents/` spawnable subagents)
 - [ ] **Interactive Mode**: Terminal UI for reviewing/approving specs and architecture
