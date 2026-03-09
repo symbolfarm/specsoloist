@@ -267,16 +267,15 @@ These are warnings, not errors. But they'd significantly improve compile quality
 
 ## 5. Multi-Language
 
-### 5a. TypeScript / Node.js
+### 5a. TypeScript / Node.js ✅ Validated (2026-03-09)
 
-The runner already has TypeScript configured (via `tsx`), but there's no working
-`arrangement.example.ts.yaml`, no integration tests, and no documentation. The pieces
-are there but the path is unvalidated. A concrete TypeScript example project (with a
-working arrangement file and a passing test run) would prove the system works and make
-it accessible to a huge audience.
+`sp conduct examples/ts_demo/src/ --arrangement arrangements/arrangement.typescript.yaml`
+works end-to-end with Gemini CLI: environment setup (package.json, tsconfig.json, npm install),
+code generation, and tests via Vitest all pass. See `examples/ts_demo/` and
+`arrangements/arrangement.typescript.yaml`.
 
-Note: the runner uses `tsx` not `jest` — this should be explicitly documented since
-most TypeScript developers expect Jest.
+Remaining gap: no example arrangements for web frameworks (Next.js, Fastify, etc.) and
+no documentation in `docs/`. The path is proven; building on it is next.
 
 ### 5b. Multi-language quine
 
@@ -499,7 +498,7 @@ Rough priority ordering given current state of the project:
 | ✅ done | Write Arrangement + agents docs (0d) | Two shipped features with zero docs |
 | ★★★ | Fix quine naming mismatch (1d) | Correctness; blocks quine_diff |
 | ★★★ | `sp doctor` (1a) | #1 new-user pain point |
-| ★★★ | TypeScript support end-to-end + validated example (5a) | Biggest audience expansion |
+| ✅ done | TypeScript conduct validated via ts_demo (5a) | Working end-to-end with Gemini CLI |
 | ★★☆ | `sp status` (1b) | High utility, manifest data already exists |
 | ★★☆ | `sp validate` quality hints (4d) | Improves compile quality significantly |
 | ★★☆ | `quine_diff` — compile from existing spec (3a) | Spec already written, just needs `sp compile` |
