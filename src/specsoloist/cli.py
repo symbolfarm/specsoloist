@@ -658,11 +658,16 @@ def _conduct_with_agent(src_dir: str | None, auto_accept: bool, model: str | Non
         )
         
         if arrangement_arg:
-            prompt += f"\n\n**Arrangement**: Use the arrangement file at '{arrangement_arg}' for build configuration. "
-            prompt += "Ensure soloists are aware of the target language and output paths defined in this arrangement."
+            # Resolve the project base directory (parent of spec dir)
+            project_dir = os.path.abspath(os.path.join(spec_dir, ".."))
+            prompt += f"\n\n**Arrangement**: Read the arrangement file at '{arrangement_arg}' for build configuration. "
+            prompt += f"The project base directory is '{project_dir}'. "
+            prompt += "Resolve output_paths templates relative to the project base directory "
+            prompt += f"(e.g., 'src/{{name}}.ts' → '{project_dir}/src/{{name}}.ts'). "
+            prompt += "Write any environment.config_files to the project base directory, then run environment.setup_commands there before spawning soloists."
         else:
             prompt += "Write implementations to the appropriate src/ paths and tests to tests/. "
-            
+
         prompt += "\nRun the full test suite when done."
 
     if model:

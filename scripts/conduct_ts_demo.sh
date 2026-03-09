@@ -36,4 +36,5 @@ echo "Starting TypeScript demo build..."
 
 $UV_BIN run python -m specsoloist.cli conduct examples/ts_demo/src/ \
     --arrangement arrangements/arrangement.typescript.yaml \
+    --auto-accept \
     "$@"

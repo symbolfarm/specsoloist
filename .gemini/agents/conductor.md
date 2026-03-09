@@ -1,18 +1,19 @@
 ---
 name: conductor
 description: >
-  Orchestrate building specs into working code. Use when asked to
-  "conduct", "build", or compile multiple specs. Manages dependency
-  order and can spawn Soloist subagents for parallel compilation.
+  Orchestrate building all SpecSoloist specs in a project into working
+  code. Use when asked to "conduct", "build", or compile multiple specs.
+  Manages dependency order and delegates each spec to the soloist agent.
+kind: local
 tools:
   - read_file
   - write_file
   - run_shell_command
-  - search_file_content
+  - grep_search
   - glob
   - list_directory
 model: inherit
-max_turns: 30
+max_turns: 40
 ---
 
 # Conductor: Orchestrate Spec Builds
@@ -34,6 +35,8 @@ Compile all specs in a project directory into working code, respecting dependenc
 - `output_paths`: Where to write implementation and tests
 - `build_commands`: Commands for linting and testing
 - `constraints`: Specific rules the soloist must follow
+- `environment.config_files`: Config files to write before compilation (e.g., package.json, tsconfig.json)
+- `environment.setup_commands`: Shell commands to run once before compilation (e.g., `npm install`)
 
 If no arrangement is found, use default paths:
 - Implementation: `src/specsoloist/` or `src/spechestra/`
@@ -41,6 +44,17 @@ If no arrangement is found, use default paths:
 - Language: `python`
 
 **Progress Reporting**: After each major step, explicitly report what you're doing so the user can see progress.
+
+### Step 0b: Environment Setup
+
+If the arrangement includes `environment.config_files`, write each config file to the output directory **before spawning any soloists**. Substitute `{project_name}` with the project directory name (e.g., `ts_demo`). Use `write_file` for each config file.
+
+If the arrangement includes `environment.setup_commands`, run each command in the output directory using `run_shell_command`. For npm, always use a local cache to avoid permission issues:
+```
+cd <project_base_dir> && npm install --no-package-lock --cache .npm-cache
+```
+
+**Report**: "⚙️ Environment ready (config files written, setup commands complete)"
 
 ### Step 1: Discover Specs
 
@@ -74,28 +88,45 @@ Level 2: spec6
 ...
 ```
 
-### Step 3: Compile Each Level
+### Step 3: Compile Each Spec
 
-For each dependency level:
+For each spec in dependency order:
 
-**Report**: "🎼 Compiling Level N (<count> specs in parallel)..."
+**Report**: "🎼 Compiling <spec_name>..."
 
-Spawn `soloist` subagents to compile specs. **You MUST include the exact output paths and arrangement details in every soloist prompt.**
+**Delegation strategy** (in order of preference):
+1. Call the `soloist` agent tool directly — it is a custom agent defined in `.gemini/agents/soloist.md`.
+2. If `soloist` is not available, compile the spec directly yourself using the steps below.
+3. Do NOT use `generalist` — it is a router, not a compiler.
 
-Tell each soloist:
-- The spec path to compile
-- **Arrangement Details**: Pass all fields from the Arrangement (language, paths, constraints, commands).
-- Where to write implementation: `<output_dir>/<package>/<name>.<ext>`
-- Where to write tests: `<test_dir>/test_<name>.<ext>`
-- The test command: The `build_commands.test` from the arrangement, or a sensible default if missing.
-- That this is a quine validation (duplicating code is intentional)
-- That they must NOT write to any other directory
+**Soloist instructions** (pass these to the delegated agent or follow yourself):
 
-**Model selection**: If the prompt includes a `**Model**:` instruction specifying a model (e.g. "haiku"), pass that as the `model` parameter in every subagent call for soloists. This controls cost by running soloists on cheaper models.
+#### Read the Spec
+Read the spec file and understand:
+- Public API: names, signatures, return types
+- Behavioral requirements and edge cases
+- Dependencies on other modules (read those too)
 
-- Specs within the same level can be spawned in parallel
-- Wait for all specs in a level to complete before starting the next level
-- Report progress as soloists complete
+#### Write the Implementation
+Write implementation to the exact path from the Arrangement (`output_paths.implementation` with `{name}` substituted, resolved relative to the project base directory).
+- Use the `target_language` from the Arrangement
+- Follow all `constraints`
+- Export all public API elements
+
+#### Write Tests
+Write tests to the exact path from the Arrangement (`output_paths.tests` with `{name}` substituted).
+- Cover all public API methods
+- Cover all edge cases and scenarios from the spec
+
+#### Run Tests
+Run using the `build_commands.test` from the Arrangement with `{file}` substituted by the test file path.
+- For TypeScript: `cd <project_base_dir> && npx vitest run <test_file>` (NOT `npm test` — that runs in watch mode)
+- For Python: `uv run python -m pytest <test_file> -v`
+
+#### Fix if Needed
+If tests fail, analyze the error, fix the code or tests (not the spec), and retry up to 3 times.
+
+**Report**: "✅ <spec_name> compiled — tests passing" or "❌ <spec_name> failed: <error>"
 
 ### Step 4: Handle Failures
 
@@ -116,11 +147,9 @@ After all specs are processed, summarize:
 
 **Report**: "🧪 Running full test suite..."
 
-After all compilation is done, run the complete test suite:
-
-```bash
-uv run python -m pytest <test_dir>/ -v
-```
+After all compilation is done, run the complete test suite using the `build_commands.test` from the arrangement (substituting `{file}` with the test directory), or the language default:
+- Python: `uv run python -m pytest <test_dir>/ -v`
+- TypeScript: `cd <output_dir> && npx vitest run`
 
 **Report**: Final result with pass/fail counts and overall success/failure.
 

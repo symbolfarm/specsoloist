@@ -1,16 +1,20 @@
 ---
 name: soloist
 description: >
-  Compile a single spec into working code and tests. Use when asked
-  to compile one specific spec. This is a leaf agent - it does not
-  spawn other agents.
+  Compile a single SpecSoloist spec file into working code and tests.
+  Use when asked to implement a specific component, compile a spec, or
+  generate code from a .spec.md file. This is a leaf agent - it does
+  not spawn other agents.
+kind: local
 tools:
   - read_file
   - write_file
   - run_shell_command
-  - search_file_content
+  - grep_search
+  - glob
+  - list_directory
 model: inherit
-max_turns: 15
+max_turns: 30
 ---
 
 # Soloist: Compile One Spec
