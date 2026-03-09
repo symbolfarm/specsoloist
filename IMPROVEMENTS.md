@@ -519,8 +519,8 @@ Rough priority ordering given current state of the project:
 | ✅ done | Write Arrangement + agents docs (0d) | Two shipped features with zero docs |
 | ★★★ | Fix quine naming mismatch (1d) | Correctness; blocks quine_diff |
 | ★★★ | `sp doctor` (1a) | #1 new-user pain point |
-| ★★★ | `sp init` — scaffold new project (1e) | Entry point for real-world adoption |
-| ★★★ | Interface & adapter spec examples (1h) | Documents external dependency patterns; adds real-world examples |
+| ✅ done | `sp init` — scaffold new project (1e) | Entry point for real-world adoption |
+| ✅ done | Interface & adapter spec examples (1h) | Documents external dependency patterns; adds real-world examples |
 | ✅ done | TypeScript conduct validated via ts_demo (5a) | Working end-to-end with Gemini CLI |
 | ★★☆ | `sp status` (1b) | High utility, manifest data already exists |
 | ★★☆ | `sp validate` quality hints (4d) | Improves compile quality significantly |

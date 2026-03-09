@@ -1,0 +1,72 @@
+# Next.js AI Chat — Arrangement
+#
+# Build: sp conduct specs/ --arrangement arrangement.yaml
+#
+# Requires: Node.js 18+, npm
+
+target_language: typescript
+
+output_paths:
+  implementation: src/{name}.ts
+  tests: tests/{name}.test.ts
+
+environment:
+  tools:
+    - npm
+    - npx
+    - tsx
+    - vitest
+  config_files:
+    package.json: |
+      {
+        "name": "nextjs-ai-chat",
+        "version": "0.1.0",
+        "private": true,
+        "scripts": {
+          "dev": "next dev",
+          "build": "next build",
+          "test": "vitest"
+        },
+        "dependencies": {
+          "next": "^14.0.0",
+          "react": "^18.0.0",
+          "react-dom": "^18.0.0",
+          "ai": "^3.0.0",
+          "@ai-sdk/openai": "^0.0.1"
+        },
+        "devDependencies": {
+          "typescript": "^5.0.0",
+          "vitest": "^1.0.0",
+          "tsx": "^4.0.0",
+          "@types/react": "^18.0.0",
+          "@types/node": "^20.0.0"
+        }
+      }
+    tsconfig.json: |
+      {
+        "compilerOptions": {
+          "target": "ES2020",
+          "lib": ["dom", "dom.iterable", "esnext"],
+          "module": "ESNext",
+          "moduleResolution": "bundler",
+          "strict": true,
+          "esModuleInterop": true,
+          "skipLibCheck": true,
+          "jsx": "preserve"
+        },
+        "include": ["src/**/*", "tests/**/*"]
+      }
+  setup_commands:
+    - npm install --no-package-lock
+
+build_commands:
+  compile: npx tsc --noEmit
+  lint: ""
+  test: npx vitest run {file}
+
+constraints:
+  - Must follow strict TypeScript mode
+  - Must use ES6 modules (import/export)
+  - Use the `ai` package (Vercel AI SDK) only inside ai_client.ts — never in chat_ui.ts
+  - chat_ui.ts imports from ai_client only
+  - Route handlers use Next.js App Router conventions (export async function POST)

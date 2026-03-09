@@ -1,0 +1,29 @@
+# FastHTML App — Arrangement
+#
+# Build: sp conduct specs/ --arrangement arrangement.yaml
+#
+# Requires: pip install python-fasthtml
+
+target_language: python
+
+output_paths:
+  implementation: src/{name}.py
+  tests: tests/test_{name}.py
+
+environment:
+  tools:
+    - uv
+    - pytest
+  setup_commands:
+    - uv sync
+
+build_commands:
+  compile: ""
+  lint: ""
+  test: uv run pytest
+
+constraints:
+  - Use python-fasthtml (import from fasthtml.common)
+  - fasthtml_interface.spec.md describes the exact API — do not guess at FastHTML internals
+  - app.py must be runnable with `python src/app.py`
+  - Tests for app.py should use the Starlette test client (from starlette.testclient import TestClient)

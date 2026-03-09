@@ -2,6 +2,7 @@
 Command-line interface for SpecSoloist.
 
 Usage:
+    sp init <name>              Scaffold a new project
     sp list                     List all specs
     sp create <name> <desc>     Create a new spec
     sp validate <name>          Validate a spec
@@ -136,6 +137,10 @@ def main():
     respec_parser.add_argument("--model", help="LLM model override (with --no-agent)")
     respec_parser.add_argument("--auto-accept", action="store_true", help="Skip interactive review")
 
+    # init
+    init_parser = subparsers.add_parser("init", help="Scaffold a new SpecSoloist project")
+    init_parser.add_argument("name", help="Project directory name to create")
+
     # install-skills
     install_skills_parser = subparsers.add_parser(
         "install-skills",
@@ -153,6 +158,9 @@ def main():
         sys.exit(0)
 
     # Commands that don't need a project context
+    if args.command == "init":
+        cmd_init(args.name)
+        return
     if args.command == "install-skills":
         cmd_install_skills(args.target)
         return
@@ -909,6 +917,97 @@ def _respec_with_llm(core: SpecSoloistCore, file_path: str, test_path: str, out_
     else:
         ui.console.print(ui.Panel(spec_content, title="Generated Spec", border_style="blue"))
         ui.print_info("Use --out <path> to save to file.")
+
+
+_INIT_ARRANGEMENT = """\
+# arrangement.yaml
+#
+# Bridges your specs to a concrete build environment.
+# Run: sp conduct specs/ --arrangement arrangement.yaml
+#
+# See: https://github.com/symbolfarm/specsoloist
+
+target_language: python
+
+output_paths:
+  implementation: src/{name}.py
+  tests: tests/test_{name}.py
+
+environment:
+  tools:
+    - uv
+    - ruff
+    - pytest
+  setup_commands:
+    - uv sync
+
+build_commands:
+  compile: ""               # Leave empty for interpreted languages
+  lint: uv run ruff check .
+  test: uv run pytest
+
+constraints:
+  - Must pass ruff with 0 errors
+  - Must use type hints for all public function signatures
+"""
+
+_INIT_GITIGNORE = """\
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# SpecSoloist
+.specsoloist-manifest.json
+.spechestra/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+.env
+
+# Node / TypeScript
+node_modules/
+.npm-cache/
+dist/
+*.js.map
+
+# Editor
+.idea/
+.vscode/
+*.swp
+.DS_Store
+"""
+
+
+def cmd_init(name: str):
+    """Scaffold a new SpecSoloist project directory."""
+    project_dir = os.path.abspath(name)
+
+    if os.path.exists(project_dir):
+        ui.print_error(f"Directory already exists: {project_dir}")
+        sys.exit(1)
+
+    os.makedirs(os.path.join(project_dir, "specs"))
+
+    with open(os.path.join(project_dir, "arrangement.yaml"), "w") as f:
+        f.write(_INIT_ARRANGEMENT)
+
+    with open(os.path.join(project_dir, ".gitignore"), "w") as f:
+        f.write(_INIT_GITIGNORE)
+
+    ui.print_success(f"Created project: [bold]{name}/[/]")
+    ui.print_step("  specs/            ← put your .spec.md files here")
+    ui.print_step("  arrangement.yaml  ← build configuration")
+    ui.print_step("  .gitignore")
+    ui.console.print()
+    ui.print_info("Next steps:")
+    ui.print_step(f"  cd {name}")
+    ui.print_step("  sp compose 'describe your project'   # draft specs")
+    ui.print_step("  sp conduct specs/                    # build")
 
 
 def cmd_install_skills(target: str):
