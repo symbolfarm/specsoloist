@@ -68,28 +68,52 @@ sp conduct score/ --model haiku --auto-accept   # quine attempt
 1. **Read this file** (done ✓)
 2. **Read `AGENTS.md`** — project structure, key commands, current phase
 3. **Pick the lowest-numbered uncompleted task** (or one the user specifies)
-4. **Read the task file** in full — it contains context, steps, files to read, and success criteria
-5. **Read the files listed in the task** before writing any code
+4. **Read the task file** in full — context, steps, files to read, success criteria
+5. **Read all source files listed in the task** before writing any code or forming an approach.
+   Task files intentionally leave some implementation decisions open; the right answer usually
+   emerges from reading the code. Decide, then proceed — don't ask about decisions the source
+   files resolve.
 6. **Verify** with `uv run python -m pytest tests/` and `uv run ruff check src/` before committing
 
 When done with a task, mark it ✅ in this file and commit.
 
 ---
 
-## Key Architectural Decisions to Know
+## Working Principles
 
-- **`type: reference`** (task 04) — once implemented, use it for any spec that documents a
-  third-party library. No code is generated; the spec body is injected into dependent soloists'
-  prompts. This is the right pattern for FastHTML, Vercel AI SDK, Prisma, fastlite, etc.
+These apply to every task. Knowing them upfront prevents the most common mistakes:
+
+**Minimal footprint.** Extend existing call sites rather than restructuring them. If `compile_code()`
+needs a new parameter, add it with a default of `None` so all existing callers still work.
+
+**Display logic lives in `cli.py`.** The validator, parser, and compiler return data. `cli.py`
+formats it for humans. Don't embed display strings in lower layers.
+
+**Unit tests for framework changes; end-to-end as a smoke test.** When a task changes parser,
+compiler, or runner behaviour, write unit tests for those layers directly. End-to-end via
+`sp conduct` is a sanity check, not the primary verification.
+
+**Reference specs have three sections** — `# Overview` (required), `# API` (required),
+`# Verification` (recommended — warn if absent). The `# Verification` section contains
+3–10 lines of import and smoke-test snippets compiled into `tests/test_{name}.py`. This makes
+reference specs *verified documentation* that fails CI when the library API drifts.
+
+**No generated files committed.** `src/` and `tests/` in examples are gitignored. Only specs,
+arrangements, READMEs, and framework source committed.
+
+**`sp conduct` nested session.** Running `sp conduct` inside Claude Code blocks subprocess
+spawning. Run from a terminal outside Claude Code, or use `--no-agent`.
+
+---
+
+## Key Architectural Decisions (already made)
+
+- **`type: reference`** — use for any spec documenting a third-party library. No implementation
+  generated. Spec body injected into prompts of dependent soloists via `reference_specs: dict[str, ParsedSpec]`
+  passed through `compile_code()`. Verification snippets compiled to a test file.
 
 - **Multi-spec web apps** — separate layout, routing, and state into distinct specs. One
-  combined spec can't express UI completeness requirements. See task 06 for the pattern.
+  combined spec can't express UI completeness. See task 06 for the pattern.
 
 - **Arrangements are build config** — language, output paths, tool versions, env var names.
   Specs are language-agnostic. Never put language-specific details in specs.
-
-- **`sp conduct` nested session** — running `sp conduct` inside Claude Code blocks subprocess
-  spawning. Always run from a terminal outside Claude Code, or use `--no-agent`.
-
-- **Generated files are not committed** — `src/` and `tests/` in examples are gitignored.
-  Only specs, arrangements, and READMEs are committed.
