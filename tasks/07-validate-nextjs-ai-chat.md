@@ -1,4 +1,4 @@
-# Task: Add Vercel AI Interface Spec and Validate the Next.js AI Chat Example
+# Task: Add Vercel AI Reference Spec and Validate the Next.js AI Chat Example
 
 ## Context
 
@@ -10,21 +10,26 @@ The `examples/nextjs_ai_chat/` directory contains a Next.js App Router + Vercel 
 - `arrangement.yaml` — build config (TypeScript, npm, vitest)
 
 **This example has never been run.** There is also a gap: the Vercel AI SDK (`ai` package) is
-new enough that LLMs may hallucinate its API, just as they do with FastHTML. The project
-has a `fasthtml_interface.spec.md` type spec for exactly this reason, but there is no
-equivalent for the Vercel AI SDK.
+new enough that LLMs may hallucinate its API, just as they do with FastHTML. This task creates
+a `reference` spec for the Vercel AI SDK (see task 04 for the `reference` type) and then
+validates the full example end-to-end.
+
+**Prerequisite:** Task 04 (`reference` spec type) must be complete before this task, as
+`vercel_ai_interface` should use `type: reference`.
 
 This task has two parts:
 
-1. **Write `vercel_ai_interface.spec.md`** — a type spec documenting the Vercel AI SDK subset used
+1. **Write `vercel_ai_interface.spec.md`** — a `reference` spec documenting the Vercel AI SDK subset used
 2. **Validate the full example end-to-end** — run `sp conduct`, get tests passing, write a README
 
 ## Part 1: Write `vercel_ai_interface.spec.md`
 
 Create `examples/nextjs_ai_chat/specs/vercel_ai_interface.spec.md`.
 
-This should be a `type` spec (no functions, just API documentation) that describes the
-subset of the `ai` package (`npm install ai`) that `ai_client.spec.md` uses.
+This should be a `reference` spec (type: reference) — no `yaml:functions`, no schema block,
+just clear `# Overview` and `# API` sections describing the subset of the `ai` package
+(`npm install ai`) that `ai_client.spec.md` uses. No code will be generated from it;
+it exists to ground soloists in the correct API.
 
 ### What to document
 
@@ -52,14 +57,18 @@ arrangement pins.
 ```markdown
 ---
 name: vercel_ai_interface
-type: type
+type: reference
 status: stable
 ---
 
-# Vercel AI SDK Interface Contract
+# Overview
 
-The subset of the [`ai`](https://sdk.vercel.ai) package (v3.x) used in this project.
-Specs that call the Vercel AI SDK should list `vercel_ai_interface` as a dependency.
+The subset of the [`ai`](https://sdk.vercel.ai) package (v3.x, `npm install ai`) used in
+this project. Specs that call the Vercel AI SDK should list `vercel_ai_interface` as a
+dependency. No code is generated from this spec — it exists to give soloists accurate API
+documentation. Verify API against v3 (not v4, which has breaking changes).
+
+# API
 
 ## `streamText(options)`
 
