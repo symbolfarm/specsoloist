@@ -160,17 +160,21 @@ All modules have requirements-oriented specs in `score/`. All validated via quin
 - [x] **Sandboxed Execution**: Run generated code in Docker/Wasm containers for safety
 - [x] **Drop MCP server**: `specsoloist-mcp` removed; agent-first CLI is the better abstraction
 
-## Phase 8: Developer Experience (Future)
+## Phase 8: Web-Dev Readiness (In Progress)
 
-- [ ] **`sp init`**: Scaffold a new project (`specs/`, `arrangement.yaml`, `.gitignore`) — top priority for real-world adoption
-- [ ] **Interface & adapter spec examples**: Add `examples/fasthtml/` and `examples/nextjs-ai-chat/` demonstrating the three external dependency patterns (constraints, interface spec, adapter spec)
-- [ ] **Quine diff report**: Implement the `quine_diff` tool for semantic fidelity analysis
+- [x] **`sp init`**: Scaffold a new project (`specs/`, `arrangement.yaml`, `.gitignore`)
+- [x] **`type: reference` spec type**: Third-party API docs injected as soloist context; `# Verification` compiled to tests (task 04)
+- [x] **FastHTML example validated**: `examples/fasthtml_app/` — 23 tests passing, `fasthtml_interface.spec.md` migrated to `type: reference`
+- [ ] **Arrangement `dependencies` field**: Machine-readable version constraints injected into soloist prompts (task 05)
+- [ ] **FastHTML app refactor**: Split `app.spec.md` into layout/routes/state; multi-spec web app pattern (task 06)
+- [ ] **Next.js AI chat example**: `vercel_ai_interface` as `type: reference`; validate end-to-end (task 07)
+- [ ] **Arrangement templates**: `sp init --template python-fasthtml/nextjs-vitest` (task 08)
+- [ ] **E2E testing pattern**: Playwright arrangement, `data-testid` spec contract (task 09)
+- [ ] **`sp conduct --resume`**: Skip already-compiled specs; cascade recompile on dep change (task 10)
+- [ ] **Quine diff report**: Implement the `quine_diff` tool for semantic fidelity analysis (task 03a)
 - [ ] **SKILLS.md**: Adopt the standard for user-invocable slash commands (distinct from `.claude/agents/` spawnable subagents)
 - [ ] **Interactive Mode**: Terminal UI for reviewing/approving specs and architecture
 - [ ] **VS Code Extension**: Live preview while editing specs
-- [ ] **Visual Spec Editor**: GUI for defining requirements
-- [ ] **Advanced Workflows**: Conditional branching, loops, fan-out/fan-in
-- [ ] **Streaming Compilation**: Real-time feedback during compilation
 - [ ] **Multi-language quine**: Prove specs can compile to TypeScript/Go/Rust, not just Python
 - [ ] **Spec coverage**: Tooling to measure how much of the public API is covered by specs
 
@@ -180,7 +184,7 @@ All modules have requirements-oriented specs in `score/`. All validated via quin
 
 - [x] Fix ruff lint errors as they arise
 - [x] Keep self-hosting specs in sync with implementation
-- [x] 177 original tests passing, 563 quine tests passing
+- [x] 242 original tests passing, 563 quine tests passing
 - [x] **v0.3.2 patch** — fix setup_commands execution, bypassPermissions scope, NO_COLOR support, validate_inputs NotImplementedError, pytest warnings, stale CLI docs, new arrangement/agents guides
 - [x] **TypeScript conduct validated** — `sp conduct examples/ts_demo/` with `arrangement.typescript.yaml` produces working code and passing tests via Gemini CLI
 

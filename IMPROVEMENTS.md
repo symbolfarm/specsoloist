@@ -1,9 +1,10 @@
 # SpecSoloist — Product & Technical Improvement Notes
 
 > Brainstorm document. Not a roadmap — just thinking out loud about where this could go.
-> Last updated: 2026-02-19
+> Last updated: 2026-03-11
 >
 > **v0.3.2 (2026-02-19):** All of Section 0 shipped. Also fix 1c (pytest warnings).
+> **2026-03-11:** Task 04 done — `type: reference` spec type fully implemented (§4e ✅).
 
 ---
 
@@ -45,6 +46,27 @@ This is worse than a missing feature: it's a documented field that promises beha
 code doesn't deliver. If a user's environment isn't already set up and they rely on
 `setup_commands` to do it, compilation fails with an opaque error and they have no idea why.
 Either execute them before running tests, or remove the field from the schema.
+
+### 0g. `_compile_single_spec` doesn't skip reference specs from output file tracking
+
+`core.py:_compile_single_spec()` (used by `sp build`) calls `compile_spec()`, which correctly
+early-returns for `type: reference`. But the method then falls through to tracking output files
+— it records a non-existent `mylib_interface.py` in the manifest. `sp status` handles this
+correctly now (type-check before manifest lookup), but the manifest entry itself is wrong.
+
+Fix: add `spec.metadata.type != "reference"` guard in `_compile_single_spec()` around the
+output file tracking and `compile_tests()` call, matching the existing `typedef` exclusion.
+
+Low priority — `sp conduct` (agent-first) bypasses `_compile_single_spec` entirely.
+
+### 0h. Dict-style dep key mismatch in `reference_specs` lookup
+
+In `core.py:compile_spec()`, reference deps are keyed by `dep.get("name", "")`. In
+`compiler.py:_build_import_context()`, the lookup uses `dep.get("from", "")`. For dict deps
+`{name: foo, from: bar}`, these keys could differ. In practice all current specs use
+string-format deps, so this doesn't bite anyone — but it's a latent inconsistency.
+
+Fix: normalise the key used in both places, or document which key is canonical.
 
 ### ~~0f. `--auto-accept` uses `bypassPermissions` too broadly~~ ✅ Fixed
 
@@ -134,24 +156,24 @@ This is the natural entry point for using SpecSoloist within an existing project
 (e.g. importing it into a FastHTML or Next.js app for spec-driven development).
 Currently new users have to discover the directory convention by reading docs.
 
-### 1h. Interface and adapter spec examples ✅ fasthtml_app validated (2026-03-11)
+### 1h. Interface and adapter spec examples — fasthtml_app ✅ Done; Next.js pending
 
 SpecSoloist has no documented pattern for external dependencies. Three patterns exist
 and should be illustrated with real examples:
 
 1. **Constraints only** — for well-known libraries (React, pytest); just mention in arrangement
-2. **Reference spec** — for obscure/new libraries (FastHTML, custom SDKs); write a `reference`
+2. **Reference spec** — for obscure/new libraries (FastHTML, custom SDKs); write a `type: reference`
    spec describing the subset of the external API you use, so soloists have accurate docs
 3. **Adapter spec** — for complex SDKs (Vercel AI); wrap the SDK in a spec'd adapter so
    the rest of your project is isolated from the SDK's API surface
 
-`examples/fasthtml_app/` is now end-to-end validated (23 tests passing). During validation,
-`fasthtml_interface.spec.md` had to be forced into `type: bundle` because no `reference` type
-exists — the yaml:functions block is semantically wrong (these aren't functions to implement,
-they're API docs to consult). See item 4e below.
+`examples/fasthtml_app/` is end-to-end validated (23 tests passing). `fasthtml_interface.spec.md`
+is now properly `type: reference` with `# Overview`, `# API`, and `# Verification` sections
+(migrated as part of task 04 — it was previously `type: bundle` which was a semantic misfit).
 
-Remaining example to add:
-- `examples/nextjs-ai-chat/` — Next.js app with an `ai_client.spec.md` adapter wrapping Vercel AI SDK
+Remaining example to add (tracked as task 07):
+- `examples/nextjs-ai-chat/` — Next.js app with a `vercel_ai_interface.spec.md` reference spec
+  wrapping the Vercel AI SDK
 
 These are higher-value examples than the current math/string demos and directly address
 the real-world use case of adopting SpecSoloist in an existing project.
@@ -289,40 +311,23 @@ Add quality hints:
 
 These are warnings, not errors. But they'd significantly improve compile quality.
 
-### 4e. `reference` spec type for third-party API documentation
+### 4e. `reference` spec type for third-party API documentation ✅ Done (2026-03-11)
 
-Surfaced during `examples/fasthtml_app/` validation. A recurring pattern: you want to
-give soloists accurate API docs for an obscure/versioned library (FastHTML, a custom SDK)
-without asking them to *implement* anything. No existing spec type fits:
+Implemented in task 04. A reference spec documents a third-party library's API without
+generating any implementation code. The spec body is injected as context into the prompts
+of dependent soloists.
 
-- `type: type` — wrong; requires `# Schema`, implies a data structure to implement
-- `type: bundle` — closest, but requires `yaml:functions` which implies "implement these"
-- `type: module` — wrong; implies aggregating sub-specs for export
+**Required sections:** `# Overview` (library name, package, version range, import path),
+`# API` (prose or tables of the external API). **Recommended:** `# Verification` — a code
+snippet compiled to `tests/test_{name}.py` that runs against the real installed library,
+catching API drift.
 
-**Proposed: `type: reference`**
+`examples/fasthtml_app/specs/fasthtml_interface.spec.md` migrated from `type: bundle`
+(a semantic misfit) to `type: reference` with all three sections present.
 
-A reference spec is documentation only — the library provides the implementation.
-Required sections: `# Overview` and `# API` (prose or tables describing the external API).
-No `yaml:functions` block, no schema, no test scenarios. The conductor skips code generation
-for reference specs and passes them as context when compiling dependent specs.
-
-Structure:
-```markdown
----
-name: fasthtml_interface
-type: reference
-status: stable
----
-
-# Overview
-...what this library is, import path, version notes...
-
-# API
-...function signatures, HTMX attributes, gotchas...
-```
-
-Compiler behaviour: reference specs are injected into the prompt of any spec that
-lists them as a dependency, but no `src/` or `tests/` output is generated for them.
+**Validation behaviour:** `sp validate` shows `type: reference — context only`; warns if
+`# Verification` absent or no version range in `# Overview`. `sp status` shows `CONTEXT`/`—`
+instead of looking up the manifest.
 
 ### 4f. Multi-spec design for web apps: separate routing from layout
 
@@ -433,11 +438,9 @@ After successful compilation, store a hash of the generated code. On recompilati
 if the hash changes significantly (not just whitespace), prompt the developer to review
 the diff before accepting. Prevents silent regressions where a spec is subtly mis-compiled.
 
-### 7c. `sp test --all` with summary reporting
+### 7c. `sp test --all` with summary reporting ✅ Done (task 02)
 
-Run tests for every compiled spec and show a dashboard. Currently you'd have to
-loop `sp test <name>` for each spec. A single command with a nice table output
-would make quality checking feel much lighter.
+Implemented. `sp test --all` runs tests for every compiled spec and shows a results table.
 
 ---
 
@@ -600,17 +603,19 @@ Rough priority ordering given current state of the project:
 | ★★★ | Fix quine naming mismatch (1d) | Correctness; blocks quine_diff |
 | ★★★ | `sp doctor` (1a) | #1 new-user pain point |
 | ✅ done | `sp init` — scaffold new project (1e) | Entry point for real-world adoption |
-| ✅ done | Interface & adapter spec examples (1h) | Documents external dependency patterns; adds real-world examples |
+| ✅ done | fasthtml_app validated + reference type (1h, 4e) | Proper type: reference; 23 tests passing |
 | ✅ done | TypeScript conduct validated via ts_demo (5a) | Working end-to-end with Gemini CLI |
-| ★★☆ | `sp status` (1b) | High utility, manifest data already exists |
-| ★★☆ | `sp validate` quality hints (4d) | Improves compile quality significantly |
-| ★★☆ | `reference` spec type (4e) | Avoids misusing `bundle` for API docs; cleaner model |
-| ★★☆ | Multi-spec web app pattern (4f) | Prevents UI gaps like missing delete buttons |
+| ✅ done | `sp status` (1b) | Compilation state table from manifest |
+| ✅ done | `sp validate` quality hints (4d) | Warnings for missing test scenarios, short descriptions |
+| ✅ done | `sp test --all` (7c) | Summary table across all compiled specs |
+| ★★☆ | Multi-spec web app pattern (4f) | Prevents UI gaps; tracked as task 06 |
+| ★★☆ | Next.js AI chat example (1h) | Tracked as task 07 |
 | ★★☆ | `quine_diff` — compile from existing spec (3a) | Spec already written, just needs `sp compile` |
 | ★★☆ | Fix or remove `sp perform` (1f) | Placeholder code in production |
 | ★★☆ | `--quiet` / `--json` output flags (1g) | Makes tool scriptable |
-| ★★☆ | OpenAI provider (6a) | Unlocks a large existing user base |
-| ★★☆ | Homebrew formula (8a) | Low effort, broad reach |
+| ★★☆ | Fix `_compile_single_spec` for reference specs (0g) | Wrong manifest entries via `sp build` |
+| ★☆☆ | OpenAI provider (6a) | Unlocks a large existing user base |
+| ★☆☆ | Homebrew formula (8a) | Low effort, broad reach |
 | ★☆☆ | Watch mode (2a) | Convenience; needs watchdog dep |
 | ★☆☆ | VS Code extension (9a) | High impact but significant effort |
 | ★☆☆ | Spec registry (9b) | Requires infrastructure; too early |

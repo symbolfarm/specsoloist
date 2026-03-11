@@ -46,6 +46,12 @@ sp conduct score/ --model haiku --auto-accept   # quine attempt
 | 03 | Validate FastHTML example | `examples/fasthtml_app/` — 23 tests passing, README written |
 | 04 | `reference` spec type | Parser validation, compiler injection, no code gen, verification tests, `sp validate`/`sp status` display |
 
+### 🔲 Housekeeping
+
+| # | Task | Effort | Summary |
+|---|------|--------|---------|
+| **HK-01** | Consolidate IMPROVEMENTS + ROADMAP into tasks | Small | Fold actionable items from `IMPROVEMENTS.md` and `ROADMAP.md` into task files here; archive or trim those docs. Also fix two small bugs: `_compile_single_spec` not guarding reference specs (§0g), dict dep key mismatch in `reference_specs` lookup (§0h). |
+
 ### 🔲 To Do — in priority order
 
 | # | Task | Effort | Depends on | Summary |
