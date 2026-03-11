@@ -755,7 +755,7 @@ def _conduct_with_agent(src_dir: str | None, auto_accept: bool, model: str | Non
         )
 
     try:
-        _run_agent_oneshot(agent, prompt, auto_accept, model=model, is_quine=is_quine)
+        _run_agent_oneshot(agent, prompt, auto_accept, model=model)
     except Exception as e:
         ui.print_error(f"Agent error: {e}")
         sys.exit(1)
@@ -1377,8 +1377,7 @@ def _detect_agent_cli() -> str | None:
     return None
 
 
-def _run_agent_oneshot(agent: str, prompt: str, auto_accept: bool, model: str | None = None,
-                       is_quine: bool = False):
+def _run_agent_oneshot(agent: str, prompt: str, auto_accept: bool, model: str | None = None):
     """Run an agent CLI in one-shot mode."""
     import subprocess
 
@@ -1388,12 +1387,7 @@ def _run_agent_oneshot(agent: str, prompt: str, auto_accept: bool, model: str | 
         if model:
             cmd.extend(["--model", model])
         if auto_accept:
-            if is_quine:
-                # Quine runs are fully autonomous and write to a sandboxed build/quine/ directory
-                cmd.extend(["--permission-mode", "bypassPermissions"])
-            else:
-                # Skip interactive prompts without granting unrestricted filesystem access
-                cmd.append("--dangerously-skip-permissions")
+            cmd.append("--dangerously-skip-permissions")
         result = subprocess.run(cmd, capture_output=False, text=True)
     elif agent == "gemini":
         # Gemini CLI: gemini -p "prompt"

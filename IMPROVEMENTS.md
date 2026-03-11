@@ -46,22 +46,16 @@ code doesn't deliver. If a user's environment isn't already set up and they rely
 `setup_commands` to do it, compilation fails with an opaque error and they have no idea why.
 Either execute them before running tests, or remove the field from the schema.
 
-### 0f. `--auto-accept` uses `bypassPermissions` too broadly
+### ~~0f. `--auto-accept` uses `bypassPermissions` too broadly~~ ✅ Fixed
 
-`_run_agent_oneshot()` in `cli.py` passes `--permission-mode bypassPermissions` to Claude
-whenever `--auto-accept` is set. This is appropriate for a deliberately supervised quine run,
-but `--auto-accept` is exposed on every agent command: `sp compose`, `sp fix`, `sp respec`,
-`sp conduct`. So `sp fix myspec --auto-accept` gives Claude Code unrestricted file-write
-access across the entire filesystem with no confirmation prompts.
+`_run_agent_oneshot()` now uses `--dangerously-skip-permissions` for all `--auto-accept` runs.
+The `bypassPermissions` mode and the `is_quine` permission branch have been removed entirely —
+`bypassPermissions` and `--dangerously-skip-permissions` are functionally equivalent in the
+current Claude CLI, and the quine's real sandbox is the output path (`build/quine/`) plus the
+agent prompt, not the permission mode.
 
-There was already one incident in Phase 6 where a soloist ignored its output path and wrote
-to `src/` instead of `build/quine/` — it was caught only because someone noticed the git diff.
-With `bypassPermissions` that write went through silently.
-
-Safer alternatives:
-- Scope `bypassPermissions` only to the quine path (when `is_quine` is true)
-- Use `--allowedTools` or `--allowed-paths` to restrict Claude to specific directories
-- Default `--auto-accept` to `--dangerously-skip-permissions` only where strictly necessary
+Still worth considering: `--allowedTools` or `--allowed-paths` for finer-grained directory
+scoping if Claude CLI exposes that cleanly in a future version.
 
 ---
 
@@ -229,7 +223,14 @@ After running `sp conduct score/`, compare the quine output against the original
 
 This turns the quine from a binary pass/fail into a useful diagnostic tool.
 
-### 3b. Quine CI — nightly self-hosting run
+### 3b. `conduct_quine_python.sh` convenience script + quine arrangement
+
+A `scripts/conduct_quine_python.sh` wrapper that runs `sp conduct score/ --model haiku --auto-accept`
+with the right environment. Should reference (or create) an `arrangements/quine_python.yaml`
+that pins output paths, the Python arrangement, and the `build/quine/` target — so the quine
+is fully reproducible without flags.
+
+### 3c. Quine CI — nightly self-hosting run
 
 Add a scheduled GitHub Actions workflow that runs `sp conduct score/` nightly and
 reports pass rate. If the quine degrades (specs drift from source), you know immediately.
@@ -416,7 +417,24 @@ Consolidating under `.specsoloist/` makes the tool feel more intentional:
 
 A minor cleanup but it signals that the tool is mature and respects your project root.
 
-### 8d. Windows support audit
+### 8d. Build progress dashboard (uvicorn + SSE)
+
+A lightweight local server (`sp serve`?) that conductor and soloists push events to,
+rendered as a live dashboard in the browser. The key design question is the event API:
+conductor and soloists would need a structured way to emit `spec_started`, `spec_passed`,
+`spec_failed`, `build_complete` events — probably a simple HTTP POST to localhost or a
+shared queue.
+
+Worth considering: tmux-based agent management (used by at least one similar project)
+as an alternative to a server — agents run in named panes, progress is visible in terminal
+without a browser. Both approaches are valid; the server approach is more composable
+(webhooks, remote monitoring, future CI integration).
+
+This is a meaningful architectural decision — the event API shapes how conductor spawns
+soloists and how results are surfaced. Park until web app examples are working in
+production and we have a clearer picture of real monitoring needs.
+
+### 8e. Windows support audit
 
 Is `sp` tested on Windows? The path handling (`os.path.join`, etc.) should be fine,
 but runner subprocess commands may not be. Worth a CI matrix run.
