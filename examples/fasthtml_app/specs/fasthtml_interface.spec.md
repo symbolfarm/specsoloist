@@ -15,7 +15,7 @@ No implementation is generated for this spec — it is API documentation only.
 
 **Critical import:** Always import from `fasthtml.common`, never from `fasthtml` directly:
 ```python
-from fasthtml.common import fast_app, serve, Div, P, H1, Form, Input, Button, Title, Ul, Li
+from fasthtml.common import fast_app, serve, picolink, Main, Div, P, H1, Form, Input, Button, Title, Ul, Li
 ```
 
 **Testing:** Use `from starlette.testclient import TestClient`. Never call `serve()` in test files —
@@ -25,13 +25,30 @@ guard with `if __name__ == "__main__": serve()`.
 
 ## fast_app()
 
-Creates the FastHTML ASGI app and route decorator.
+Creates the FastHTML ASGI app and route decorator. Pass `hdrs` to inject `<head>` elements
+such as CSS framework links.
 
 ```python
-app, rt = fast_app()
+app, rt = fast_app()                          # bare app
+app, rt = fast_app(hdrs=(picolink,))          # with Pico CSS
 ```
 
 Returns a tuple `(app, rt)` where `app` is the ASGI application and `rt` is a route decorator factory.
+
+## picolink
+
+A pre-built `<link>` header element that loads [Pico CSS](https://picocss.com) from a CDN.
+Pico CSS applies clean, semantic styles to plain HTML elements with no class names required.
+Wrap page content in `Main(..., cls="container")` for centred, responsive layout.
+
+```python
+from fasthtml.common import fast_app, picolink, Main
+app, rt = fast_app(hdrs=(picolink,))
+
+@rt("/")
+def get():
+    return Title("My App"), Main(H1("Hello"), cls="container")
+```
 
 ## serve()
 
@@ -50,6 +67,7 @@ All HTML components share this signature: `Tag(*children, **attrs)`.
 | `Input` | `<input>` | `name=` delivers form field to route handler |
 | `Button` | `<button>` | Submit button |
 | `Title` | `<title>` | Page title in head |
+| `Main` | `<main>` | Use `cls="container"` with Pico CSS for centred layout |
 | `Ul` | `<ul>` | Unordered list |
 | `Li` | `<li>` | List item |
 
@@ -95,11 +113,13 @@ assert "<ul" in response.text
 # Verification
 
 ```python
-from fasthtml.common import fast_app, serve, Div, P, H1, Form, Input, Button, Title, Ul, Li
-app, rt = fast_app()
+from fasthtml.common import fast_app, serve, picolink, Main, Div, P, H1, Form, Input, Button, Title, Ul, Li
+app, rt = fast_app(hdrs=(picolink,))
 assert callable(rt)
 div = Div("hello", id="x")
 assert "hello" in str(div)
 form = Form(Input(name="item"), Button("Add"), hx_post="/add", hx_swap="beforeend")
 assert "hx-post" in str(form)
+main = Main(H1("Hello"), cls="container")
+assert "container" in str(main)
 ```

@@ -14,9 +14,9 @@ Route handlers for the FastHTML todo app. Creates the ASGI app and registers GET
 POST, and DELETE routes. Imports UI components from `layout` and data operations
 from `state`.
 
-The app is created at module level:
+The app is created at module level with Pico CSS loaded:
 ```python
-app, rt = fast_app()
+app, rt = fast_app(hdrs=(picolink,))
 ```
 
 The `if __name__ == "__main__":` guard calls `serve()` so the module is importable

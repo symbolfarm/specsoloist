@@ -31,6 +31,7 @@ constraints:
   - Use python-fasthtml (import from fasthtml.common)
   - fasthtml_interface.spec.md is a reference spec — it describes the API but generates no code
   - Three-spec decomposition: state (data model) -> layout (UI components) -> routes (HTTP handlers)
+  - Use Pico CSS for styling: fast_app(hdrs=(picolink,)) in routes.py; wrap page content in Main(..., cls="container")
   - state.py must be independently testable with no HTTP or FastHTML imports
   - layout.py builds FastHTML components; tests render them to strings and check for expected attributes
   - routes.py imports from state and layout; tests use the Starlette TestClient
