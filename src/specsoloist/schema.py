@@ -136,7 +136,7 @@ class Arrangement(BaseModel):
     """
     target_language: str
     output_paths: ArrangementOutputPaths
-    environment: Optional[ArrangementEnvironment] = Field(default_factory=ArrangementEnvironment)
+    environment: ArrangementEnvironment = Field(default_factory=ArrangementEnvironment)
     build_commands: ArrangementBuildCommands
     constraints: List[str] = Field(default_factory=list)
 

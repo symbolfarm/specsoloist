@@ -184,7 +184,7 @@ Your task is to implement the workflow described in the following specification.
                 if override.tests:
                     context.append(f"- `{spec_name}` tests: `{override.tests}`")
 
-        if arrangement.environment and arrangement.environment.dependencies:
+        if arrangement.environment.dependencies:
             context.append("\n## Dependency Versions")
             context.append(
                 "This project uses the following versioned dependencies. "

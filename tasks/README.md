@@ -58,7 +58,7 @@ sp conduct score/ --model haiku --auto-accept   # quine attempt
 
 | # | Task | Effort | Summary |
 |---|------|--------|---------|
-| **HK-02** | Small fixes | Tiny | Fix `Optional[ArrangementEnvironment]` type hint; add comment on reference spec early return; move dependency warning to `_resolve_arrangement()` |
+| ~~**HK-02**~~ | ~~Small fixes~~ | ~~Tiny~~ | ~~Fix `Optional[ArrangementEnvironment]` type hint; add comment on reference spec early return; move dependency warning to `_resolve_arrangement()`~~ |
 | **HK-03** | Remove `sp perform` | Small | Remove `cmd_perform`, `SpecConductor.perform/build_and_perform/_execute_step`, `PerformResult`, `StepResult`. See `decisions/01-sp-perform.md` for full removal checklist. |
 
 ### 🔲 To Do — in priority order

@@ -289,13 +289,13 @@ def cmd_create(core: SpecSoloistCore, name: str, description: str, spec_type: st
 def _check_arrangement_dependencies(arrangement) -> list[str]:
     """Return warnings for arrangement dependency configuration issues."""
     warnings = []
-    if not arrangement or not arrangement.environment:
+    if not arrangement:
         return warnings
     deps = arrangement.environment.dependencies
     if not deps:
         return warnings
     install_keywords = ("uv sync", "uv add", "pip install", "npm install", "npm ci", "yarn install", "pnpm install")
-    commands = arrangement.environment.setup_commands or []
+    commands = arrangement.environment.setup_commands
     has_install = any(
         any(kw in cmd for kw in install_keywords) for cmd in commands
     )
@@ -373,11 +373,6 @@ def cmd_validate(core: SpecSoloistCore, name: str, arrangement_arg: str | None =
             for warning in _check_spec_quality(spec_content, spec_type):
                 ui.console.print(f"[warning]⚠[/] {warning}")
 
-        # Arrangement dependency check
-        if arrangement_arg:
-            arrangement = _load_arrangement(arrangement_arg)
-            for warning in _check_arrangement_dependencies(arrangement):
-                ui.console.print(f"[warning]⚠[/] {warning}")
     else:
         ui.print_error(f"{name} is INVALID")
         for error in result["errors"]:
@@ -1552,7 +1547,7 @@ def _discover_arrangement(core):
 
 def _apply_arrangement(core, arrangement):
     """Apply arrangement settings to core (e.g. setup_commands)."""
-    if arrangement and arrangement.environment and arrangement.environment.setup_commands:
+    if arrangement and arrangement.environment.setup_commands:
         core.runner.setup_commands = arrangement.environment.setup_commands
 
 
@@ -1561,10 +1556,12 @@ def _resolve_arrangement(core, arrangement_arg):
     if arrangement_arg:
         arr = _load_arrangement(arrangement_arg)
         ui.print_info(f"Using arrangement: [bold]{arrangement_arg}[/]")
-        return arr
-    arr = _discover_arrangement(core)
-    if arr:
-        ui.print_info("Using auto-discovered [bold]arrangement.yaml[/]")
+    else:
+        arr = _discover_arrangement(core)
+        if arr:
+            ui.print_info("Using auto-discovered [bold]arrangement.yaml[/]")
+    for warning in _check_arrangement_dependencies(arr):
+        ui.console.print(f"[warning]⚠[/] {warning}")
     return arr
 
 
