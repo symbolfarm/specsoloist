@@ -366,7 +366,7 @@ class SpecSoloistCore:
         # Collect reference specs from dependencies to inject as context
         reference_specs = {}
         for dep in (spec.metadata.dependencies or []):
-            dep_name = dep if isinstance(dep, str) else dep.get("name", "") if isinstance(dep, dict) else ""
+            dep_name = dep if isinstance(dep, str) else dep.get("from", dep.get("name", "")) if isinstance(dep, dict) else ""
             dep_name = dep_name.replace(".spec.md", "")
             if not dep_name:
                 continue
@@ -612,6 +612,10 @@ class SpecSoloistCore:
 
             # Compile the spec
             self.compile_spec(spec_name, model=model, arrangement=arrangement)
+
+            # Reference specs produce no output files — skip tracking and test generation
+            if spec.metadata.type == "reference":
+                return {"success": True, "error": ""}
 
             # Determine output files
             if arrangement:

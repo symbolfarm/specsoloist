@@ -45,6 +45,7 @@ def main():
     # validate
     validate_parser = subparsers.add_parser("validate", help="Validate a spec's structure")
     validate_parser.add_argument("name", help="Spec name to validate")
+    validate_parser.add_argument("--arrangement", metavar="FILE", help="Path to arrangement YAML file")
 
     # verify
     subparsers.add_parser("verify", help="Verify all specs for orchestration readiness")
@@ -195,7 +196,7 @@ def main():
         elif args.command == "create":
             cmd_create(core, args.name, args.description, args.type)
         elif args.command == "validate":
-            cmd_validate(core, args.name)
+            cmd_validate(core, args.name, getattr(args, "arrangement", None))
         elif args.command == "verify":
             cmd_verify(core)
         elif args.command == "graph":
@@ -285,6 +286,24 @@ def cmd_create(core: SpecSoloistCore, name: str, description: str, spec_type: st
         sys.exit(1)
 
 
+def _check_arrangement_dependencies(arrangement) -> list[str]:
+    """Return warnings for arrangement dependency configuration issues."""
+    warnings = []
+    if not arrangement or not arrangement.environment:
+        return warnings
+    deps = arrangement.environment.dependencies
+    if not deps:
+        return warnings
+    install_keywords = ("uv sync", "uv add", "pip install", "npm install", "npm ci", "yarn install", "pnpm install")
+    commands = arrangement.environment.setup_commands or []
+    has_install = any(
+        any(kw in cmd for kw in install_keywords) for cmd in commands
+    )
+    if not has_install:
+        warnings.append("dependencies declared but no install command found in setup_commands")
+    return warnings
+
+
 def _check_spec_quality(spec_content: str, spec_type: str) -> list[str]:
     """Return a list of quality warning strings for the given spec markdown."""
     warnings = []
@@ -328,7 +347,7 @@ def _check_spec_quality(spec_content: str, spec_type: str) -> list[str]:
     return warnings
 
 
-def cmd_validate(core: SpecSoloistCore, name: str):
+def cmd_validate(core: SpecSoloistCore, name: str, arrangement_arg: str | None = None):
     ui.print_header("Validating Spec", name)
     result = core.validate_spec(name)
 
@@ -352,6 +371,12 @@ def cmd_validate(core: SpecSoloistCore, name: str):
                     ui.console.print(f"[warning]⚠[/] {warning}")
         else:
             for warning in _check_spec_quality(spec_content, spec_type):
+                ui.console.print(f"[warning]⚠[/] {warning}")
+
+        # Arrangement dependency check
+        if arrangement_arg:
+            arrangement = _load_arrangement(arrangement_arg)
+            for warning in _check_arrangement_dependencies(arrangement):
                 ui.console.print(f"[warning]⚠[/] {warning}")
     else:
         ui.print_error(f"{name} is INVALID")

@@ -16,6 +16,11 @@ environment:
     - pytest
   setup_commands:
     - uv sync
+  dependencies:
+    python-fasthtml: ">=0.12,<0.13"
+    starlette: ">=0.52"
+    httpx: ">=0.24"
+    pytest: ">=7.0"
 
 build_commands:
   compile: ""

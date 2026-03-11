@@ -10,63 +10,7 @@
 
 ## 0. Bugs / Immediately Fixable
 
-### 0a. Docs reference `sp lift` — command is `sp respec`
-
-`docs/reference/cli.md:15` lists `sp lift` which was the old name. The rename to `sp respec`
-happened in Phase 4 but the docs weren't updated. Anyone reading the docs and trying `sp lift`
-gets a confusing error.
-
-### 0b. `validate_inputs()` is a placeholder
-
-`src/specsoloist/schema.py:139` — `InterfaceSchema.validate_inputs()` has a body of `pass`.
-This is called at runtime during `sp perform` to validate workflow step inputs.
-Either implement it or raise `NotImplementedError` so failures are explicit rather than silent.
-
-### 0c. Rich ANSI codes break CI/CD pipelines
-
-Spinners and Rich markup render as garbage in GitHub Actions logs. A simple `--no-color`
-flag (or auto-detection of `NO_COLOR` env var, which Rich supports natively) would make
-`sp build` and `sp conduct` usable in scripted/CI contexts without visual noise.
-Rich already has `Console(force_terminal=False)` for this — it's a one-liner.
-
-### 0d. Missing docs for Arrangement, Docker sandbox, and agents
-
-Three shipped features with zero user documentation:
-- Arrangement system — no guide in docs/
-- Docker sandboxing (`SPECSOLOIST_SANDBOX=true`) — mentioned nowhere in docs/
-- Agent integration (`.claude/agents/`, `.gemini/agents/`) — no guide explaining how to use them
-
-### 0e. `setup_commands` is parsed but never executed
-
-`Arrangement.environment.setup_commands` is a first-class field in the schema — users can
-write `setup_commands: [uv sync, npm install]` in their `arrangement.yaml` and it will
-validate cleanly. But `runner.py` never reads it. The field silently does nothing.
-
-This is worse than a missing feature: it's a documented field that promises behaviour the
-code doesn't deliver. If a user's environment isn't already set up and they rely on
-`setup_commands` to do it, compilation fails with an opaque error and they have no idea why.
-Either execute them before running tests, or remove the field from the schema.
-
-### 0g. `_compile_single_spec` doesn't skip reference specs from output file tracking
-
-`core.py:_compile_single_spec()` (used by `sp build`) calls `compile_spec()`, which correctly
-early-returns for `type: reference`. But the method then falls through to tracking output files
-— it records a non-existent `mylib_interface.py` in the manifest. `sp status` handles this
-correctly now (type-check before manifest lookup), but the manifest entry itself is wrong.
-
-Fix: add `spec.metadata.type != "reference"` guard in `_compile_single_spec()` around the
-output file tracking and `compile_tests()` call, matching the existing `typedef` exclusion.
-
-Low priority — `sp conduct` (agent-first) bypasses `_compile_single_spec` entirely.
-
-### 0h. Dict-style dep key mismatch in `reference_specs` lookup
-
-In `core.py:compile_spec()`, reference deps are keyed by `dep.get("name", "")`. In
-`compiler.py:_build_import_context()`, the lookup uses `dep.get("from", "")`. For dict deps
-`{name: foo, from: bar}`, these keys could differ. In practice all current specs use
-string-format deps, so this doesn't bite anyone — but it's a latent inconsistency.
-
-Fix: normalise the key used in both places, or document which key is canonical.
+All known §0 bugs shipped (see version notes at top).
 
 ### ~~0f. `--auto-accept` uses `bypassPermissions` too broadly~~ ✅ Fixed
 

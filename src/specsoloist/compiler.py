@@ -184,6 +184,16 @@ Your task is to implement the workflow described in the following specification.
                 if override.tests:
                     context.append(f"- `{spec_name}` tests: `{override.tests}`")
 
+        if arrangement.environment and arrangement.environment.dependencies:
+            context.append("\n## Dependency Versions")
+            context.append(
+                "This project uses the following versioned dependencies. "
+                "Use APIs compatible with these versions:"
+            )
+            context.append("")
+            for pkg, version in arrangement.environment.dependencies.items():
+                context.append(f"  {pkg:<30} {version}")
+
         if arrangement.constraints:
             context.append("\n## Environment Constraints")
             for constraint in arrangement.constraints:

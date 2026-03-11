@@ -15,6 +15,7 @@ from specsoloist.runner import TestRunner
 from specsoloist.schema import (
     Arrangement,
     ArrangementBuildCommands,
+    ArrangementEnvironment,
     ArrangementOutputPathOverride,
     ArrangementOutputPaths,
 )
@@ -283,6 +284,150 @@ def test_override_path_used_when_compiling(tmp_path):
 
     assert os.path.exists(override_path)
     assert not os.path.exists(str(tmp_path / "src" / "mymod.py"))
+
+
+# ---------------------------------------------------------------------------
+# dependencies field
+# ---------------------------------------------------------------------------
+
+def test_dependencies_parsed_from_yaml():
+    """ArrangementEnvironment.dependencies is populated from YAML."""
+    yaml_content = """\
+target_language: python
+output_paths:
+  implementation: src/{name}.py
+  tests: tests/test_{name}.py
+environment:
+  tools: [uv, pytest]
+  setup_commands: [uv sync]
+  dependencies:
+    python-fasthtml: ">=0.12,<0.13"
+    starlette: ">=0.52"
+    pytest: ">=7.0"
+build_commands:
+  test: uv run pytest
+"""
+    parser = SpecParser(".")
+    arrangement = parser.parse_arrangement(yaml_content)
+
+    assert arrangement.environment.dependencies == {
+        "python-fasthtml": ">=0.12,<0.13",
+        "starlette": ">=0.52",
+        "pytest": ">=7.0",
+    }
+
+
+def test_empty_dependencies_default():
+    """ArrangementEnvironment.dependencies defaults to an empty dict."""
+    env = ArrangementEnvironment()
+    assert env.dependencies == {}
+
+
+def test_dependencies_injected_into_prompt():
+    """_build_arrangement_context includes a Dependency Versions table when dependencies are set."""
+    arr = Arrangement(
+        target_language="python",
+        output_paths=ArrangementOutputPaths(
+            implementation="src/{name}.py",
+            tests="tests/test_{name}.py",
+        ),
+        environment=ArrangementEnvironment(
+            setup_commands=["uv sync"],
+            dependencies={
+                "python-fasthtml": ">=0.12,<0.13",
+                "starlette": ">=0.52",
+            },
+        ),
+        build_commands=ArrangementBuildCommands(test="uv run pytest"),
+    )
+
+    compiler = SpecCompiler(provider=None, global_context="")
+    context = compiler._build_arrangement_context(arr)
+
+    assert "Dependency Versions" in context
+    assert "python-fasthtml" in context
+    assert ">=0.12,<0.13" in context
+    assert "starlette" in context
+    assert ">=0.52" in context
+
+
+def test_empty_dependencies_not_injected():
+    """_build_arrangement_context omits the Dependency Versions section when dependencies is empty."""
+    arr = Arrangement(
+        target_language="python",
+        output_paths=ArrangementOutputPaths(
+            implementation="src/{name}.py",
+            tests="tests/test_{name}.py",
+        ),
+        environment=ArrangementEnvironment(setup_commands=["uv sync"]),
+        build_commands=ArrangementBuildCommands(test="uv run pytest"),
+    )
+
+    compiler = SpecCompiler(provider=None, global_context="")
+    context = compiler._build_arrangement_context(arr)
+
+    assert "Dependency Versions" not in context
+
+
+def test_dependencies_without_install_command_warns():
+    """_check_arrangement_dependencies returns a warning when dependencies lack an install command."""
+    from specsoloist.cli import _check_arrangement_dependencies
+
+    arr = Arrangement(
+        target_language="python",
+        output_paths=ArrangementOutputPaths(
+            implementation="src/{name}.py",
+            tests="tests/test_{name}.py",
+        ),
+        environment=ArrangementEnvironment(
+            setup_commands=["uv run ruff check ."],  # no install command
+            dependencies={"python-fasthtml": ">=0.12"},
+        ),
+        build_commands=ArrangementBuildCommands(test="uv run pytest"),
+    )
+
+    warnings = _check_arrangement_dependencies(arr)
+    assert len(warnings) == 1
+    assert "install command" in warnings[0]
+
+
+def test_dependencies_with_install_command_no_warning():
+    """_check_arrangement_dependencies returns no warning when setup_commands includes an install step."""
+    from specsoloist.cli import _check_arrangement_dependencies
+
+    arr = Arrangement(
+        target_language="python",
+        output_paths=ArrangementOutputPaths(
+            implementation="src/{name}.py",
+            tests="tests/test_{name}.py",
+        ),
+        environment=ArrangementEnvironment(
+            setup_commands=["uv sync"],
+            dependencies={"python-fasthtml": ">=0.12"},
+        ),
+        build_commands=ArrangementBuildCommands(test="uv run pytest"),
+    )
+
+    warnings = _check_arrangement_dependencies(arr)
+    assert warnings == []
+
+
+def test_no_dependencies_no_warning():
+    """_check_arrangement_dependencies returns no warning when dependencies is empty."""
+    from specsoloist.cli import _check_arrangement_dependencies
+
+    arr = Arrangement(
+        target_language="python",
+        output_paths=ArrangementOutputPaths(
+            implementation="src/{name}.py",
+            tests="tests/test_{name}.py",
+        ),
+        environment=ArrangementEnvironment(setup_commands=[]),
+        build_commands=ArrangementBuildCommands(test="uv run pytest"),
+    )
+
+    warnings = _check_arrangement_dependencies(arr)
+    assert warnings == []
 
 
 def test_compiler_context_includes_overrides():

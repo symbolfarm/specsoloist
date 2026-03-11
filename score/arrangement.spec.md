@@ -49,6 +49,15 @@ properties:
       config_files:
         type: object
         description: Dictionary of file names to their required content (e.g., package.json, tsconfig.json).
+      dependencies:
+        type: object
+        description: >
+          Package name to version specifier. Records which library versions the arrangement
+          was written and verified against. Injected into soloist prompts as a "Dependency Versions"
+          table so generated code uses APIs compatible with the pinned versions.
+          Format follows the native package manager: PEP 440 for Python (e.g. ">=0.12,<0.13"),
+          semver range for npm (e.g. "^3.0.0"). No parsing is performed — values are stored and
+          passed verbatim.
 
   build_commands:
     type: object
@@ -101,6 +110,11 @@ environment:
     - pytest
   setup_commands:
     - uv sync
+  dependencies:
+    python-fasthtml: ">=0.12,<0.13"
+    starlette: ">=0.52"
+    httpx: ">=0.24"
+    pytest: ">=7.0"
 build_commands:
   compile: ""
   lint: uv run ruff check .
@@ -111,7 +125,7 @@ constraints:
   - Must use google-style docstrings
 ```
 
-## 5.2 TypeScript Project Arrangement
+## 5.2 TypeScript / Node Project Arrangement
 
 ```yaml
 target_language: typescript
@@ -120,10 +134,14 @@ output_paths:
   tests: tests/calculator.test.ts
 environment:
   tools:
+    - node
     - npm
-    - jest
   setup_commands:
     - npm install
+  dependencies:
+    ai: "^3.0.0"
+    "@ai-sdk/openai": "^0.0.20"
+    vitest: "^1.0.0"
 build_commands:
   compile: npx tsc
   lint: npx eslint src/**/*.ts

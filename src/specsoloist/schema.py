@@ -115,6 +115,11 @@ class ArrangementEnvironment(BaseModel):
     tools: List[str] = Field(default_factory=list)
     setup_commands: List[str] = Field(default_factory=list)
     config_files: Dict[str, str] = Field(default_factory=dict)
+    dependencies: Dict[str, str] = Field(
+        default_factory=dict,
+        description="Package name to version specifier (e.g. 'python-fasthtml': '>=0.12,<0.13'). "
+                    "Format follows the native package manager: PEP 440 for Python, semver for npm."
+    )
 
 
 class ArrangementBuildCommands(BaseModel):

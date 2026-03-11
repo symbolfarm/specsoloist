@@ -45,19 +45,15 @@ sp conduct score/ --model haiku --auto-accept   # quine attempt
 | 02 | Implement `sp test --all` | Runs tests for every compiled spec, shows summary table |
 | 03 | Validate FastHTML example | `examples/fasthtml_app/` — 23 tests passing, README written |
 | 04 | `reference` spec type | Parser validation, compiler injection, no code gen, verification tests, `sp validate`/`sp status` display |
-
-### 🔲 Housekeeping
-
-| # | Task | Effort | Summary |
-|---|------|--------|---------|
-| **HK-01** | Consolidate IMPROVEMENTS + ROADMAP into tasks | Small | Fold actionable items from `IMPROVEMENTS.md` and `ROADMAP.md` into task files here; archive or trim those docs. Also fix two small bugs: `_compile_single_spec` not guarding reference specs (§0g), dict dep key mismatch in `reference_specs` lookup (§0h). |
+| HK-01 | Consolidate IMPROVEMENTS + ROADMAP | Trimmed §0 done-items from IMPROVEMENTS.md; fixed §0g (`_compile_single_spec` reference spec guard) and §0h (dep key normalised to `"from"` in core.py) |
+| 05 | Arrangement `dependencies` field | `ArrangementEnvironment.dependencies: dict[str, str]`; injected as "Dependency Versions" table in soloist prompts; `sp validate --arrangement` warns if no install command; FastHTML arrangement and score spec updated |
 
 ### 🔲 To Do — in priority order
 
 | # | Task | Effort | Depends on | Summary |
 |---|------|--------|------------|---------|
 | ~~**04**~~ | ~~`reference` spec type~~ | ~~Medium~~ | ~~—~~ | ~~Done~~ |
-| **05** | Arrangement `dependencies` field | Small | — | Machine-readable version constraints in `arrangement.yaml`; injected into soloist prompts |
+| ~~**05**~~ | ~~Arrangement `dependencies` field~~ | ~~Small~~ | ~~—~~ | ~~Done~~ |
 | **06** | FastHTML app refactor | Small–Medium | 04, 05 | Split `app.spec.md` into layout/routes/state; add delete button; migrate `fasthtml_interface` to `type: reference` |
 | **07** | Validate Next.js AI chat | Medium | 04 | Write `vercel_ai_interface` as `reference` spec; run `sp conduct`; get tests passing |
 | **08** | Arrangement templates | Small | 06, 07 | `sp init --template python-fasthtml/nextjs-vitest/nextjs-playwright` |
