@@ -61,7 +61,9 @@ def main():
 
     # test
     test_parser = subparsers.add_parser("test", help="Run tests for a spec")
-    test_parser.add_argument("name", help="Spec name to test")
+    test_parser.add_argument("name", nargs="?", help="Spec name to test (omit with --all)")
+    test_parser.add_argument("--all", action="store_true", dest="test_all",
+                             help="Run tests for every compiled spec")
 
     # fix
     fix_parser = subparsers.add_parser("fix", help="Auto-fix failing tests")
@@ -201,7 +203,13 @@ def main():
         elif args.command == "compile":
             cmd_compile(core, args.name, args.model, not args.no_tests, args.arrangement)
         elif args.command == "test":
-            cmd_test(core, args.name)
+            if args.test_all:
+                cmd_test_all(core)
+            elif args.name:
+                cmd_test(core, args.name)
+            else:
+                ui.print_error("Specify a spec name or use --all")
+                sys.exit(1)
         elif args.command == "fix":
             cmd_fix(core, args.name, args.no_agent, args.auto_accept, args.model)
         elif args.command == "build":
@@ -448,6 +456,68 @@ def cmd_test(core: SpecSoloistCore, name: str):
         ui.print_error("Tests FAILED")
         ui.console.print(ui.Panel(result["output"], title="Failure Output", border_style="red"))
         sys.exit(1)
+
+
+def cmd_test_all(core: SpecSoloistCore):
+    """Run tests for every compiled spec and show a results table."""
+    import time
+
+    arrangement = _resolve_arrangement(core, None)
+    _apply_arrangement(core, arrangement)
+
+    specs = core.list_specs()
+    manifest = core._get_manifest()
+
+    if not specs:
+        ui.print_warning("No specs found.")
+        return
+
+    ui.print_header("Running All Tests", f"{len(specs)} specs")
+
+    table = ui.create_table(["Spec", "Result", "Duration"])
+    passed = 0
+    failed = 0
+    skipped = 0
+
+    for spec_file in specs:
+        name = spec_file.replace(".spec.md", "")
+        info = manifest.get_spec_info(name)
+
+        # Check whether a non-test output file exists on disk
+        if info is None or not any(
+            os.path.exists(f) for f in info.output_files
+            if not os.path.basename(f).startswith("test_")
+        ):
+            table.add_row(name, "[dim]NO BUILD[/]", "")
+            skipped += 1
+            continue
+
+        t0 = time.perf_counter()
+        result = core.run_tests(name)
+        duration = time.perf_counter() - t0
+
+        if result["success"]:
+            table.add_row(name, "[green]PASS[/]", f"{duration:.1f}s")
+            passed += 1
+        else:
+            table.add_row(name, "[red]FAIL[/]", f"{duration:.1f}s")
+            failed += 1
+
+    ui.console.print(table)
+
+    summary = f"{passed} passed"
+    if failed:
+        summary += f", {failed} failed"
+    if skipped:
+        summary += f", {skipped} no build"
+
+    if failed:
+        ui.print_error(summary)
+        sys.exit(1)
+    elif passed == 0:
+        ui.print_warning("No compiled specs to test.")
+    else:
+        ui.print_success(summary)
 
 
 def cmd_fix(core: SpecSoloistCore, name: str, no_agent: bool, auto_accept: bool, model: str | None = None):
