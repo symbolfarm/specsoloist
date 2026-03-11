@@ -65,3 +65,8 @@ examples/ts_demo/src/*.ts
 examples/ts_demo/tests/
 examples/ts_demo/node_modules/
 examples/ts_demo/.npm-cache/
+
+examples/fasthtml_app/src/
+examples/fasthtml_app/tests/
+examples/fasthtml_app/.sesskey
+examples/fasthtml_app/uv.lock
