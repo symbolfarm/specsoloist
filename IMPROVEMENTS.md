@@ -134,19 +134,23 @@ This is the natural entry point for using SpecSoloist within an existing project
 (e.g. importing it into a FastHTML or Next.js app for spec-driven development).
 Currently new users have to discover the directory convention by reading docs.
 
-### 1h. Interface and adapter spec examples
+### 1h. Interface and adapter spec examples ✅ fasthtml_app validated (2026-03-11)
 
 SpecSoloist has no documented pattern for external dependencies. Three patterns exist
 and should be illustrated with real examples:
 
 1. **Constraints only** — for well-known libraries (React, pytest); just mention in arrangement
-2. **Interface spec** — for obscure/new libraries (FastHTML, custom SDKs); write a `type`
+2. **Reference spec** — for obscure/new libraries (FastHTML, custom SDKs); write a `reference`
    spec describing the subset of the external API you use, so soloists have accurate docs
 3. **Adapter spec** — for complex SDKs (Vercel AI); wrap the SDK in a spec'd adapter so
    the rest of your project is isolated from the SDK's API surface
 
-Concrete examples to add:
-- `examples/fasthtml/` — Python FastHTML app with an `fasthtml_interface.spec.md`
+`examples/fasthtml_app/` is now end-to-end validated (23 tests passing). During validation,
+`fasthtml_interface.spec.md` had to be forced into `type: bundle` because no `reference` type
+exists — the yaml:functions block is semantically wrong (these aren't functions to implement,
+they're API docs to consult). See item 4e below.
+
+Remaining example to add:
 - `examples/nextjs-ai-chat/` — Next.js app with an `ai_client.spec.md` adapter wrapping Vercel AI SDK
 
 These are higher-value examples than the current math/string demos and directly address
@@ -284,6 +288,64 @@ Add quality hints:
 - "Description is very short — consider expanding edge cases"
 
 These are warnings, not errors. But they'd significantly improve compile quality.
+
+### 4e. `reference` spec type for third-party API documentation
+
+Surfaced during `examples/fasthtml_app/` validation. A recurring pattern: you want to
+give soloists accurate API docs for an obscure/versioned library (FastHTML, a custom SDK)
+without asking them to *implement* anything. No existing spec type fits:
+
+- `type: type` — wrong; requires `# Schema`, implies a data structure to implement
+- `type: bundle` — closest, but requires `yaml:functions` which implies "implement these"
+- `type: module` — wrong; implies aggregating sub-specs for export
+
+**Proposed: `type: reference`**
+
+A reference spec is documentation only — the library provides the implementation.
+Required sections: `# Overview` and `# API` (prose or tables describing the external API).
+No `yaml:functions` block, no schema, no test scenarios. The conductor skips code generation
+for reference specs and passes them as context when compiling dependent specs.
+
+Structure:
+```markdown
+---
+name: fasthtml_interface
+type: reference
+status: stable
+---
+
+# Overview
+...what this library is, import path, version notes...
+
+# API
+...function signatures, HTMX attributes, gotchas...
+```
+
+Compiler behaviour: reference specs are injected into the prompt of any spec that
+lists them as a dependency, but no `src/` or `tests/` output is generated for them.
+
+### 4f. Multi-spec design for web apps: separate routing from layout
+
+Surfaced during `examples/fasthtml_app/` validation. The single `app.spec.md` mixes
+route logic and page layout, which caused a real gap: the spec defined `DELETE /todos/{index}`
+as a route but never specified that `GET /` should render a delete button per todo item.
+The tests passed (the route exists), but the UI was incomplete.
+
+Better decomposition for any non-trivial web app:
+
+```
+specs/
+  layout.spec.md   — page skeleton, reusable components (Header, TodoItem with delete button)
+  routes.spec.md   — route handlers, depends on layout
+  state.spec.md    — data model (todos list), pure logic
+```
+
+This way a spec reviewer can catch the missing delete button by reading `layout.spec.md`
+alone, without cross-referencing route definitions. The `app.spec.md` Test Scenarios section
+should also be updated to include a UI-level scenario: "Home page renders a delete button
+for each todo item."
+
+Worth noting in the fasthtml_app README and using as the pattern recommendation in docs.
 
 ---
 
@@ -542,6 +604,8 @@ Rough priority ordering given current state of the project:
 | ✅ done | TypeScript conduct validated via ts_demo (5a) | Working end-to-end with Gemini CLI |
 | ★★☆ | `sp status` (1b) | High utility, manifest data already exists |
 | ★★☆ | `sp validate` quality hints (4d) | Improves compile quality significantly |
+| ★★☆ | `reference` spec type (4e) | Avoids misusing `bundle` for API docs; cleaner model |
+| ★★☆ | Multi-spec web app pattern (4f) | Prevents UI gaps like missing delete buttons |
 | ★★☆ | `quine_diff` — compile from existing spec (3a) | Spec already written, just needs `sp compile` |
 | ★★☆ | Fix or remove `sp perform` (1f) | Placeholder code in production |
 | ★★☆ | `--quiet` / `--json` output flags (1g) | Makes tool scriptable |
