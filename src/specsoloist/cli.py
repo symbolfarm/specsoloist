@@ -1388,8 +1388,12 @@ def _run_agent_oneshot(agent: str, prompt: str, auto_accept: bool, model: str | 
         if model:
             cmd.extend(["--model", model])
         if auto_accept:
-            # bypassPermissions for automated runs
-            cmd.extend(["--permission-mode", "bypassPermissions"])
+            if is_quine:
+                # Quine runs are fully autonomous and write to a sandboxed build/quine/ directory
+                cmd.extend(["--permission-mode", "bypassPermissions"])
+            else:
+                # Skip interactive prompts without granting unrestricted filesystem access
+                cmd.append("--dangerously-skip-permissions")
         result = subprocess.run(cmd, capture_output=False, text=True)
     elif agent == "gemini":
         # Gemini CLI: gemini -p "prompt"
