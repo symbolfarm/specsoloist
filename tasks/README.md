@@ -67,7 +67,7 @@ sp conduct score/ --model haiku --auto-accept   # quine attempt
 |---|------|--------|------------|---------|
 | ~~**04**~~ | ~~`reference` spec type~~ | ~~Medium~~ | ~~—~~ | ~~Done~~ |
 | ~~**05**~~ | ~~Arrangement `dependencies` field~~ | ~~Small~~ | ~~—~~ | ~~Done~~ |
-| **06** | FastHTML app refactor | Small–Medium | 04, 05 | Split `app.spec.md` into layout/routes/state; add delete button; migrate `fasthtml_interface` to `type: reference` |
+| ~~**06**~~ | ~~FastHTML app refactor~~ | ~~Small–Medium~~ | ~~04, 05~~ | ~~Split `app.spec.md` into layout/routes/state; add delete button; migrate `fasthtml_interface` to `type: reference`~~ |
 | **07** | Validate Next.js AI chat | Medium | 04 | Write `vercel_ai_interface` as `reference` spec; run `sp conduct`; get tests passing |
 | **08** | Arrangement templates | Small | 06, 07 | `sp init --template python-fasthtml/nextjs-vitest/nextjs-playwright` |
 | **09** | E2E testing pattern | Medium | 08 | Playwright arrangement, `data-testid` spec contract, FastHTML E2E example |

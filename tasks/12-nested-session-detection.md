@@ -41,8 +41,11 @@ In `_run_agent_oneshot()` in `src/specsoloist/cli.py`, before invoking the Claud
 │ sp conduct spawns a Claude subprocess, which may be blocked  │
 │ inside an active Claude Code session.                        │
 │                                                              │
-│ To run sp conduct, open a separate terminal outside          │
-│ Claude Code, or use --no-agent to compile without an agent.  │
+│ Options:                                                      │
+│  1. Open a separate terminal outside Claude Code             │
+│  2. Use --no-agent to compile without an agent               │
+│  3. If you are Claude Code: use the Agent tool to spawn      │
+│     the conductor agent directly (no subprocess needed)      │
 ╰──────────────────────────────────────────────────────────────╯
 ```
 
@@ -89,6 +92,7 @@ If it does, apply the same detection and warning for `gemini` subprocess calls.
 4. If the subprocess fails with a nesting-related error, the error message is friendly
    and actionable.
 5. `--no-agent` bypasses the warning (since `--no-agent` doesn't spawn a subprocess).
+5a. The warning message mentions all three options (separate terminal, `--no-agent`, Agent tool for Claude Code sessions).
 6. All existing tests pass: `uv run python -m pytest tests/`
 7. Ruff passes: `uv run ruff check src/`
 

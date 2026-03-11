@@ -192,6 +192,28 @@ sp conduct score/
 
 Each soloist (or the conductor directly) reads the spec file, writes implementation code, writes tests, runs them, and fixes issues — up to 3 retries.
 
+### Running `sp conduct` from Within a Claude Code Session
+
+`sp conduct` (agent mode) works by spawning a new Claude Code subprocess. This is
+blocked when already inside an active Claude Code session — the subprocess can't start.
+
+**The right approach when you are already Claude Code:** use the `Agent` tool to spawn
+the `conductor` agent directly. No subprocess needed — you *are* the runtime.
+
+```
+# Instead of shelling out to:
+sp conduct examples/myapp/specs/ --arrangement arrangement.yaml
+
+# Do this from within the session:
+Agent(subagent_type="conductor", prompt="Build specs in examples/myapp/specs/ using arrangement.yaml ...")
+```
+
+The conductor agent will read the specs, resolve dependencies, and spawn soloist
+subagents via the `Agent` tool — exactly what `sp conduct` does from a terminal.
+
+Fallback: `sp conduct --no-agent` uses direct LLM API calls with no subprocess, and
+works from within a Claude Code session (requires `ANTHROPIC_API_KEY` or `GEMINI_API_KEY`).
+
 ### Before Committing
 
 See `CONTRIBUTING.md` for required checks and conventions.

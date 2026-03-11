@@ -2,7 +2,7 @@
 #
 # Build: sp conduct specs/ --arrangement arrangement.yaml
 #
-# Requires: pip install python-fasthtml
+# Requires: uv sync (installs python-fasthtml, pytest, httpx)
 
 target_language: python
 
@@ -29,6 +29,10 @@ build_commands:
 
 constraints:
   - Use python-fasthtml (import from fasthtml.common)
-  - fasthtml_interface.spec.md describes the exact API — do not guess at FastHTML internals
-  - app.py must be runnable with `python src/app.py`
-  - Tests for app.py should use the Starlette test client (from starlette.testclient import TestClient)
+  - fasthtml_interface.spec.md is a reference spec — it describes the API but generates no code
+  - Three-spec decomposition: state (data model) -> layout (UI components) -> routes (HTTP handlers)
+  - state.py must be independently testable with no HTTP or FastHTML imports
+  - layout.py builds FastHTML components; tests render them to strings and check for expected attributes
+  - routes.py imports from state and layout; tests use the Starlette TestClient
+  - routes.py must be runnable with `python src/routes.py` (guarded serve() call)
+  - Tests for routes.py must include a test that GET / returns HTML containing hx-delete attributes
