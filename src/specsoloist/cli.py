@@ -103,11 +103,6 @@ def main():
     conduct_parser.add_argument("--model", help="Override LLM model")
     conduct_parser.add_argument("--arrangement", metavar="FILE", help="Path to arrangement YAML file")
 
-    # perform
-    perform_parser = subparsers.add_parser("perform", help="Execute an orchestration workflow")
-    perform_parser.add_argument("workflow", help="Workflow spec name")
-    perform_parser.add_argument("inputs", help="JSON inputs for the workflow")
-
     # diff
     diff_parser = subparsers.add_parser(
         "diff",
@@ -220,8 +215,6 @@ def main():
         elif args.command == "conduct":
             cmd_conduct(core, args.src_dir, args.no_agent, args.auto_accept,
                         args.incremental, args.parallel, args.workers, args.model, args.arrangement)
-        elif args.command == "perform":
-            cmd_perform(core, args.workflow, args.inputs)
         elif args.command == "diff":
             cmd_diff(core, args.left, args.right, args.label_left, args.label_right,
                      args.report, args.runs)
@@ -913,62 +906,6 @@ def _conduct_with_llm(core: SpecSoloistCore, src_dir: str | None, incremental: b
         ui.print_success("Conductor finished successfully.")
     else:
         ui.print_error("Conductor reported failures.")
-        sys.exit(1)
-
-
-def cmd_perform(core: SpecSoloistCore, workflow: str, inputs_json: str):
-    import json
-    from rich.prompt import Confirm
-    
-    ui.print_header("Performing Workflow", workflow)
-    
-    try:
-        inputs = json.loads(inputs_json)
-    except json.JSONDecodeError:
-        ui.print_error("Invalid JSON inputs")
-        sys.exit(1)
-        
-    conductor = SpecConductor(core.project_dir)
-    
-    def checkpoint_callback(step_name: str) -> bool:
-        return Confirm.ask(f"[bold yellow]Checkpoint:[/] Proceed with step '{step_name}'?")
-
-    try:
-        result = conductor.perform(
-            workflow, 
-            inputs, 
-            checkpoint_callback=checkpoint_callback
-        )
-        
-        # Display results
-        table = ui.create_table(["Step", "Status", "Duration", "Result"], title="Performance Summary")
-        for step in result.steps:
-            status = "[green]Success[/]" if step.success else "[red]Failed[/]"
-            duration = f"{step.duration:.2f}s"
-            
-            # Format output briefly
-            output_str = str(step.outputs)[:50] + "..." if len(str(step.outputs)) > 50 else str(step.outputs)
-            if step.error:
-                output_str = f"[red]{step.error}[/]"
-                
-            table.add_row(step.name, status, duration, output_str)
-            
-        ui.console.print(table)
-        
-        if result.success:
-            ui.print_success("Performance complete")
-            ui.print_info(f"Trace saved to: {result.trace_path}")
-            # Show final outputs
-            ui.console.print(ui.Panel(str(result.outputs), title="Final Outputs"))
-        else:
-            ui.print_error("Performance failed")
-            sys.exit(1)
-            
-    except Exception as e:
-        ui.print_error(f"Performance error: {e}")
-        # Print traceback for debugging
-        import traceback
-        traceback.print_exc()
         sys.exit(1)
 
 

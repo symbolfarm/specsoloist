@@ -7,7 +7,7 @@ import tempfile
 
 from spechestra import SpecComposer, SpecConductor
 from spechestra.composer import Architecture, ComponentDef, CompositionResult
-from spechestra.conductor import PerformResult, StepResult, VerifyResult
+from spechestra.conductor import VerifyResult
 
 
 def test_import():
@@ -69,33 +69,6 @@ def test_architecture_dataclass():
     )
     assert len(arch.components) == 2
     assert arch.build_order == ["add", "calc"]
-
-
-def test_step_result_dataclass():
-    """Test StepResult dataclass."""
-    result = StepResult(
-        name="step1",
-        spec="my_function",
-        inputs={"x": 1},
-        outputs={"y": 2},
-        success=True,
-        duration=0.5
-    )
-    assert result.success is True
-    assert result.error is None
-
-
-def test_perform_result_dataclass():
-    """Test PerformResult dataclass."""
-    result = PerformResult(
-        success=True,
-        workflow="test_workflow",
-        steps=[],
-        outputs={"result": 42},
-        duration=1.0
-    )
-    assert result.success is True
-    assert result.outputs == {"result": 42}
 
 
 def test_composition_result_dataclass():

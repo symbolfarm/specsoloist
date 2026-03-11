@@ -60,14 +60,14 @@
 ### 4d: SpecConductor
 - [x] **Parallel Build**: `build()` - Orchestrate SpecSoloistCore for parallel compilation.
 - [x] **Build Verification**: `verify()` - Schema compliance and interface compatibility.
-- [x] **Workflow Execution**: `perform()` - Run compiled workflows with checkpoints.
-- [x] **Execution Tracing**: Save traces to `.spechestra/traces/`.
-- [x] **Combined Flow**: `build_and_perform()` - Build then execute.
+- ~~[x] **Workflow Execution**: `perform()` - Run compiled workflows with checkpoints.~~ *(removed — see `decisions/01-sp-perform.md`)*
+- ~~[x] **Execution Tracing**: Save traces to `.spechestra/traces/`.~~ *(removed with `perform`)*
+- ~~[x] **Combined Flow**: `build_and_perform()` - Build then execute.~~ *(removed with `perform`)*
 
 ### 4e: CLI Integration
 - [x] **`sp compose`**: Draft architecture and specs from natural language.
 - [x] **`sp conduct`**: Orchestrate parallel builds.
-- [x] **`sp perform`**: Execute workflow specs.
+- ~~[x] **`sp perform`**: Execute workflow specs.~~ *(removed — see `decisions/01-sp-perform.md`)*
 - [x] **`sp respec`**: Reverse engineer code to specs (formerly `lift`).
 
 ---
