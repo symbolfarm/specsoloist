@@ -48,6 +48,18 @@ sp conduct score/ --model haiku --auto-accept   # quine attempt
 | HK-01 | Consolidate IMPROVEMENTS + ROADMAP | Trimmed §0 done-items from IMPROVEMENTS.md; fixed §0g (`_compile_single_spec` reference spec guard) and §0h (dep key normalised to `"from"` in core.py) |
 | 05 | Arrangement `dependencies` field | `ArrangementEnvironment.dependencies: dict[str, str]`; injected as "Dependency Versions" table in soloist prompts; `sp validate --arrangement` warns if no install command; FastHTML arrangement and score spec updated |
 
+### 🔲 Decisions
+
+| File | Topic | Status |
+|------|-------|--------|
+| `decisions/01-sp-perform.md` | Keep / fix / remove `sp perform` | Open |
+
+### 🔲 Housekeeping
+
+| # | Task | Effort | Summary |
+|---|------|--------|---------|
+| **HK-02** | Small fixes | Tiny | Fix `Optional[ArrangementEnvironment]` type hint; add comment on reference spec early return; move dependency warning to `_resolve_arrangement()` |
+
 ### 🔲 To Do — in priority order
 
 | # | Task | Effort | Depends on | Summary |
