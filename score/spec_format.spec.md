@@ -54,12 +54,14 @@ The first dictates implementation. The second defines behavior — the agent pic
 | `bundle` | Multiple trivial functions/types | Compact format |
 | `module` | Aggregates functions/types for export | Composition of specs |
 | `workflow` | Execution flow | Steps referencing specs |
+| `reference` | Third-party API documentation | One external library |
 
 **When to use which:**
 - `bundle`: When the module is a collection of related functions/types where each can be described in a sentence. Most modules should start here.
 - `function`/`type`: Only when a single function or type is complex enough to need full Behavior, Constraints, Contract, and Examples sections.
 - `module`: When you need to re-export a public API from sub-specs.
 - `workflow`: Multi-step execution with data flow between steps.
+- `reference`: When documenting a third-party library (FastHTML, Vercel AI SDK, etc.) so soloists have accurate API docs. No code is generated — the spec body is injected as context into dependent soloists' prompts.
 
 # 4. File Structure
 
@@ -383,6 +385,57 @@ outputs:
 - If `charge` fails: Retry up to 3 times, then notify admin
 ```
 
+## 6.6 Reference Spec
+
+For documenting a third-party library's API. No implementation is generated. The spec body is
+injected into the prompts of dependent soloists as context, grounding them in the real API.
+
+| Section | Required | Purpose |
+|---------|----------|---------|
+| `# Overview` | Yes | Library name, package name, version range, import path |
+| `# API` | Yes | Functions, types, attributes, gotchas — prose or tables |
+| `# Verification` | Recommended | 3–10 lines of import + smoke tests; compiled to `tests/test_{name}.py` |
+
+```markdown
+---
+name: fasthtml_interface
+type: reference
+status: stable
+---
+
+# Overview
+
+The subset of FastHTML (`python-fasthtml >= 0.12`) used in this project.
+Always import from `fasthtml.common`, never from `fasthtml` directly.
+
+# API
+
+## fast_app()
+
+Returns `(app, rt)` — the ASGI app and route decorator factory.
+
+## HTML components
+
+`Div`, `P`, `H1`, `Form`, `Input`, `Button`, `Ul`, `Li` — all share the signature
+`Tag(*children, **attrs)`. Use `hx_post`, `hx_swap`, `hx_target` for HTMX attributes.
+
+# Verification
+
+```python
+from fasthtml.common import fast_app, serve, Div
+app, rt = fast_app()
+assert callable(rt)
+div = Div("hello", id="x")
+assert "hello" in str(div)
+```
+```
+
+**Key rules:**
+- Specs that depend on a reference spec list it in `dependencies:` in their frontmatter.
+- Soloists read reference spec bodies as API documentation — they do not import from them.
+- If `# Verification` is absent, no test file is generated (a warning is shown, not an error).
+- A missing version range in `# Overview` triggers a quality warning.
+
 # 7. Schema Types
 
 The `yaml:schema` block uses a language-agnostic type system:
@@ -421,19 +474,21 @@ The `yaml:schema` block uses a language-agnostic type system:
 
 # 8. Section Reference
 
-| Section | Function | Type | Bundle | Module | Workflow | Required |
-|---------|----------|------|--------|--------|----------|----------|
-| Overview | Y | Y | Y | Y | Y | Yes |
-| Interface/Schema | Y | Y | - | - | Y | Yes* |
-| Functions block | - | - | Y | - | - | Yes** |
-| Types block | - | - | Y | - | - | Yes** |
-| Behavior | Y | - | - | - | - | Yes |
-| Steps | - | - | - | - | Y | Yes |
-| Exports | - | - | - | Y | - | Yes |
-| Constraints | Y | Y | - | - | - | No |
-| Contract | Y | - | - | - | - | No |
-| Examples | Y | Y | Y | Y | - | No |
-| Error Handling | - | - | - | - | Y | No |
+| Section | Function | Type | Bundle | Module | Workflow | Reference | Required |
+|---------|----------|------|--------|--------|----------|-----------|----------|
+| Overview | Y | Y | Y | Y | Y | Y | Yes |
+| Interface/Schema | Y | Y | - | - | Y | - | Yes* |
+| Functions block | - | - | Y | - | - | - | Yes** |
+| Types block | - | - | Y | - | - | - | Yes** |
+| Behavior | Y | - | - | - | - | - | Yes |
+| Steps | - | - | - | - | Y | - | Yes |
+| Exports | - | - | - | Y | - | - | Yes |
+| API | - | - | - | - | - | Y | Yes |
+| Verification | - | - | - | - | - | Y | Recommended |
+| Constraints | Y | Y | - | - | - | - | No |
+| Contract | Y | - | - | - | - | - | No |
+| Examples | Y | Y | Y | Y | - | - | No |
+| Error Handling | - | - | - | - | Y | - | No |
 
 *Interface required for function/type/workflow; **At least one of Functions or Types required for bundle.
 
@@ -456,6 +511,7 @@ At build time, the Conductor:
    - `bundle` -> module with all functions and types
    - `module` -> module/package aggregating exports
    - `workflow` -> executable script/function
+   - `reference` -> no implementation; body injected as context into dependent soloists' prompts; `# Verification` compiled to a test file
 
 Build configuration (not in spec):
 ```yaml

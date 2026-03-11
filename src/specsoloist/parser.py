@@ -27,7 +27,7 @@ from .schema import (
 
 
 # Valid spec types
-SPEC_TYPES = {"function", "type", "bundle", "module", "workflow", "typedef", "class", "orchestrator"}
+SPEC_TYPES = {"function", "type", "bundle", "module", "workflow", "typedef", "class", "orchestrator", "reference"}
 
 
 @dataclass
@@ -328,7 +328,10 @@ Describe each export's public interface and behavior below.
 
         spec_type = metadata.type
 
-        if spec_type == "bundle":
+        if spec_type == "reference":
+            # Reference specs: documentation only, no schema/functions/steps extracted
+            pass
+        elif spec_type == "bundle":
             # Parse yaml:functions and yaml:types blocks
             bundle_functions = self._extract_bundle_functions(body)
             bundle_types = self._extract_bundle_types(body)
@@ -541,7 +544,9 @@ Describe each export's public interface and behavior below.
             errors.append("Missing YAML frontmatter.")
 
         # Check required sections based on type
-        if spec_type in ("function", "class"):
+        if spec_type == "reference":
+            errors.extend(self._validate_reference_sections(parsed))
+        elif spec_type in ("function", "class"):
             errors.extend(self._validate_function_sections(parsed))
         elif spec_type == "type":
             errors.extend(self._validate_type_sections(parsed.body))
@@ -627,6 +632,65 @@ Describe each export's public interface and behavior below.
             errors.append("Module must have '# Exports', legacy interface, or dependencies")
             
         return errors
+
+    def _validate_reference_sections(self, parsed: ParsedSpec) -> List[str]:
+        """Validates required sections for reference specs. Returns errors (not warnings)."""
+        errors = []
+        body = parsed.body
+        if "# Overview" not in body and "# 1. Overview" not in body:
+            errors.append("Missing required section: '# Overview'")
+        if "# API" not in body:
+            errors.append("Missing required section: '# API'")
+        return errors
+
+    def get_reference_warnings(self, parsed: ParsedSpec) -> List[str]:
+        """Returns quality warnings for a reference spec (not errors)."""
+        warnings = []
+        body = parsed.body
+        if "# Verification" not in body:
+            warnings.append("No '# Verification' section — spec cannot detect library version drift")
+        # Check for version range mention in Overview
+        overview_text = ""
+        for marker in ["# Overview", "# 1. Overview"]:
+            if marker in body:
+                try:
+                    parts = body.split(marker, 1)[1]
+                    next_section = parts.split("\n#", 1)[0]
+                    overview_text = next_section
+                    break
+                except Exception:
+                    pass
+        version_indicators = [">=", "<=", "~=", "^", "version", "v0.", "v1.", "v2.", "v3."]
+        if not any(v in overview_text for v in version_indicators):
+            warnings.append("No version range mentioned in '# Overview' — consider specifying compatible versions")
+        return warnings
+
+    def extract_verification_snippet(self, body: str) -> str:
+        """Extracts the code block from the '# Verification' section, if present."""
+        if "# Verification" not in body:
+            return ""
+        try:
+            section = body.split("# Verification", 1)[1]
+            # Find the first code block in the section (before any next heading)
+            next_heading = section.find("\n#")
+            if next_heading != -1:
+                section = section[:next_heading]
+            # Extract code block
+            if "```" not in section:
+                return ""
+            start = section.find("```")
+            if start == -1:
+                return ""
+            # Skip the opening fence line
+            after_open = section.find("\n", start)
+            if after_open == -1:
+                return ""
+            end = section.find("```", after_open)
+            if end == -1:
+                return ""
+            return section[after_open:end].strip()
+        except Exception:
+            return ""
 
     def _validate_legacy_sections(self, body: str) -> List[str]:
         """Validates required sections for legacy specs."""

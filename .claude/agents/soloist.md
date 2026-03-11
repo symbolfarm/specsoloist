@@ -41,6 +41,8 @@ Read the spec file and understand:
 
 Also read any dependency modules referenced by the spec so you understand the interfaces you need to use.
 
+**Reference specs** (`type: reference`) in the dependency list are API documentation — they describe a third-party library's interface. Read them carefully and use the documented API exactly. Do NOT re-implement the library, and do NOT import from a reference spec as if it were a module you wrote. The library is already installed; just use it.
+
 **Extract output paths from the prompt**: The conductor will tell you where to write files. Look for explicit paths like:
 - Implementation: `<output_dir>/<package>/<name>.py`
 - Tests: `<test_dir>/test_<name>.py`

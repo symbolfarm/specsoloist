@@ -342,8 +342,17 @@ def cmd_validate(core: SpecSoloistCore, name: str):
         except Exception:
             spec_content = ""
             spec_type = "bundle"
-        for warning in _check_spec_quality(spec_content, spec_type):
-            ui.console.print(f"[warning]⚠[/] {warning}")
+            parsed = None
+
+        if spec_type == "reference":
+            ui.print_info("type: reference — context only, no implementation will be generated")
+            # For reference specs, show reference-specific warnings (not standard quality warnings)
+            if parsed is not None:
+                for warning in core.parser.get_reference_warnings(parsed):
+                    ui.console.print(f"[warning]⚠[/] {warning}")
+        else:
+            for warning in _check_spec_quality(spec_content, spec_type):
+                ui.console.print(f"[warning]⚠[/] {warning}")
     else:
         ui.print_error(f"{name} is INVALID")
         for error in result["errors"]:
@@ -1187,6 +1196,16 @@ def cmd_status(core: SpecSoloistCore):
 
     for spec_file in specs:
         name = spec_file.replace(".spec.md", "")
+
+        # Reference specs: show CONTEXT instead of compilation status
+        try:
+            parsed = core.parser.parse_spec(name)
+            if parsed.metadata.type == "reference":
+                table.add_row(name, "[blue]CONTEXT[/]", "[dim]—[/]", "[dim]—[/]")
+                continue
+        except Exception:
+            pass
+
         info = manifest.get_spec_info(name)
 
         if info is None:

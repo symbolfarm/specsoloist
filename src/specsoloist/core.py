@@ -356,7 +356,26 @@ class SpecSoloistCore:
 
         # Parse and compile
         spec = self.parser.parse_spec(name)
+
+        # Reference specs: documentation only — no implementation generated
+        if spec.metadata.type == "reference":
+            return "Reference spec — no code generated"
+
         compiler = self._get_compiler()
+
+        # Collect reference specs from dependencies to inject as context
+        reference_specs = {}
+        for dep in (spec.metadata.dependencies or []):
+            dep_name = dep if isinstance(dep, str) else dep.get("name", "") if isinstance(dep, dict) else ""
+            dep_name = dep_name.replace(".spec.md", "")
+            if not dep_name:
+                continue
+            try:
+                dep_spec = self.parser.parse_spec(dep_name)
+                if dep_spec.metadata.type == "reference":
+                    reference_specs[dep_name] = dep_spec
+            except Exception:
+                pass  # missing dep handled elsewhere
 
         # Use appropriate compilation method based on spec type
         if spec.metadata.type == "typedef":
@@ -364,7 +383,7 @@ class SpecSoloistCore:
         elif spec.metadata.type == "orchestrator":
             code = compiler.compile_orchestrator(spec, model=model, arrangement=arrangement)
         else:
-            code = compiler.compile_code(spec, model=model, arrangement=arrangement)
+            code = compiler.compile_code(spec, model=model, arrangement=arrangement, reference_specs=reference_specs)
 
         # Determine output path and language
         if arrangement:
@@ -396,6 +415,20 @@ class SpecSoloistCore:
         # Skip test generation for typedef specs
         if spec.metadata.type == "typedef":
             return f"Skipped tests for typedef spec: {name}"
+
+        # Reference specs: generate verification test from # Verification snippet, if present
+        if spec.metadata.type == "reference":
+            snippet = self.parser.extract_verification_snippet(spec.body)
+            if not snippet:
+                return f"Skipped tests for reference spec (no # Verification section): {name}"
+            module_name = self.parser.get_module_name(name)
+            code = "def test_verify():\n" + "\n".join(f"    {line}" for line in snippet.splitlines())
+            if arrangement:
+                output_path = arrangement.output_paths.resolve_tests(module_name)
+                full_path = self.runner.write_file(output_path, code)
+            else:
+                full_path = self.runner.write_tests(module_name, code, language=spec.metadata.language_target)
+            return f"Generated verification tests at {full_path}"
 
         compiler = self._get_compiler()
         code = compiler.compile_tests(spec, model=model, arrangement=arrangement)
@@ -667,6 +700,13 @@ class SpecSoloistCore:
             Dict with 'success' (bool) and 'output' (str) keys.
         """
         spec = self.parser.parse_spec(name)
+
+        # Reference specs with no verification: synthetic pass
+        if spec.metadata.type == "reference":
+            snippet = self.parser.extract_verification_snippet(spec.body)
+            if not snippet:
+                return {"success": True, "output": "No verification — reference spec (pass)"}
+
         module_name = self.parser.get_module_name(name)
         result = self.runner.run_tests(
             module_name, language=spec.metadata.language_target

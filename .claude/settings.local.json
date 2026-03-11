@@ -21,7 +21,8 @@
       "Bash(grep:*)",
       "Bash(uv build:*)",
       "Bash(python3:*)",
-      "Bash(gemini:*)"
+      "Bash(gemini:*)",
+      "Bash(sp validate:*)"
     ],
     "deny": [],
     "ask": []

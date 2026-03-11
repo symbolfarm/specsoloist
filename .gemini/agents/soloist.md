@@ -44,6 +44,8 @@ Read the spec file and understand:
 
 Also read any dependency modules referenced by the spec so you understand the interfaces you need to use.
 
+**Reference specs** (`type: reference`) in the dependency list are API documentation — they describe a third-party library's interface. Read them carefully and use the documented API exactly. Do NOT re-implement the library, and do NOT import from a reference spec as if it were a module you wrote. The library is already installed; just use it.
+
 **Extract Arrangement from the prompt**: The conductor will provide an **Arrangement** which acts as your build configuration. Look for:
 - `target_language`: (e.g., python, typescript, rust) - **YOU MUST USE THIS LANGUAGE**.
 - `output_paths`: Exact paths for implementation and tests.

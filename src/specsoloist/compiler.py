@@ -21,7 +21,8 @@ class SpecCompiler:
         self,
         spec: ParsedSpec,
         model: Optional[str] = None,
-        arrangement: Optional[Arrangement] = None
+        arrangement: Optional[Arrangement] = None,
+        reference_specs: Optional[dict] = None
     ) -> str:
         """
         Compiles a spec to implementation code.
@@ -37,8 +38,8 @@ class SpecCompiler:
         language = arrangement.target_language if arrangement else spec.metadata.language_target
 
         # Build import context from dependencies
-        import_context = self._build_import_context(spec)
-        
+        import_context = self._build_import_context(spec, reference_specs=reference_specs)
+
         # Build arrangement context
         arrangement_context = self._build_arrangement_context(arrangement)
 
@@ -196,29 +197,51 @@ Your task is to implement the workflow described in the following specification.
 
         return "\n".join(context)
 
-    def _build_import_context(self, spec: ParsedSpec) -> str:
-        """Build import instructions from spec dependencies."""
+    def _build_import_context(self, spec: ParsedSpec, reference_specs: Optional[dict] = None) -> str:
+        """Build import instructions from spec dependencies.
+
+        For deps in reference_specs, emit the full spec body as API documentation.
+        For regular deps, emit the standard import line.
+        """
         if not spec.metadata.dependencies:
             return "No external dependencies."
 
+        ref_specs = reference_specs or {}
         lines = ["This component depends on the following modules:"]
+        reference_sections = []
+
         for dep in spec.metadata.dependencies:
+            dep_name = ""
             if isinstance(dep, dict):
                 name = dep.get("name", "")
                 from_spec = dep.get("from", "").replace(".spec.md", "")
-                if name and from_spec:
+                dep_name = from_spec
+                if dep_name in ref_specs:
+                    pass  # handled below
+                elif name and from_spec:
                     lines.append(f"- Import `{name}` from `{from_spec}`")
             elif isinstance(dep, str):
-                from_spec = dep.replace(".spec.md", "")
-                lines.append(f"- Import from `{from_spec}`")
+                dep_name = dep.replace(".spec.md", "")
+                if dep_name not in ref_specs:
+                    lines.append(f"- Import from `{dep_name}`")
 
-        return "\n".join(lines)
+            if dep_name in ref_specs:
+                ref_spec = ref_specs[dep_name]
+                reference_sections.append(
+                    f"## Reference: {dep_name}\n\n{ref_spec.body}"
+                )
+
+        result = "\n".join(lines)
+        if reference_sections:
+            result += "\n\n" + "\n\n".join(reference_sections)
+        return result
 
     def compile_tests(
         self,
         spec: ParsedSpec,
         model: Optional[str] = None,
-        arrangement: Optional[Arrangement] = None
+        arrangement: Optional[Arrangement] = None,
+        reference_specs: Optional[dict] = None
     ) -> str:
         """
         Generates a test suite for a spec.
