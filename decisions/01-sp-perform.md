@@ -138,6 +138,47 @@ Option C is a cop-out.
 
 ---
 
+## Historical Context
+
+`sp perform` was built during the early direct-LLM-call era of SpecSoloist, before
+Claude Code / Gemini CLI integration existed. At that time, SpecSoloist needed its own
+orchestration layer to chain compiled modules together — there was no external agent to
+do that job. `sp perform` was the runtime that executed those chains.
+
+That need is now gone. `sp conduct` (with a native subagent as the conductor) is the
+orchestration layer. The workflow has become well-defined and intentional rather than
+pluggable.
+
+There is a longer-term interest in integrating SpecSoloist with platform-agnostic
+agentic frameworks (e.g. Pydantic AI) as an alternative to Claude Code / Gemini CLI.
+That is a separate story — and even in that world, SpecSoloist would act as a *build
+tool* consumed by an agent framework, not as an orchestration runtime itself.
+
 ## Decision
 
-*(To be made — discuss here.)*
+**Option A — Remove `sp perform`.**
+
+SpecSoloist is a spec-driven build tool with a well-defined workflow (`sp conduct`).
+It is not, and will not become, a multi-agent orchestration runtime. Removing `sp
+perform` and `SpecConductor.perform()` eliminates a misleading surface area and
+sharpens the tool's identity.
+
+The `type: workflow` spec type and `yaml:steps` format can remain valid for now —
+they are parsed cleanly and could be useful for describing orchestration requirements
+that a soloist compiles into a standalone runner script. But the `sp perform` runtime
+that executes those steps is out of scope.
+
+**Implementation notes for whoever does the removal:**
+- Remove `cmd_perform` from `cli.py` and its `perform` subparser entry
+- Remove `SpecConductor.perform()`, `build_and_perform()`, `_execute_step()`,
+  `_resolve_step_inputs()`, `_save_trace()`, `get_trace()` from `conductor.py`
+- Remove `PerformResult` and `StepResult` dataclasses from `conductor.py`
+- Remove or stub out `validate_inputs()` in `schema.py` (keep raising
+  `NotImplementedError` with an updated message, or delete if `InterfaceSchema`
+  is otherwise clean)
+- Check `tests/` for any `sp perform` / `SpecConductor.perform` test coverage
+  to remove
+- Update `ROADMAP.md` to reflect that `sp perform` is removed (it is listed as
+  ✅ Done in Phase 4d)
+- Keep `.spechestra/traces/` directory convention documented in case traces are
+  useful for a future agent-framework integration
