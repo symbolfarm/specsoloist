@@ -70,3 +70,10 @@ examples/fasthtml_app/src/
 examples/fasthtml_app/tests/
 examples/fasthtml_app/.sesskey
 examples/fasthtml_app/uv.lock
+
+examples/nextjs_ai_chat/src/
+examples/nextjs_ai_chat/tests/
+examples/nextjs_ai_chat/node_modules/
+examples/nextjs_ai_chat/package.json
+examples/nextjs_ai_chat/package-lock.json
+examples/nextjs_ai_chat/.next/

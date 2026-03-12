@@ -39,7 +39,7 @@ environment:
           "react": "^18.0.0",
           "react-dom": "^18.0.0",
           "ai": "^3.0.0",
-          "@ai-sdk/openai": "^0.0.1"
+          "@ai-sdk/openai": "^0.0.9"
         },
         "devDependencies": {
           "typescript": "^5.0.0",
