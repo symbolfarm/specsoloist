@@ -69,6 +69,72 @@ npm run dev
 Open `http://localhost:3000`. The chat UI will be available once you add a page component
 (see below).
 
+## Sample Output
+
+`sp conduct` generates these files. Here are excerpts showing the key patterns:
+
+**`src/ai_client.ts`** — the SDK adapter (only file that imports from `ai`):
+```typescript
+import { streamText } from 'ai';
+import { openai } from '@ai-sdk/openai';
+
+export interface Message {
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+}
+
+export async function streamChat(
+  messages: Message[],
+  options?: ChatOptions,
+): Promise<ReadableStream<string>> {
+  const result = await streamText({
+    model: openai(options?.model ?? 'gpt-4o-mini'),
+    messages,
+    maxTokens: options?.maxTokens ?? 1024,
+  });
+  return result.toAIStream() as ReadableStream<string>;
+}
+```
+
+**`src/app/api/chat/route.ts`** — Next.js App Router route handler:
+```typescript
+import { streamChat } from '../../../ai_client.js';
+import { StreamingTextResponse } from 'ai';
+
+export async function POST(request: Request): Promise<Response> {
+  const body = await request.json();
+  const messages = body?.messages;
+
+  if (!messages || !Array.isArray(messages) || messages.length === 0) {
+    return Response.json({ error: 'messages required' }, { status: 400 });
+  }
+
+  try {
+    const stream = await streamChat(messages);
+    return new StreamingTextResponse(stream);
+  } catch {
+    return Response.json({ error: 'upstream error' }, { status: 500 });
+  }
+}
+```
+
+**`src/hooks/useChatMessages.ts`** — React hook (streaming chunk-by-chunk):
+```typescript
+export function useChatMessages(): UseChatMessagesResult {
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const sendMessage = async (text: string): Promise<void> => {
+    setMessages(prev => [...prev, { role: 'user', content: text }]);
+    setIsLoading(true);
+    // POSTs to /api/chat, reads stream, appends chunks to last assistant message
+    // Sets isLoading=false when done; appends error message on failure
+  };
+
+  return { messages, isLoading, sendMessage, clearMessages };
+}
+```
+
 ## Notes
 
 ### `@ai-sdk/openai` version

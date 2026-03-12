@@ -1,5 +1,24 @@
 # Changelog
 
+## [Unreleased] - 2026-03-13
+
+### Added
+- `type: reference` spec type — documents third-party APIs without generating code; body injected into dependent soloists' prompts; `# Verification` section compiled to a test file (task 04)
+- `ArrangementEnvironment.dependencies: dict[str, str]` — version pins injected as "Dependency Versions" table in soloist prompts; `sp validate --arrangement` warns if no install command (task 05)
+- `examples/nextjs_ai_chat/` — Next.js App Router + Vercel AI SDK chat app validated end-to-end; 22 tests passing; `vercel_ai_interface.spec.md` reference spec documents the v3 API (task 07)
+- `examples/fasthtml_app/` refactored into three-spec decomposition (layout/routes/state); added Pico CSS, empty state, input reset, styled delete button (task 06)
+
+### Changed
+- `fasthtml_interface.spec.md` migrated from `type: bundle` to `type: reference` (task 04)
+
+### Fixed
+- `Optional[ArrangementEnvironment]` type hint corrected — field is never `None` (HK-02)
+- Arrangement dependency warning moved to `_resolve_arrangement()` so it fires on all commands, not just `sp validate` (HK-02)
+- `_compile_single_spec()` reference spec early return now has explanatory comment (HK-02)
+
+### Removed
+- `sp perform` command and `SpecConductor.perform/build_and_perform/_execute_step` — placeholder-quality implementation removed (HK-03, decision 01)
+
 ## [0.3.2] - 2026-02-18
 
 ### Fixed

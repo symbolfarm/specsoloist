@@ -5,6 +5,7 @@
 >
 > **v0.3.2 (2026-02-19):** All of Section 0 shipped. Also fix 1c (pytest warnings).
 > **2026-03-11:** Task 04 done — `type: reference` spec type fully implemented (§4e ✅).
+> **2026-03-13:** Task 07 done — Next.js AI chat validated, 22 tests passing (§1h ✅).
 
 ---
 
@@ -100,7 +101,7 @@ This is the natural entry point for using SpecSoloist within an existing project
 (e.g. importing it into a FastHTML or Next.js app for spec-driven development).
 Currently new users have to discover the directory convention by reading docs.
 
-### 1h. Interface and adapter spec examples — fasthtml_app ✅ Done; Next.js pending
+### 1h. Interface and adapter spec examples ✅ Done (both examples validated)
 
 SpecSoloist has no documented pattern for external dependencies. Three patterns exist
 and should be illustrated with real examples:
@@ -115,9 +116,8 @@ and should be illustrated with real examples:
 is now properly `type: reference` with `# Overview`, `# API`, and `# Verification` sections
 (migrated as part of task 04 — it was previously `type: bundle` which was a semantic misfit).
 
-Remaining example to add (tracked as task 07):
-- `examples/nextjs-ai-chat/` — Next.js app with a `vercel_ai_interface.spec.md` reference spec
-  wrapping the Vercel AI SDK
+`examples/nextjs_ai_chat/` validated (2026-03-13, task 07): `vercel_ai_interface.spec.md`
+reference spec wraps the Vercel AI SDK v3; 22 tests passing across 4 files.
 
 These are higher-value examples than the current math/string demos and directly address
 the real-world use case of adopting SpecSoloist in an existing project.
@@ -553,7 +553,7 @@ Rough priority ordering given current state of the project:
 | ✅ done | `sp validate` quality hints (4d) | Warnings for missing test scenarios, short descriptions |
 | ✅ done | `sp test --all` (7c) | Summary table across all compiled specs |
 | ★★☆ | Multi-spec web app pattern (4f) | Prevents UI gaps; tracked as task 06 |
-| ★★☆ | Next.js AI chat example (1h) | Tracked as task 07 |
+| ✅ done | Next.js AI chat example (1h, task 07) | vercel_ai_interface reference spec; 22 tests passing |
 | ★★☆ | `quine_diff` — compile from existing spec (3a) | Spec already written, just needs `sp compile` |
 | ★★☆ | Fix or remove `sp perform` (1f) | Placeholder code in production |
 | ★★☆ | `--quiet` / `--json` output flags (1g) | Makes tool scriptable |

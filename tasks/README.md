@@ -61,6 +61,8 @@ sp conduct score/ --model haiku --auto-accept   # quine attempt
 |---|------|--------|---------|
 | ~~**HK-02**~~ | ~~Small fixes~~ | ~~Tiny~~ | ~~Fix `Optional[ArrangementEnvironment]` type hint; add comment on reference spec early return; move dependency warning to `_resolve_arrangement()`~~ |
 | ~~**HK-03**~~ | ~~Remove `sp perform`~~ | ~~Small~~ | ~~Remove `cmd_perform`, `SpecConductor.perform/build_and_perform/_execute_step`, `PerformResult`, `StepResult`. See `decisions/01-sp-perform.md` for full removal checklist.~~ |
+| **HK-04** | Conductor writes `config_files` | Tiny | Conductor should write `config_files` from arrangement before running `setup_commands` — currently they must be created manually |
+| **HK-05** | Bundle spec docs vs parser | Tiny | `spec_format.spec.md` §6.1 shows prose `## functionName` headings but parser requires `yaml:functions` block; update the docs |
 
 ### 🔲 To Do — in priority order
 
