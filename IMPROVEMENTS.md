@@ -531,6 +531,69 @@ specs). Without this, future format changes will break existing spec files silen
 
 ---
 
+## 11. Workflow Automation Research
+
+Ideas and external frameworks worth understanding for inspiration, not necessarily adoption.
+
+### 11a. Beads (bd) + Gas Town
+
+Steve Yegge's [Beads](https://github.com/steveyegge/beads) is a distributed, git-backed
+issue tracker built on [Dolt](https://github.com/dolthub/dolt) (a version-controlled SQL
+database). [Gas Town](https://github.com/steveyegge/gastown) is a multi-agent orchestration
+layer built on top of it.
+
+**Key concepts:**
+
+- **Dolt storage** — SQL with native push/pull, cell-level merge, automatic commit on every write.
+  Issues travel with the repo; offline work just works.
+- **Hash-based IDs** — avoids sequential ID collisions when multiple agents create issues
+  concurrently. IDs are derived from random UUIDs and scale progressively (4 → 5–6 chars).
+- **Molecules / Wisps** — a molecule is a template workflow; `bd mol pour` spawns wisps
+  (ephemeral local-only child issues) per step; `bd mol squash` collapses them into a
+  permanent digest. Wisps are never synced and are hard-deleted on squash.
+- **Convoys** — work bundles grouping related beads, assigned to agents.
+- **Mayor** — a Claude Code coordinator that breaks down goals, creates convoys, spawns
+  and monitors Polecats (worker agents with persistent identity but ephemeral sessions).
+- **Hooks** — git worktree-based persistent storage so agent state survives crashes/restarts.
+- **Formulas** — TOML-defined repeatable workflows with `[[steps]]` + `needs` dependency
+  ordering; executed via `bd cook <formula>`.
+
+**What this maps to in SpecSoloist:**
+
+| Gas Town | SpecSoloist |
+|----------|-------------|
+| Molecule (template) | Spec directory + arrangement |
+| `bd mol pour` | `sp conduct` |
+| Wisp | Individual soloist run |
+| `bd mol squash` → digest | Build manifest + completed artifacts |
+| `blocks` dependency | Spec dependency ordering |
+| `discovered-from` dep type | Soloist discovering a missing spec mid-run |
+
+The mapping is close enough that Gas Town + SpecSoloist could compose naturally: each spec
+becomes a bead, `sp conduct` creates a convoy of soloist polecats.
+
+**Why not adopting now:**
+Gas Town is optimised for 4–30+ concurrent agents. At a solo dev + one AI assistant scale,
+the setup cost (Dolt, bd, tmux, Go, sqlite3, new vocabulary) doesn't pay off. The
+`tasks/` markdown workflow is simpler, more readable in-context, and already working.
+
+**Inspiration to draw:**
+
+- **Hooks pattern** (git worktree for crash recovery) → natural inspiration for
+  `sp conduct --resume` (task 10). If a soloist dies mid-run, state should survive.
+- **`discovered-from` dependency type** — SpecSoloist has no structured way to record
+  when a soloist discovers a missing dependency at runtime. Worth considering for the
+  manifest or conductor output.
+- **Formulas** — the TOML step-dependency format is very close to SpecSoloist's
+  `yaml:steps` workflow spec type. Convergent validation that this pattern is right.
+
+### 11b. Ralph Loop
+
+Mentioned as worth investigating for the current SpecSoloist dev workflow. Details TBD —
+to be explored in a future session.
+
+---
+
 ## Summary: What to Do Next
 
 Rough priority ordering given current state of the project:
