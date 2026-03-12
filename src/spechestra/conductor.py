@@ -104,22 +104,23 @@ class SpecConductor:
         )
 
     def _provision_environment(self, arrangement: Arrangement):
-        """Create config files and run setup commands if needed."""
-        # 1. Create config files
+        """Create config files and run setup commands."""
+        # 1. Write config files (arrangement is the source of truth — always overwrite)
         for filename, content in arrangement.environment.config_files.items():
             # Use runner's build_dir as base (redirection already handled in CLI for src_dir)
             target_path = os.path.join(self._core.runner.build_dir, filename)
 
-            if not os.path.exists(target_path):
-                from specsoloist import ui
-                ui.print_info(f"Provisionsing config file: {filename}")
-                os.makedirs(os.path.dirname(target_path), exist_ok=True)
-                # Handle placeholders
-                project_name = os.path.basename(self.project_dir)
-                formatted_content = content.replace("{project_name}", project_name)
+            from specsoloist import ui
+            ui.print_info(f"Provisioning config file: {filename}")
+            parent_dir = os.path.dirname(target_path)
+            if parent_dir:
+                os.makedirs(parent_dir, exist_ok=True)
+            # Handle placeholders
+            project_name = os.path.basename(self.project_dir)
+            formatted_content = content.replace("{project_name}", project_name)
 
-                with open(target_path, 'w') as f:
-                    f.write(formatted_content)
+            with open(target_path, 'w') as f:
+                f.write(formatted_content)
 
         # 2. Run setup commands if files were missing
         # For now, we always run them if provided, but in a real build we might optimize

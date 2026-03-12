@@ -15,6 +15,8 @@
 - `Optional[ArrangementEnvironment]` type hint corrected — field is never `None` (HK-02)
 - Arrangement dependency warning moved to `_resolve_arrangement()` so it fires on all commands, not just `sp validate` (HK-02)
 - `_compile_single_spec()` reference spec early return now has explanatory comment (HK-02)
+- `_provision_environment()` now always writes config_files from the arrangement (was skipping if file existed); fixed typo in log message (HK-04)
+- Bundle spec validator now accepts prose-style `##` headings as well as `yaml:functions` blocks — all score specs now pass `sp validate` (HK-05)
 
 ### Removed
 - `sp perform` command and `SpecConductor.perform/build_and_perform/_execute_step` — placeholder-quality implementation removed (HK-03, decision 01)

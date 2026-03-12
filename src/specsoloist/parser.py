@@ -603,7 +603,11 @@ Describe each export's public interface and behavior below.
         errors = []
         if "# Overview" not in parsed.body and "# 1. Overview" not in parsed.body:
             errors.append("Missing required section: '# Overview'")
-        if not parsed.bundle_functions and not parsed.bundle_types:
+        # Accept either yaml:functions/yaml:types blocks (parsed form) or prose-style
+        # ## headings (the compiler passes the full body to the LLM regardless of format).
+        has_yaml_blocks = parsed.bundle_functions or parsed.bundle_types
+        has_prose_sections = "\n##" in parsed.body or parsed.body.startswith("##")
+        if not has_yaml_blocks and not has_prose_sections:
             errors.append("Bundle must have at least one function or type defined")
         return errors
 
