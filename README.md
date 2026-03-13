@@ -23,40 +23,41 @@ pip install specsoloist
 
 ## Quick Start
 
-1.  Clone the repository (or create a new folder):
-    ```bash
-    git clone https://github.com/symbolfarm/specsoloist.git
-    cd specsoloist
-    ```
-
-2.  Set your API Key (Gemini or Anthropic):
+1.  Set your API Key (Gemini or Anthropic):
     ```bash
     export GEMINI_API_KEY="your_key_here"
     # or
     export ANTHROPIC_API_KEY="your_key_here"
     ```
 
-3.  Create a new specification:
+2.  Scaffold a new project:
     ```bash
-    sp create calculator "A simple calculator with add and multiply"
-    ```
-    This creates `src/calculator.spec.md`.
-
-4.  Compile it to code:
-    ```bash
-    sp compile calculator
-    ```
-    This generates `build/calculator.py` and `build/test_calculator.py`.
-
-5.  Run the tests:
-    ```bash
-    sp test calculator
+    sp init my-app                                  # blank Python arrangement
+    sp init my-app --template python-fasthtml       # FastHTML + pytest
+    sp init my-app --template nextjs-vitest         # Next.js + vitest
+    sp init my-app --template nextjs-playwright     # Next.js + Playwright E2E
+    sp init --list-templates                        # see all options
     ```
 
-6.  (Optional) If tests fail, try auto-fix:
+3.  Draft specs from natural language:
     ```bash
-    sp fix calculator
+    cd my-app
+    sp compose "A todo app with auth"
     ```
+
+4.  Build with agents:
+    ```bash
+    sp conduct specs/
+    ```
+
+### Manual workflow (single spec)
+
+```bash
+sp create calculator "A simple calculator with add and multiply"
+sp compile calculator
+sp test calculator
+sp fix calculator  # if tests fail
+```
 
 ## Orchestration (Spechestra)
 
@@ -105,6 +106,8 @@ export SPECSOLOIST_LLM_MODEL="gemini-2.0-flash"  # optional
 ## Arrangement Files
 
 An **Arrangement** is SpecSoloist's makefile — it bridges language-agnostic specs to a concrete build environment by specifying the target language, output paths, build commands, and constraints.
+
+`sp init --template <name>` copies a validated starter arrangement into your project. Run `sp init --list-templates` to see what's available. You can also start from one of the examples in `arrangements/`:
 
 See `arrangements/arrangement.python.yaml` for a complete example:
 

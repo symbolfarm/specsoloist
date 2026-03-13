@@ -139,10 +139,18 @@ def main():
 
     # init
     init_parser = subparsers.add_parser("init", help="Scaffold a new SpecSoloist project")
-    init_parser.add_argument("name", help="Project directory name to create")
+    init_parser.add_argument("name", nargs="?", help="Project directory name to create")
     init_parser.add_argument(
         "--arrangement", choices=["python", "typescript"], default="python",
         help="Arrangement template to use (default: python)"
+    )
+    init_parser.add_argument(
+        "--template",
+        help="Named arrangement template (e.g. python-fasthtml, nextjs-vitest, nextjs-playwright)"
+    )
+    init_parser.add_argument(
+        "--list-templates", action="store_true",
+        help="List available arrangement templates"
     )
 
     # install-skills
@@ -169,7 +177,13 @@ def main():
 
     # Commands that don't need a project context
     if args.command == "init":
-        cmd_init(args.name, args.arrangement)
+        if args.list_templates:
+            cmd_list_templates()
+            return
+        if args.name is None:
+            init_parser.print_help()
+            sys.exit(1)
+        cmd_init(args.name, args.arrangement, args.template)
         return
     if args.command == "install-skills":
         cmd_install_skills(args.target)
@@ -1319,7 +1333,69 @@ dist/
 """
 
 
-def cmd_init(name: str, arrangement: str = "python"):
+def _find_arrangements_dir() -> str | None:
+    """Find the bundled arrangements directory."""
+    try:
+        import importlib.resources as pkg_resources
+        arr_ref = pkg_resources.files('specsoloist').joinpath('arrangements')
+        arr_path = str(arr_ref)
+        if os.path.isdir(arr_path):
+            return arr_path
+    except Exception:
+        pass
+
+    # Fallback: relative to this file (development installs)
+    candidate = os.path.join(os.path.dirname(__file__), 'arrangements')
+    abs_path = os.path.abspath(candidate)
+    if os.path.isdir(abs_path):
+        return abs_path
+
+    return None
+
+
+def _list_templates() -> list[dict[str, str]]:
+    """Return a list of available templates as [{"name": ..., "description": ...}]."""
+    arr_dir = _find_arrangements_dir()
+    if not arr_dir:
+        return []
+
+    templates = []
+    for filename in sorted(os.listdir(arr_dir)):
+        if not filename.endswith('.yaml'):
+            continue
+        template_name = filename[:-5]  # strip .yaml
+        filepath = os.path.join(arr_dir, filename)
+        description = ""
+        with open(filepath) as f:
+            for line in f:
+                line = line.strip()
+                if line.startswith('#'):
+                    # First non-empty comment line that isn't a Usage: line is the description
+                    text = line.lstrip('#').strip()
+                    if text and not text.startswith('Usage:') and not text.startswith('Requires:'):
+                        description = text
+                        break
+                elif line:
+                    break
+        templates.append({"name": template_name, "description": description})
+    return templates
+
+
+def cmd_list_templates():
+    """List available arrangement templates."""
+    templates = _list_templates()
+    if not templates:
+        ui.print_warning("No templates found.")
+        return
+
+    ui.print_header("Arrangement Templates", "Available for sp init --template")
+    for t in templates:
+        ui.print_step(f"  [bold]{t['name']}[/]  — {t['description']}")
+    ui.console.print()
+    ui.print_info("Usage: sp init <project> --template <name>")
+
+
+def cmd_init(name: str, arrangement: str = "python", template: str | None = None):
     """Scaffold a new SpecSoloist project directory."""
     project_dir = os.path.abspath(name)
 
@@ -1329,22 +1405,46 @@ def cmd_init(name: str, arrangement: str = "python"):
 
     os.makedirs(os.path.join(project_dir, "specs"))
 
-    arrangement_content = (
-        _INIT_ARRANGEMENT_TYPESCRIPT if arrangement == "typescript" else _INIT_ARRANGEMENT
-    )
+    if template is not None:
+        # Load from bundled template
+        arr_dir = _find_arrangements_dir()
+        if not arr_dir:
+            ui.print_error("Arrangements directory not found. Ensure specsoloist is properly installed.")
+            sys.exit(1)
+        template_path = os.path.join(arr_dir, f"{template}.yaml")
+        if not os.path.exists(template_path):
+            available = [t["name"] for t in _list_templates()]
+            ui.print_error(f"Unknown template: {template!r}. Available: {', '.join(available)}")
+            sys.exit(1)
+        with open(template_path) as f:
+            arrangement_content = f.read()
+        label = template
+    else:
+        arrangement_content = (
+            _INIT_ARRANGEMENT_TYPESCRIPT if arrangement == "typescript" else _INIT_ARRANGEMENT
+        )
+        label = arrangement
+
     with open(os.path.join(project_dir, "arrangement.yaml"), "w") as f:
         f.write(arrangement_content)
 
     with open(os.path.join(project_dir, ".gitignore"), "w") as f:
         f.write(_INIT_GITIGNORE)
 
-    ui.print_success(f"Created project: [bold]{name}/[/]  [{arrangement}]")
+    ui.print_success(f"Created project: [bold]{name}/[/]  [{label}]")
     ui.print_step("  specs/            ← put your .spec.md files here")
     ui.print_step("  arrangement.yaml  ← build configuration")
     ui.print_step("  .gitignore")
     ui.console.print()
     ui.print_info("Next steps:")
     ui.print_step(f"  cd {name}")
+    if template == "python-fasthtml":
+        ui.print_step("  uv init && uv add python-fasthtml pytest httpx  # set up Python project")
+    elif template == "nextjs-vitest":
+        ui.print_step("  npm init next-app@latest . -- --typescript       # set up Next.js project")
+    elif template == "nextjs-playwright":
+        ui.print_step("  npm init next-app@latest . -- --typescript       # set up Next.js project")
+        ui.print_step("  npx playwright install --with-deps               # install Playwright browsers")
     ui.print_step("  sp compose 'describe your project'   # draft specs")
     ui.print_step("  sp conduct specs/                    # build")
 

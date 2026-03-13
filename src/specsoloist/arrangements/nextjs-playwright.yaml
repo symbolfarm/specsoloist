@@ -1,0 +1,33 @@
+# Next.js + Playwright E2E arrangement
+# Usage: sp init --template nextjs-playwright
+#
+# Requires: Node.js 18+, npm, Playwright browsers
+
+target_language: typescript
+
+output_paths:
+  implementation: src/{name}.ts
+  tests: e2e/{name}.spec.ts
+
+environment:
+  tools:
+    - node
+    - npm
+    - npx
+  setup_commands:
+    - npm install
+    - npx playwright install --with-deps
+  dependencies:
+    next: ">=14.0"
+    "@playwright/test": ">=1.40"
+
+build_commands:
+  compile: ""
+  lint: ""
+  test: npx playwright test
+
+constraints:
+  - Tests are Playwright E2E tests, not unit tests
+  - Use page.goto(), page.click(), page.fill(), page.locator() — not import statements
+  - Each test file covers one user-facing feature or page
+  - Use data-testid attributes for selectors in generated component code
