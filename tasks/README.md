@@ -46,7 +46,6 @@ sp conduct score/ --model haiku --auto-accept   # quine attempt
 
 | # | Task | Effort | Depends on | Summary |
 |---|------|--------|------------|---------|
-| **11** | Arrangement `env_vars` field | Small | — | Declared env var names; `sp doctor` warns if unset |
 | **12** | Nested session warning | Small | — | Detect when running inside Claude Code; print friendly message |
 | **13** | Incremental adoption guide | Small–Medium | — | `sp respec` workflow for existing FastHTML/Next.js projects |
 | **14** | Database persistence patterns | Medium | — | `fastlite` + Prisma reference specs; test fixture patterns |
