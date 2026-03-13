@@ -46,7 +46,7 @@ sp conduct score/ --model haiku --auto-accept   # quine attempt
 
 | # | Task | Effort | Depends on | Summary |
 |---|------|--------|------------|---------|
-| **14** | Database persistence patterns | Medium | — | `fastlite` + Prisma reference specs; test fixture patterns |
+*No active feature tasks.*
 
 ---
 
