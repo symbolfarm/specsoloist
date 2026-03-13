@@ -113,6 +113,9 @@ class IncrementalBuilder:
             return True
         if any(dep in rebuilt_specs for dep in current_deps):
             return True
+        # Check that all declared output files still exist on disk
+        if any(not os.path.exists(f) for f in info.output_files):
+            return True
         return False
 
     def get_rebuild_plan(

@@ -102,6 +102,15 @@ def main():
     conduct_parser.add_argument("--workers", type=int, default=4, help="Max parallel workers (default: 4)")
     conduct_parser.add_argument("--model", help="Override LLM model")
     conduct_parser.add_argument("--arrangement", metavar="FILE", help="Path to arrangement YAML file")
+    resume_group = conduct_parser.add_mutually_exclusive_group()
+    resume_group.add_argument(
+        "--resume", action="store_true",
+        help="Skip specs already compiled (hash + output files match manifest); recompile stale or missing"
+    )
+    resume_group.add_argument(
+        "--force", action="store_true",
+        help="Recompile all specs regardless of manifest state"
+    )
 
     # diff
     diff_parser = subparsers.add_parser(
@@ -228,7 +237,8 @@ def main():
             cmd_compose(core, args.request, args.no_agent, args.auto_accept, args.model)
         elif args.command == "conduct":
             cmd_conduct(core, args.src_dir, args.no_agent, args.auto_accept,
-                        args.incremental, args.parallel, args.workers, args.model, args.arrangement)
+                        args.incremental, args.parallel, args.workers, args.model, args.arrangement,
+                        resume=args.resume, force=args.force)
         elif args.command == "diff":
             cmd_diff(core, args.left, args.right, args.label_left, args.label_right,
                      args.report, args.runs)
@@ -782,20 +792,23 @@ def _compose_with_llm(core: SpecSoloistCore, request: str, auto_accept: bool):
 
 def cmd_conduct(core: SpecSoloistCore, src_dir: str | None, no_agent: bool, auto_accept: bool,
                  incremental: bool, parallel: bool, workers: int, model: str | None = None,
-                 arrangement_arg: str | None = None):
+                 arrangement_arg: str | None = None, resume: bool = False, force: bool = False):
     """Orchestrate project build."""
 
     ui.print_header("Conducting Build", src_dir or "project specs")
 
     if no_agent:
         arrangement = _resolve_arrangement(core, arrangement_arg)
-        _conduct_with_llm(core, src_dir, incremental, parallel, workers, arrangement=arrangement)
+        _conduct_with_llm(core, src_dir, incremental, parallel, workers, arrangement=arrangement,
+                          resume=resume, force=force)
     else:
-        _conduct_with_agent(src_dir, auto_accept, model=model, arrangement_arg=arrangement_arg)
+        _conduct_with_agent(src_dir, auto_accept, model=model, arrangement_arg=arrangement_arg,
+                            resume=resume, force=force)
 
 
 def _conduct_with_agent(src_dir: str | None, auto_accept: bool, model: str | None = None,
-                        arrangement_arg: str | None = None):
+                        arrangement_arg: str | None = None, resume: bool = False,
+                        force: bool = False):
     """Use an AI agent CLI for multi-step orchestrated build."""
     agent = _detect_agent_cli()
     if not agent:
@@ -854,6 +867,19 @@ def _conduct_with_agent(src_dir: str | None, auto_accept: bool, model: str | Non
 
         prompt += "\nRun the full test suite when done."
 
+    if force:
+        prompt += (
+            "\n\n**Build mode**: --force is set. Recompile ALL specs regardless of manifest state. "
+            "Do not skip any spec."
+        )
+    elif resume:
+        prompt += (
+            "\n\n**Build mode**: --resume is set. Before compiling each spec, check the build "
+            "manifest (.specsoloist-manifest.json) to see if it was already compiled with the same "
+            "spec hash and all output files still exist on disk. Skip specs that are up-to-date; "
+            "only compile specs that are missing, stale, or whose dependencies were recompiled this run."
+        )
+
     if model:
         prompt += (
             f'\n\n**Model**: When spawning soloist subagents via the Task tool, '
@@ -868,33 +894,48 @@ def _conduct_with_agent(src_dir: str | None, auto_accept: bool, model: str | Non
 
 
 def _conduct_with_llm(core: SpecSoloistCore, src_dir: str | None, incremental: bool, parallel: bool, workers: int,
-                      arrangement=None):
+                      arrangement=None, resume: bool = False, force: bool = False):
     """Direct LLM build (single-shot compilation, no agent iteration)."""
     _check_api_key()
 
     ui.print_info("Using direct LLM calls (no agent)...")
 
+    # Resolve effective incremental flag:
+    # --force: always recompile (incremental=False)
+    # --resume or default: use manifest staleness (incremental=True)
+    # Legacy --incremental flag also maps to True
+    effective_incremental = not force  # True unless --force
+
     # If src_dir is provided, we should use it for spec discovery
     # SpecConductor uses its internal core for compilation, but we want it
     # to find specs in src_dir if specified.
-    
+
     project_base = core.root_dir
     if src_dir:
         # Resolve the absolute path to the directory containing 'src'
         # e.g. if src_dir is 'examples/ts_demo/src/', project_base is 'examples/ts_demo/'
         project_base = os.path.abspath(os.path.join(src_dir, ".."))
-    
+
     conductor = SpecConductor(project_base)
-    
+
     if src_dir:
         conductor.parser.src_dir = os.path.abspath(src_dir)
         conductor.resolver.parser.src_dir = os.path.abspath(src_dir)
         # Redirect the runner to write relative to the project base
         conductor._core.runner.build_dir = project_base
 
+    # Show resume/force mode header and pre-computed skip plan
+    if resume:
+        ui.print_info("Resuming build from manifest...")
+    elif force:
+        ui.print_info("Force mode: recompiling all specs...")
+
+    if effective_incremental and (resume or not force):
+        _show_resume_plan(conductor._core, parallel)
+
     with ui.spinner("Orchestrating build..."):
         result = conductor.build(
-            incremental=incremental,
+            incremental=effective_incremental,
             parallel=parallel,
             max_workers=workers,
             arrangement=arrangement,
@@ -903,24 +944,84 @@ def _conduct_with_llm(core: SpecSoloistCore, src_dir: str | None, incremental: b
     table = ui.create_table(["Result", "Spec", "Details"], title="Conductor Report")
 
     for spec in result.specs_compiled:
-        table.add_row("[green]Compiled[/]", spec, "Success")
+        table.add_row("[green]COMPILED[/]", spec, "")
 
     for spec in result.specs_skipped:
-        table.add_row("[dim]Skipped[/]", spec, "Unchanged")
+        table.add_row("[dim]SKIPPED[/]", spec, "[dim]cached[/]")
 
     for spec in result.specs_failed:
         error = result.errors.get(spec, "Unknown error")
         if len(error) > 50:
             error = error[:47] + "..."
-        table.add_row("[red]Failed[/]", spec, error)
+        table.add_row("[red]FAILED[/]", spec, error)
 
     ui.console.print(table)
 
+    # Summary line
+    parts = []
+    if result.specs_compiled:
+        parts.append(f"{len(result.specs_compiled)} compiled")
+    if result.specs_skipped:
+        parts.append(f"{len(result.specs_skipped)} skipped")
+    if result.specs_failed:
+        parts.append(f"{len(result.specs_failed)} failed")
+    summary = ", ".join(parts) if parts else "nothing to do"
+
     if result.success:
-        ui.print_success("Conductor finished successfully.")
+        ui.print_success(f"Conductor finished: {summary}.")
     else:
-        ui.print_error("Conductor reported failures.")
+        ui.print_error(f"Conductor reported failures: {summary}.")
         sys.exit(1)
+
+
+def _show_resume_plan(core: SpecSoloistCore, parallel: bool):
+    """Print a pre-flight summary of which specs will be compiled vs skipped."""
+    from .manifest import IncrementalBuilder, compute_file_hash
+
+    try:
+        build_order = core.resolver.resolve_build_order()
+        manifest = core._get_manifest()
+        builder = IncrementalBuilder(manifest, core.config.src_path)
+
+        # Compute hashes and deps for all specs
+        spec_hashes: dict[str, str] = {}
+        spec_deps: dict[str, list[str]] = {}
+        for name in build_order:
+            spec_path = os.path.join(core.parser.src_dir, f"{name}.spec.md")
+            spec_hashes[name] = compute_file_hash(spec_path)
+            try:
+                parsed = core.parser.parse_spec(name)
+                spec_deps[name] = parsed.metadata.dependencies or []
+            except Exception:
+                spec_deps[name] = []
+
+        # Compute rebuild plan (respects cascade)
+        to_rebuild = set(builder.get_rebuild_plan(build_order, spec_hashes, spec_deps))
+
+        if not to_rebuild:
+            ui.print_info("All specs are up-to-date — nothing to recompile.")
+            return
+
+        for name in build_order:
+            if name in to_rebuild:
+                info = manifest.get_spec_info(name)
+                if info is None:
+                    reason = "never built"
+                elif compute_file_hash(os.path.join(core.parser.src_dir, f"{name}.spec.md")) != info.spec_hash:
+                    reason = "spec changed"
+                elif any(not os.path.exists(f) for f in info.output_files):
+                    reason = "output missing"
+                else:
+                    # Cascade: a dependency changed
+                    changed_deps = [d for d in spec_deps.get(name, []) if d in to_rebuild]
+                    reason = f"dep {changed_deps[0]} changed" if changed_deps else "stale"
+                ui.print_step(f"  [bold]{name}[/]  [yellow]COMPILING[/] ({reason})")
+            else:
+                ui.print_step(f"  [bold]{name}[/]  [dim]SKIPPED (cached)[/]")
+        ui.console.print()
+    except Exception:
+        # If plan computation fails, proceed silently — the build will still work
+        pass
 
 
 def cmd_diff(

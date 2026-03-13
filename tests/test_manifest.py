@@ -109,28 +109,36 @@ def test_incremental_builder_needs_rebuild_never_built():
     assert builder.needs_rebuild("new_spec", "hash123", [], set()) is True
 
 
-def test_incremental_builder_needs_rebuild_hash_changed():
+def test_incremental_builder_needs_rebuild_hash_changed(test_dir):
     """Test that changed spec content triggers rebuild."""
+    out_file = os.path.join(test_dir, "spec1.py")
+    with open(out_file, "w") as f:
+        f.write("# placeholder")
+
     manifest = BuildManifest()
-    manifest.update_spec("spec1", "old_hash", [], ["spec1.py"])
+    manifest.update_spec("spec1", "old_hash", [], [out_file])
 
     builder = IncrementalBuilder(manifest, "/fake/path")
 
-    # Same hash - no rebuild
+    # Same hash, output file exists - no rebuild
     assert builder.needs_rebuild("spec1", "old_hash", [], set()) is False
 
     # Different hash - needs rebuild
     assert builder.needs_rebuild("spec1", "new_hash", [], set()) is True
 
 
-def test_incremental_builder_needs_rebuild_deps_changed():
+def test_incremental_builder_needs_rebuild_deps_changed(test_dir):
     """Test that changed dependencies trigger rebuild."""
+    out_file = os.path.join(test_dir, "spec1.py")
+    with open(out_file, "w") as f:
+        f.write("# placeholder")
+
     manifest = BuildManifest()
-    manifest.update_spec("spec1", "hash123", ["dep1"], ["spec1.py"])
+    manifest.update_spec("spec1", "hash123", ["dep1"], [out_file])
 
     builder = IncrementalBuilder(manifest, "/fake/path")
 
-    # Same deps - no rebuild
+    # Same deps, output file exists - no rebuild
     assert builder.needs_rebuild("spec1", "hash123", ["dep1"], set()) is False
 
     # Different deps - needs rebuild
@@ -138,11 +146,17 @@ def test_incremental_builder_needs_rebuild_deps_changed():
     assert builder.needs_rebuild("spec1", "hash123", [], set()) is True
 
 
-def test_incremental_builder_needs_rebuild_dep_rebuilt():
+def test_incremental_builder_needs_rebuild_dep_rebuilt(test_dir):
     """Test that rebuilding a dependency triggers dependent rebuild."""
+    types_file = os.path.join(test_dir, "types.py")
+    service_file = os.path.join(test_dir, "service.py")
+    for f in (types_file, service_file):
+        with open(f, "w") as fh:
+            fh.write("# placeholder")
+
     manifest = BuildManifest()
-    manifest.update_spec("types", "hash1", [], ["types.py"])
-    manifest.update_spec("service", "hash2", ["types"], ["service.py"])
+    manifest.update_spec("types", "hash1", [], [types_file])
+    manifest.update_spec("service", "hash2", ["types"], [service_file])
 
     builder = IncrementalBuilder(manifest, "/fake/path")
 
@@ -150,22 +164,42 @@ def test_incremental_builder_needs_rebuild_dep_rebuilt():
     rebuilt = {"types"}
     assert builder.needs_rebuild("service", "hash2", ["types"], rebuilt) is True
 
-    # If nothing rebuilt, service doesn't need rebuilding
+    # If nothing rebuilt and output files exist, service doesn't need rebuilding
     assert builder.needs_rebuild("service", "hash2", ["types"], set()) is False
 
 
-def test_incremental_builder_rebuild_plan():
-    """Test computing the full rebuild plan."""
+def test_incremental_builder_needs_rebuild_output_missing(test_dir):
+    """Test that a missing output file triggers rebuild even when hash is unchanged."""
+    missing_file = os.path.join(test_dir, "nonexistent.py")
+
     manifest = BuildManifest()
-    manifest.update_spec("types", "hash1", [], ["types.py"])
-    manifest.update_spec("utils", "hash2", [], ["utils.py"])
-    manifest.update_spec("service", "hash3", ["types", "utils"], ["service.py"])
+    manifest.update_spec("spec1", "hash123", [], [missing_file])
+
+    builder = IncrementalBuilder(manifest, "/fake/path")
+
+    # Output file does not exist on disk — must rebuild
+    assert builder.needs_rebuild("spec1", "hash123", [], set()) is True
+
+
+def test_incremental_builder_rebuild_plan(test_dir):
+    """Test computing the full rebuild plan."""
+    types_file = os.path.join(test_dir, "types.py")
+    utils_file = os.path.join(test_dir, "utils.py")
+    service_file = os.path.join(test_dir, "service.py")
+    for f in (types_file, utils_file, service_file):
+        with open(f, "w") as fh:
+            fh.write("# placeholder")
+
+    manifest = BuildManifest()
+    manifest.update_spec("types", "hash1", [], [types_file])
+    manifest.update_spec("utils", "hash2", [], [utils_file])
+    manifest.update_spec("service", "hash3", ["types", "utils"], [service_file])
 
     builder = IncrementalBuilder(manifest, "/fake/path")
 
     build_order = ["types", "utils", "service"]
 
-    # No changes - nothing to rebuild
+    # No changes, all output files exist - nothing to rebuild
     spec_hashes = {"types": "hash1", "utils": "hash2", "service": "hash3"}
     spec_deps = {"types": [], "utils": [], "service": ["types", "utils"]}
 
