@@ -95,6 +95,43 @@ After respeccing, verify the spec is sufficient by regenerating the code and run
 3. Run tests: `uv run python -m pytest tests/`
 4. If tests pass, the spec captures the requirements correctly
 
+## Releasing
+
+> **The tag push is the trigger.** Pushing a `v*` tag automatically runs tests, publishes
+> to PyPI, and creates a GitHub release. Everything must be correct before tagging.
+
+### Checklist
+
+- [ ] `uv run python -m pytest tests/` — all passing
+- [ ] `uv run ruff check src/` — 0 errors
+- [ ] `CHANGELOG.md` — `[Unreleased]` section renamed to `[X.Y.Z] - YYYY-MM-DD`
+- [ ] `pyproject.toml` — `version` bumped to match
+- [ ] No unintended uncommitted changes: `git status`
+
+### Version scheme
+
+- **Patch** (`0.x.Y`) — bug fixes, docs, no behaviour change
+- **Minor** (`0.X.0`) — new features or breaking changes
+
+### Steps
+
+```bash
+git add pyproject.toml CHANGELOG.md
+git commit -m "chore: release vX.Y.Z"
+git tag vX.Y.Z
+git push origin main --tags   # <-- triggers publish + GitHub release
+```
+
+After release, add a fresh `[Unreleased]` section at the top of `CHANGELOG.md`.
+
+### What the workflow does
+
+`.github/workflows/publish.yaml` runs on every `v*` tag push:
+1. Runs tests and lint (fails fast — PyPI publish is blocked if either fails)
+2. Builds and publishes the package to PyPI
+3. Extracts the matching `[X.Y.Z]` section from `CHANGELOG.md` as release notes
+4. Creates the GitHub release automatically
+
 ## See Also
 
 - `AGENTS.md` - Context for AI agents (development and MCP usage)
