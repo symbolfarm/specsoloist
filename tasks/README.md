@@ -2,6 +2,7 @@
 
 > **For new Claude sessions:** Read this first. It orients you on project state and points
 > you to the right task. Then read `AGENTS.md` for full project context.
+> Completed tasks are in `tasks/HISTORY.md`.
 
 ---
 
@@ -23,12 +24,12 @@ and Next.js web applications.**
 | Agent-first CLI | Done — `sp conduct`, `sp compose`, `sp respec`, `sp fix` |
 | Quine (self-hosting) | Validated — `sp conduct score/` regenerates `src/` with 563 tests passing |
 | FastHTML example | Validated — 23 tests passing (`examples/fasthtml_app/`) |
-| Next.js example | Not yet run — `examples/nextjs_ai_chat/` exists but unvalidated |
-| Web-dev readiness | In progress — tasks 04–14 cover the remaining gaps |
+| Next.js example | Validated — 22 tests passing (`examples/nextjs_ai_chat/`) |
+| Web-dev readiness | In progress — tasks 08–14 cover the remaining gaps |
 
 Key commands:
 ```bash
-uv run python -m pytest tests/   # 52 tests — must stay green
+uv run python -m pytest tests/   # 247 tests — must stay green
 uv run ruff check src/           # must pass with 0 errors
 sp conduct score/ --model haiku --auto-accept   # quine attempt
 ```
@@ -37,49 +38,21 @@ sp conduct score/ --model haiku --auto-accept   # quine attempt
 
 ## Task Status
 
-### ✅ Done
-
-| # | Task | Summary |
-|---|------|---------|
-| 01 | Fix `--auto-accept` scoping | `bypassPermissions` now scoped to quine runs only |
-| 02 | Implement `sp test --all` | Runs tests for every compiled spec, shows summary table |
-| 03 | Validate FastHTML example | `examples/fasthtml_app/` — 23 tests passing, README written |
-| 04 | `reference` spec type | Parser validation, compiler injection, no code gen, verification tests, `sp validate`/`sp status` display |
-| HK-01 | Consolidate IMPROVEMENTS + ROADMAP | Trimmed §0 done-items from IMPROVEMENTS.md; fixed §0g (`_compile_single_spec` reference spec guard) and §0h (dep key normalised to `"from"` in core.py) |
-| 05 | Arrangement `dependencies` field | `ArrangementEnvironment.dependencies: dict[str, str]`; injected as "Dependency Versions" table in soloist prompts; `sp validate --arrangement` warns if no install command; FastHTML arrangement and score spec updated |
-| 07 | Validate Next.js AI chat | `vercel_ai_interface` reference spec written; `@ai-sdk/openai` pinned to `^0.0.9`; 22 tests passing across 4 files; README written |
-
-### 🔲 Decisions
-
-| File | Topic | Status |
-|------|-------|--------|
-| `decisions/01-sp-perform.md` | Keep / fix / remove `sp perform` | **Decided: Option A — remove** |
-
 ### 🔲 Housekeeping
 
-| # | Task | Effort | Summary |
-|---|------|--------|---------|
-| ~~**HK-02**~~ | ~~Small fixes~~ | ~~Tiny~~ | ~~Fix `Optional[ArrangementEnvironment]` type hint; add comment on reference spec early return; move dependency warning to `_resolve_arrangement()`~~ |
-| ~~**HK-03**~~ | ~~Remove `sp perform`~~ | ~~Small~~ | ~~Remove `cmd_perform`, `SpecConductor.perform/build_and_perform/_execute_step`, `PerformResult`, `StepResult`. See `decisions/01-sp-perform.md` for full removal checklist.~~ |
-| ~~**HK-04**~~ | ~~Conductor writes `config_files`~~ | ~~Tiny~~ | ~~Fixed: always overwrite from arrangement (was skipping existing files); fixed typo~~ |
-| ~~**HK-05**~~ | ~~Bundle spec docs vs parser~~ | ~~Tiny~~ | ~~Fixed: validator now accepts prose `##` headings in addition to `yaml:functions` blocks; all score specs now pass `sp validate`~~ |
-| ~~**HK-06**~~ | ~~Release v0.4.0~~ | ~~Tiny~~ | ~~Released as v0.4.1 (README fix); publish workflow now auto-creates GitHub releases~~ |
+*No active housekeeping tasks.*
 
 ### 🔲 To Do — in priority order
 
 | # | Task | Effort | Depends on | Summary |
 |---|------|--------|------------|---------|
-| ~~**04**~~ | ~~`reference` spec type~~ | ~~Medium~~ | ~~—~~ | ~~Done~~ |
-| ~~**05**~~ | ~~Arrangement `dependencies` field~~ | ~~Small~~ | ~~—~~ | ~~Done~~ |
-| ~~**06**~~ | ~~FastHTML app refactor~~ | ~~Small–Medium~~ | ~~04, 05~~ | ~~Split `app.spec.md` into layout/routes/state; add delete button; migrate `fasthtml_interface` to `type: reference`~~ |
-| ~~**07**~~ | ~~Validate Next.js AI chat~~ | ~~Medium~~ | ~~04~~ | ~~Write `vercel_ai_interface` as `reference` spec; run `sp conduct`; get tests passing~~ |
-| **08** | Arrangement templates | Small | 06, 07 | `sp init --template python-fasthtml/nextjs-vitest/nextjs-playwright` |
+| **08** | Arrangement templates | Small | — | `sp init --template python-fasthtml/nextjs-vitest/nextjs-playwright` |
 | **09** | E2E testing pattern | Medium | 08 | Playwright arrangement, `data-testid` spec contract, FastHTML E2E example |
 | **10** | `sp conduct --resume` | Medium | — | Skip already-compiled specs; cascade recompile on dep change |
-| **11** | Arrangement `env_vars` field | Small | 05 | Declared env var names; `sp doctor` warns if unset |
+| **11** | Arrangement `env_vars` field | Small | — | Declared env var names; `sp doctor` warns if unset |
 | **12** | Nested session warning | Small | — | Detect when running inside Claude Code; print friendly message |
-| **13** | Incremental adoption guide | Small–Medium | 06 | `sp respec` workflow for existing FastHTML/Next.js projects |
-| **14** | Database persistence patterns | Medium | 04, 06 | `fastlite` + Prisma reference specs; test fixture patterns |
+| **13** | Incremental adoption guide | Small–Medium | — | `sp respec` workflow for existing FastHTML/Next.js projects |
+| **14** | Database persistence patterns | Medium | — | `fastlite` + Prisma reference specs; test fixture patterns |
 
 ---
 
@@ -95,7 +68,7 @@ sp conduct score/ --model haiku --auto-accept   # quine attempt
    files resolve.
 6. **Verify** with `uv run python -m pytest tests/` and `uv run ruff check src/` before committing
 
-When done with a task, mark it ✅ in this file and commit.
+When done with a task, move it to `tasks/HISTORY.md` and commit.
 
 ---
 
@@ -122,7 +95,8 @@ reference specs *verified documentation* that fails CI when the library API drif
 arrangements, READMEs, and framework source committed.
 
 **`sp conduct` nested session.** Running `sp conduct` inside Claude Code blocks subprocess
-spawning. Run from a terminal outside Claude Code, or use `--no-agent`.
+spawning. Run from a terminal outside Claude Code, or use `--no-agent`. Alternatively, use
+the `Agent` tool with `subagent_type="conductor"` from within a Claude Code session.
 
 ---
 
@@ -133,7 +107,7 @@ spawning. Run from a terminal outside Claude Code, or use `--no-agent`.
   passed through `compile_code()`. Verification snippets compiled to a test file.
 
 - **Multi-spec web apps** — separate layout, routing, and state into distinct specs. One
-  combined spec can't express UI completeness. See task 06 for the pattern.
+  combined spec can't express UI completeness. See `tasks/HISTORY.md` task 06 for the pattern.
 
 - **Arrangements are build config** — language, output paths, tool versions, env var names.
   Specs are language-agnostic. Never put language-specific details in specs.
