@@ -74,11 +74,6 @@ SpecSoloist allows you to chain multiple specs into a workflow.
     ```
     The conductor agent resolves dependency order and spawns soloist agents to compile each spec in parallel.
 
-3.  **Perform Workflow**: Execute a workflow spec.
-    ```bash
-    sp perform my_workflow '{"symbol": "AAPL"}'
-    ```
-
 ## CLI Reference
 
 | Command | Description |
@@ -87,7 +82,6 @@ SpecSoloist allows you to chain multiple specs into a workflow.
 | `sp create` | Create a new spec manually |
 | `sp compose` | **Draft architecture & specs from natural language** |
 | `sp conduct [dir]` | **Build project via conductor/soloist agents** |
-| `sp perform` | **Execute an orchestration workflow** |
 | `sp validate` | Check spec structure |
 | `sp verify` | Verify schemas and interface compatibility |
 | `sp compile` | Compile single spec to code + tests |
