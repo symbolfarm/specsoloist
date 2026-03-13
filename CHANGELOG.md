@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.4.1] - 2026-03-13
+
+### Fixed
+- `sp perform` removed from README (command was removed in HK-03)
+
 ## [0.4.0] - 2026-03-13
 
 ### Added
