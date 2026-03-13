@@ -17,6 +17,7 @@ Append-only log of completed tasks, in order of completion.
 | 07 | Validate Next.js AI chat | 2026-03-13 | `vercel_ai_interface` reference spec written; `@ai-sdk/openai` pinned to `^0.0.9`; 22 tests passing across 4 files; README written |
 | 08 | Arrangement templates | 2026-03-13 | `sp init --template python-fasthtml/nextjs-vitest/nextjs-playwright`; templates bundled in `src/specsoloist/arrangements/`; `sp init --list-templates` lists all with descriptions |
 | 09 | E2E testing pattern | 2026-03-13 | `docs/e2e-testing.md` guide; `e2e_todos.spec.md` FastHTML example; `data-testid` added to layout spec; `pytest-playwright` added to pyproject.toml; §6.7 added to spec_format.spec.md |
+| 10 | `sp conduct --resume` | 2026-03-13 | `--resume` and `--force` flags; `IncrementalBuilder.needs_rebuild()` checks output file existence; pre-flight SKIPPED/COMPILING plan display; 6 new tests in `test_conduct_resume.py` |
 
 ## Housekeeping Tasks
 
