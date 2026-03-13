@@ -63,7 +63,7 @@ sp conduct score/ --model haiku --auto-accept   # quine attempt
 | ~~**HK-03**~~ | ~~Remove `sp perform`~~ | ~~Small~~ | ~~Remove `cmd_perform`, `SpecConductor.perform/build_and_perform/_execute_step`, `PerformResult`, `StepResult`. See `decisions/01-sp-perform.md` for full removal checklist.~~ |
 | ~~**HK-04**~~ | ~~Conductor writes `config_files`~~ | ~~Tiny~~ | ~~Fixed: always overwrite from arrangement (was skipping existing files); fixed typo~~ |
 | ~~**HK-05**~~ | ~~Bundle spec docs vs parser~~ | ~~Tiny~~ | ~~Fixed: validator now accepts prose `##` headings in addition to `yaml:functions` blocks; all score specs now pass `sp validate`~~ |
-| **HK-06** | Release v0.4.0 | Tiny | Checklist to cut the 0.4.0 release — version bump, tag, PyPI, GitHub release |
+| ~~**HK-06**~~ | ~~Release v0.4.0~~ | ~~Tiny~~ | ~~Released as v0.4.1 (README fix); publish workflow now auto-creates GitHub releases~~ |
 
 ### 🔲 To Do — in priority order
 

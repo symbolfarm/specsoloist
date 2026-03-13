@@ -6,6 +6,7 @@
 > **v0.3.2 (2026-02-19):** All of Section 0 shipped. Also fix 1c (pytest warnings).
 > **2026-03-11:** Task 04 done — `type: reference` spec type fully implemented (§4e ✅).
 > **2026-03-13:** Task 07 done — Next.js AI chat validated, 22 tests passing (§1h ✅).
+> **v0.4.1 (2026-03-13):** Web app readiness — `type: reference`, arrangement `dependencies`, FastHTML + Next.js examples validated, `sp perform` removed.
 
 ---
 
