@@ -46,7 +46,6 @@ sp conduct score/ --model haiku --auto-accept   # quine attempt
 
 | # | Task | Effort | Depends on | Summary |
 |---|------|--------|------------|---------|
-| **13** | Incremental adoption guide | Small–Medium | — | `sp respec` workflow for existing FastHTML/Next.js projects |
 | **14** | Database persistence patterns | Medium | — | `fastlite` + Prisma reference specs; test fixture patterns |
 
 ---

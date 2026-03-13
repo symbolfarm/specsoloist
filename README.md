@@ -75,6 +75,20 @@ SpecSoloist allows you to chain multiple specs into a workflow.
     ```
     The conductor agent resolves dependency order and spawns soloist agents to compile each spec in parallel.
 
+## Adding SpecSoloist to an Existing Project
+
+Already have a FastHTML or Next.js app? You don't have to start over. `sp respec` extracts
+specs from your existing code, and the spec layer can coexist with hand-written code indefinitely.
+
+See the [Incremental Adoption Guide](docs/incremental-adoption.md) for a step-by-step walkthrough,
+and `examples/fasthtml_incremental/` for a concrete before/after example.
+
+```bash
+sp respec src/mymodule.py     # extract a spec from existing code
+sp validate specs/mymodule.spec.md
+sp conduct specs/mymodule.spec.md --arrangement arrangement.yaml
+```
+
 ## CLI Reference
 
 | Command | Description |

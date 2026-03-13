@@ -1,0 +1,37 @@
+# FastHTML Incremental Adoption — Arrangement
+#
+# Build: sp conduct specs/ --arrangement arrangement.yaml
+#
+# Requires: uv sync (installs python-fasthtml, pytest, httpx)
+
+target_language: python
+
+output_paths:
+  implementation: src/{name}.py
+  tests: tests/test_{name}.py
+
+environment:
+  tools:
+    - uv
+    - pytest
+  setup_commands:
+    - uv sync
+  dependencies:
+    python-fasthtml: ">=0.12,<0.13"
+    starlette: ">=0.52"
+    httpx: ">=0.24"
+    pytest: ">=7.0"
+
+build_commands:
+  compile: ""
+  lint: ""
+  test: uv run pytest
+
+constraints:
+  - Use python-fasthtml (import from fasthtml.common)
+  - Three-spec decomposition: state (data + helpers) -> layout (UI components) -> routes (HTTP handlers)
+  - state.py must be independently testable with no HTTP or FastHTML imports
+  - layout.py builds FastHTML components; tests render them to strings
+  - routes.py imports from state and layout; tests use the Starlette TestClient
+  - routes.py must be runnable with python src/routes.py (guarded serve() call)
+  - Priority values are restricted to "low", "medium", "high"
