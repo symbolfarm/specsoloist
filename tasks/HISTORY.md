@@ -19,6 +19,7 @@ Append-only log of completed tasks, in order of completion.
 | 09 | E2E testing pattern | 2026-03-13 | `docs/e2e-testing.md` guide; `e2e_todos.spec.md` FastHTML example; `data-testid` added to layout spec; `pytest-playwright` added to pyproject.toml; §6.7 added to spec_format.spec.md |
 | 10 | `sp conduct --resume` | 2026-03-13 | `--resume` and `--force` flags; `IncrementalBuilder.needs_rebuild()` checks output file existence; pre-flight SKIPPED/COMPILING plan display; 6 new tests in `test_conduct_resume.py` |
 | 11 | Arrangement `env_vars` field | 2026-03-13 | `ArrangementEnvVar` model; compiler injects "Environment Variables" section into prompts; `sp doctor --arrangement` checks unset required vars; `sp validate` warns; nextjs arrangement updated; score spec updated; 8 new tests |
+| 12 | Nested session warning | 2026-03-13 | `_detect_nested_session()` checks `CLAUDECODE`/`CLAUDE_CODE_ENTRYPOINT` env vars; "Heads Up" warning panel; friendly failure message; README note; 8 new tests |
 
 ## Housekeeping Tasks
 
