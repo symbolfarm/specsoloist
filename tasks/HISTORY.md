@@ -15,6 +15,7 @@ Append-only log of completed tasks, in order of completion.
 | 05 | Arrangement `dependencies` field | 2026-03-11 | `ArrangementEnvironment.dependencies: dict[str, str]`; injected as "Dependency Versions" table in soloist prompts; `sp validate --arrangement` warns if no install command; FastHTML arrangement and score spec updated |
 | 06 | FastHTML app refactor | 2026-03-11 | Split `app.spec.md` into layout/routes/state; add delete button; migrate `fasthtml_interface` to `type: reference` |
 | 07 | Validate Next.js AI chat | 2026-03-13 | `vercel_ai_interface` reference spec written; `@ai-sdk/openai` pinned to `^0.0.9`; 22 tests passing across 4 files; README written |
+| 08 | Arrangement templates | 2026-03-13 | `sp init --template python-fasthtml/nextjs-vitest/nextjs-playwright`; templates bundled in `src/specsoloist/arrangements/`; `sp init --list-templates` lists all with descriptions |
 
 ## Housekeeping Tasks
 

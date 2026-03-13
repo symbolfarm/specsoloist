@@ -46,7 +46,6 @@ sp conduct score/ --model haiku --auto-accept   # quine attempt
 
 | # | Task | Effort | Depends on | Summary |
 |---|------|--------|------------|---------|
-| **08** | Arrangement templates | Small | — | `sp init --template python-fasthtml/nextjs-vitest/nextjs-playwright` |
 | **09** | E2E testing pattern | Medium | 08 | Playwright arrangement, `data-testid` spec contract, FastHTML E2E example |
 | **10** | `sp conduct --resume` | Medium | — | Skip already-compiled specs; cascade recompile on dep change |
 | **11** | Arrangement `env_vars` field | Small | — | Declared env var names; `sp doctor` warns if unset |
