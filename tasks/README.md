@@ -46,7 +46,6 @@ sp conduct score/ --model haiku --auto-accept   # quine attempt
 
 | # | Task | Effort | Depends on | Summary |
 |---|------|--------|------------|---------|
-| **09** | E2E testing pattern | Medium | 08 | Playwright arrangement, `data-testid` spec contract, FastHTML E2E example |
 | **10** | `sp conduct --resume` | Medium | — | Skip already-compiled specs; cascade recompile on dep change |
 | **11** | Arrangement `env_vars` field | Small | — | Declared env var names; `sp doctor` warns if unset |
 | **12** | Nested session warning | Small | — | Detect when running inside Claude Code; print friendly message |
