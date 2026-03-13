@@ -436,6 +436,50 @@ assert "hello" in str(div)
 - If `# Verification` is absent, no test file is generated (a warning is shown, not an error).
 - A missing version range in `# Overview` triggers a quality warning.
 
+# 6.7 E2E Test Spec
+
+For end-to-end browser tests (Playwright / pytest-playwright). Use `type: bundle`
+with a `# Test Scenarios` table instead of a `# Behavior` section.
+
+**Selector contract:** When a component spec describes interactive elements, include
+`data-testid` attributes for each. The E2E spec references them using stable selectors:
+
+```markdown
+# In layout.spec.md (component spec)
+## `todo_item(text: str, index: int) -> Li`
+Returns `<li data-testid="todo-item">` containing:
+- A `<button data-testid="delete-btn" hx_delete="/todos/{index}">`
+
+# In e2e_todos.spec.md (test spec)
+| Delete todo | Click [data-testid="delete-btn"] | Item removed from list |
+```
+
+**Test Scenarios table:** Each row is a complete user journey, not a function call:
+
+```markdown
+# Test Scenarios
+
+| Scenario | Steps | Expected |
+|----------|-------|----------|
+| Add todo | Fill "Buy milk" in input, click Add | "Buy milk" in #todo-list |
+| Delete todo | Add "Buy milk", click delete button | Item removed from list |
+| Empty add | Click Add with empty input | List unchanged |
+```
+
+Soloists translate each row into a `test('...', async ({ page }) => { ... })` block
+(TypeScript) or `def test_...(page)` function (pytest-playwright).
+
+**Dev server:** E2E tests need a running server. For Python:
+- Use a session-scoped subprocess fixture that starts and polls the server.
+
+For TypeScript/Next.js:
+- Use `playwright.config.ts` with `webServer: { command: 'npm run dev', port: 3000 }`.
+
+**Keep E2E tests separate** from unit tests — use a separate arrangement and spec
+directory. Run with `sp conduct specs/e2e/ --arrangement arrangement.e2e.yaml`.
+
+See `docs/e2e-testing.md` for the full guide including mocking and CI setup.
+
 # 7. Schema Types
 
 The `yaml:schema` block uses a language-agnostic type system:

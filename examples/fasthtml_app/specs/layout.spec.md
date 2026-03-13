@@ -21,18 +21,21 @@ Returns the complete page as a tuple of top-level FastHTML components:
 - `Main(..., cls="container")` containing:
   - `H1("Todo List")`
   - `add_form()`
-  - `Ul(id="todo-list")` populated with one `todo_item(text, index)` per entry,
+  - `Ul(id="todo-list", data_testid="todo-list")` populated with one `todo_item(text, index)` per entry,
     or a `P("No todos yet. Add one above!", id="empty-msg")` if the list is empty
 
-The `Ul` element has `id="todo-list"` — this is the HTMX swap target for new items.
+The `Ul` element has `id="todo-list"` and `data-testid="todo-list"` — the id is the
+HTMX swap target; the data-testid is the E2E test selector.
 
 ## `todo_item(text: str, index: int) -> Li`
 
-Returns a single `Li` containing the todo text and a delete button arranged inline
-(e.g. using `style="display:flex; justify-content:space-between; align-items:center"`).
+Returns a single `Li` with `data_testid="todo-item"`, containing the todo text and a
+delete button arranged inline (e.g. using
+`style="display:flex; justify-content:space-between; align-items:center"`).
 
 The delete button:
 - Labelled `"✕"` (or similar compact label)
+- Has `data_testid="delete-btn"` for E2E test targeting
 - Uses `hx_delete=f"/todos/{index}"` to call the DELETE route
 - Uses `hx_target="closest li"` and `hx_swap="outerHTML"` so HTMX removes the
   entire `<li>` from the DOM on a successful response
@@ -42,8 +45,9 @@ The delete button:
 ## `add_form() -> Form`
 
 Returns the add-todo form with:
-- A text input (`name="item"`, `placeholder="What needs doing?"`, `autofocus=True`)
-- A submit button labelled `"Add"`
+- A text input (`name="item"`, `placeholder="What needs doing?"`, `autofocus=True`,
+  `data_testid="todo-input"`)
+- A submit button labelled `"Add"` with `data_testid="add-btn"`
 
 The form submits via HTMX:
 - `hx_post="/todos"`
