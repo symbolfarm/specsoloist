@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased] - 2026-03-13
+## [0.4.0] - 2026-03-13
 
 ### Added
 - `type: reference` spec type — documents third-party APIs without generating code; body injected into dependent soloists' prompts; `# Verification` section compiled to a test file (task 04)
