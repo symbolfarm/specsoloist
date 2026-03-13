@@ -1701,9 +1701,64 @@ def _detect_agent_cli() -> str | None:
     return None
 
 
+def _detect_nested_session(agent: str) -> bool:
+    """Return True if we appear to be running inside an active agent session.
+
+    Claude Code sets CLAUDECODE and CLAUDE_CODE_ENTRYPOINT in its terminal environment.
+    Gemini CLI does not currently set a reliable indicator; fall back to parent process check.
+    """
+    if agent == "claude":
+        # Reliable: Claude Code sets CLAUDECODE in its spawned terminals
+        if "CLAUDECODE" in os.environ or "CLAUDE_CODE_ENTRYPOINT" in os.environ:
+            return True
+    elif agent == "gemini":
+        if "GEMINI_CLI_SESSION" in os.environ or "GEMINI_TERMINAL" in os.environ:
+            return True
+
+    # Optional: check parent process name (requires psutil, gracefully degraded)
+    try:
+        import psutil
+        parent = psutil.Process().parent()
+        if parent and agent in (parent.name() or "").lower():
+            return True
+    except Exception:
+        pass
+
+    return False
+
+
+def _warn_nested_session(agent: str) -> None:
+    """Print a friendly warning when running inside an active agent session."""
+    from rich.panel import Panel
+    from rich.text import Text
+
+    msg = Text()
+    msg.append("You appear to be running inside ")
+    msg.append(agent.capitalize() + " Code", style="bold")
+    msg.append(".\n\n")
+    msg.append(f"sp conduct spawns a {agent} subprocess, which may be blocked\n")
+    msg.append("inside an active session.\n\n")
+    msg.append("Options:\n", style="bold")
+    msg.append("  1. Open a separate terminal outside ")
+    msg.append(agent.capitalize() + " Code\n", style="bold")
+    msg.append("  2. Use ")
+    msg.append("--no-agent", style="bold cyan")
+    msg.append(" to compile without an agent\n")
+    msg.append("  3. If you are Claude Code: use the ")
+    msg.append("Agent tool", style="bold cyan")
+    msg.append(" to spawn\n     the conductor agent directly (no subprocess needed)")
+
+    panel = Panel(msg, title="[yellow]Heads Up[/yellow]", border_style="yellow", padding=(0, 1))
+    ui.console.print(panel)
+
+
 def _run_agent_oneshot(agent: str, prompt: str, auto_accept: bool, model: str | None = None):
     """Run an agent CLI in one-shot mode."""
     import subprocess
+
+    # Warn if running inside an active agent session
+    if _detect_nested_session(agent):
+        _warn_nested_session(agent)
 
     if agent == "claude":
         # Claude Code: claude -p "prompt" --verbose for progress visibility
@@ -1725,6 +1780,13 @@ def _run_agent_oneshot(agent: str, prompt: str, auto_accept: bool, model: str | 
         raise ValueError(f"Unknown agent: {agent}")
 
     if result.returncode != 0:
+        # Give a friendly message if we detected a nested session
+        if _detect_nested_session(agent):
+            raise RuntimeError(
+                f"The conductor agent failed to start.\n"
+                f"  This often happens when running sp conduct inside {agent.capitalize()} Code.\n"
+                f"  Try running from a separate terminal, or use --no-agent."
+            )
         raise RuntimeError(f"Agent exited with code {result.returncode}")
 
 

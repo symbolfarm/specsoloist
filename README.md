@@ -94,6 +94,8 @@ SpecSoloist allows you to chain multiple specs into a workflow.
 
 Commands that use agents (`compose`, `conduct`, `respec`, `fix`) default to detecting an available agent CLI (Claude Code or Gemini CLI). Use `--no-agent` to fall back to direct LLM API calls.
 
+> **Running inside Claude Code?** `sp conduct` spawns a Claude subprocess, which is blocked inside an active Claude Code session. If you see a "Heads Up" warning, either open a separate terminal, use `--no-agent`, or use the `Agent` tool to spawn the conductor directly (see `AGENTS.md`).
+
 ## Configuration
 
 You can configure SpecSoloist via environment variables or a `.env` file:
