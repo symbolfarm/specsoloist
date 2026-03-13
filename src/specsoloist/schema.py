@@ -129,6 +129,13 @@ class ArrangementBuildCommands(BaseModel):
     test: str
 
 
+class ArrangementEnvVar(BaseModel):
+    """Declaration of a single environment variable expected by the project."""
+    description: str
+    required: bool = True
+    example: str = ""
+
+
 class Arrangement(BaseModel):
     """
     An Arrangement file bridges a Score (spec) to a specific Build Environment.
@@ -139,6 +146,11 @@ class Arrangement(BaseModel):
     environment: ArrangementEnvironment = Field(default_factory=ArrangementEnvironment)
     build_commands: ArrangementBuildCommands
     constraints: List[str] = Field(default_factory=list)
+    env_vars: Dict[str, ArrangementEnvVar] = Field(
+        default_factory=dict,
+        description="Declared environment variable names with descriptions and requirements. "
+                    "Values are never stored — only names, descriptions, and whether required."
+    )
 
 
 class InterfaceSchema(BaseModel):

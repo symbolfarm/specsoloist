@@ -77,3 +77,9 @@ constraints:
   - Use the `ai` package (Vercel AI SDK) only inside ai_client.ts — never in other files
   - chat_route and use_chat_messages import from ai_client only
   - Route handlers use Next.js App Router conventions (export async function POST)
+
+env_vars:
+  OPENAI_API_KEY:
+    description: "OpenAI API key — get one at https://platform.openai.com"
+    required: true
+    example: "sk-..."

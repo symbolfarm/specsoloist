@@ -173,7 +173,8 @@ def main():
     )
 
     # doctor
-    subparsers.add_parser("doctor", help="Check environment health (API keys, CLIs, tools)")
+    doctor_parser = subparsers.add_parser("doctor", help="Check environment health (API keys, CLIs, tools)")
+    doctor_parser.add_argument("--arrangement", metavar="FILE", help="Path to arrangement YAML; checks declared env_vars")
 
     # status
     subparsers.add_parser("status", help="Show compilation state of each spec")
@@ -198,7 +199,7 @@ def main():
         cmd_install_skills(args.target)
         return
     if args.command == "doctor":
-        cmd_doctor()
+        cmd_doctor(arrangement_arg=getattr(args, "arrangement", None))
         return
 
     # Initialize core
@@ -390,11 +391,47 @@ def cmd_validate(core: SpecSoloistCore, name: str, arrangement_arg: str | None =
             for warning in _check_spec_quality(spec_content, spec_type):
                 ui.console.print(f"[warning]⚠[/] {warning}")
 
+        # Warn about unset required env vars declared in arrangement
+        _check_validate_env_vars(arrangement_arg, core)
+
     else:
         ui.print_error(f"{name} is INVALID")
         for error in result["errors"]:
             ui.print_step(f"[red]{error}[/]")
         sys.exit(1)
+
+
+def _check_validate_env_vars(arrangement_arg: str | None, core) -> None:
+    """Warn if required env vars declared in the arrangement are unset."""
+    arr_path = arrangement_arg
+    if arr_path is None:
+        # Auto-discover arrangement.yaml relative to cwd or core project dir
+        for candidate in (
+            os.path.join(os.getcwd(), "arrangement.yaml"),
+            os.path.join(core.root_dir, "arrangement.yaml"),
+        ):
+            if os.path.exists(candidate):
+                arr_path = candidate
+                break
+
+    if not arr_path or not os.path.exists(arr_path):
+        return
+
+    try:
+        import yaml
+        with open(arr_path) as f:
+            arr_data = yaml.safe_load(f)
+        from .schema import Arrangement
+        arr = Arrangement(**arr_data)
+        for var_name, var_info in arr.env_vars.items():
+            if var_info.required and var_name not in os.environ:
+                ui.console.print(
+                    f"[warning]⚠[/] {var_name} is required by arrangement but not set "
+                    f"— sp conduct may fail at runtime"
+                )
+    except Exception:
+        # If arrangement can't be parsed, skip silently
+        pass
 
 
 def cmd_verify(core: SpecSoloistCore):
@@ -1140,7 +1177,7 @@ def _respec_with_llm(core: SpecSoloistCore, file_path: str, test_path: str, out_
         ui.print_info("Use --out <path> to save to file.")
 
 
-def cmd_doctor():
+def cmd_doctor(arrangement_arg: str | None = None):
     """Check environment health and report status for each item."""
     import shutil
     import subprocess
@@ -1224,6 +1261,46 @@ def cmd_doctor():
         ui.console.print(f"[success]✓[/] {spec_count} spec(s) found")
     else:
         ui.console.print("[dim]~  0 specs found — run 'sp init' to create a project[/]")
+
+    # Arrangement env_vars check
+    arr_path = arrangement_arg
+    if arr_path is None:
+        # Auto-discover arrangement.yaml in cwd
+        candidate = os.path.join(os.getcwd(), "arrangement.yaml")
+        if os.path.exists(candidate):
+            arr_path = candidate
+
+    if arr_path and os.path.exists(arr_path):
+        try:
+            import yaml
+            with open(arr_path) as f:
+                arr_data = yaml.safe_load(f)
+            from .schema import Arrangement
+            arr = Arrangement(**arr_data)
+            if arr.env_vars:
+                ui.console.print()
+                ui.console.print(f"[dim]Arrangement env_vars ({os.path.basename(arr_path)}):[/]")
+                for var_name, var_info in arr.env_vars.items():
+                    is_set = var_name in os.environ
+                    if is_set:
+                        msg = f"[success]✓[/] {var_name} set"
+                        if not var_info.required:
+                            msg += " [dim](optional)[/]"
+                        ui.console.print(msg)
+                    elif var_info.required:
+                        ui.console.print(
+                            f"[error]✗[/] {var_name} not set  "
+                            f"[dim](required by arrangement: {var_info.description})[/]"
+                        )
+                        critical_failure = True
+                    else:
+                        example_hint = f", default: {var_info.example}" if var_info.example else ""
+                        ui.console.print(
+                            f"[success]✓[/] {var_name} not set  "
+                            f"[dim](optional — {var_info.description}{example_hint})[/]"
+                        )
+        except Exception as e:
+            ui.console.print(f"[warning]~[/] Could not parse arrangement env_vars: {e}")
 
     ui.console.print()
     if critical_failure:

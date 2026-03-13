@@ -79,6 +79,27 @@ properties:
     items:
       type: string
     description: Non-functional constraints for the Soloist to follow during generation.
+
+  env_vars:
+    type: object
+    description: >
+      Declared environment variable names with metadata. Values are never stored — only
+      names, descriptions, and whether each variable is required. Used to: (1) inject an
+      "Environment Variables" section into soloist prompts so generated code uses the
+      correct variable names; (2) enable `sp doctor` to warn when required variables are
+      unset; (3) enable `sp validate` to warn when required variables are missing locally.
+    additionalProperties:
+      type: object
+      properties:
+        description:
+          type: string
+          description: Human-readable description of what this variable is used for.
+        required:
+          type: boolean
+          description: Whether this variable must be set for the app to function. Default true.
+        example:
+          type: string
+          description: A non-secret example value for documentation (e.g., "sk-...").
 ```
 
 # 3. File Format

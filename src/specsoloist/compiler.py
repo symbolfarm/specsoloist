@@ -194,6 +194,21 @@ Your task is to implement the workflow described in the following specification.
             for pkg, version in arrangement.environment.dependencies.items():
                 context.append(f"  {pkg:<30} {version}")
 
+        if arrangement.env_vars:
+            context.append("\n## Environment Variables")
+            context.append(
+                "This project uses the following environment variables. "
+                "Reference them by name in generated code using os.environ['VAR_NAME'] "
+                "or process.env.VAR_NAME — never hardcode values."
+            )
+            context.append("")
+            for var_name, var_info in arrangement.env_vars.items():
+                req_label = "required" if var_info.required else "optional"
+                line = f"  {var_name:<30} ({req_label}) {var_info.description}"
+                if var_info.example and not var_info.required:
+                    line += f", default: {var_info.example}"
+                context.append(line)
+
         if arrangement.constraints:
             context.append("\n## Environment Constraints")
             for constraint in arrangement.constraints:
