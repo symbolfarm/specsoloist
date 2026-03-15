@@ -115,25 +115,35 @@ def main():
     # diff
     diff_parser = subparsers.add_parser(
         "diff",
-        help="Compare two build output directories semantically"
+        help="Detect spec vs code drift, or compare two build directories"
     )
-    diff_parser.add_argument("left", help="Left directory (e.g. src/ or build/run1/)")
-    diff_parser.add_argument("right", help="Right directory (e.g. build/quine/src/ or build/run2/)")
+    diff_parser.add_argument(
+        "left",
+        help="Spec name (e.g. 'parser') for spec-drift mode, or left directory for build-diff mode"
+    )
+    diff_parser.add_argument(
+        "right", nargs="?", default=None,
+        help="Right directory for build-diff mode (omit to use spec-drift mode)"
+    )
+    diff_parser.add_argument(
+        "--json", dest="json_output", action="store_true",
+        help="Output machine-readable JSON (spec-drift mode)"
+    )
     diff_parser.add_argument(
         "--label-left", default=None, metavar="LABEL",
-        help="Human-readable label for the left directory (default: directory name)"
+        help="Human-readable label for the left directory (build-diff mode)"
     )
     diff_parser.add_argument(
         "--label-right", default=None, metavar="LABEL",
-        help="Human-readable label for the right directory (default: directory name)"
+        help="Human-readable label for the right directory (build-diff mode)"
     )
     diff_parser.add_argument(
         "--report", default="build/diff-report.json", metavar="PATH",
-        help="Path to write the JSON diff report (default: build/diff-report.json)"
+        help="Path to write the JSON diff report (build-diff mode; default: build/diff-report.json)"
     )
     diff_parser.add_argument(
         "--runs", type=int, default=None, metavar="N",
-        help="Compare the last N build runs recorded in build/runs/ (overrides left/right)"
+        help="Compare the last N build runs recorded in build/runs/ (build-diff mode)"
     )
 
     # respec
@@ -241,8 +251,12 @@ def main():
                         args.incremental, args.parallel, args.workers, args.model, args.arrangement,
                         resume=args.resume, force=args.force)
         elif args.command == "diff":
-            cmd_diff(core, args.left, args.right, args.label_left, args.label_right,
-                     args.report, args.runs)
+            if args.right is None and args.runs is None:
+                # Spec-drift mode: single spec name argument
+                cmd_spec_diff(core, args.left, args.json_output)
+            else:
+                cmd_diff(core, args.left, args.right, args.label_left, args.label_right,
+                         args.report, args.runs)
         elif args.command == "respec":
             cmd_respec(core, args.file, args.test, args.out, args.no_agent, args.model, args.auto_accept)
         elif args.command == "status":
@@ -1111,6 +1125,24 @@ def cmd_diff(
     summary = run_diff(left_abs, right_abs, report_abs, label_left, label_right)
 
     if summary.failed > 0 or summary.missing_right > 0:
+        sys.exit(1)
+
+
+def cmd_spec_diff(core: SpecSoloistCore, spec_name: str, json_output: bool = False):
+    """Compare a spec against its compiled implementation and report drift."""
+    from .spec_diff import diff_spec, format_result_text, format_result_json
+
+    root_dir = core.root_dir
+    result = diff_spec(spec_name, root_dir)
+
+    if json_output:
+        print(format_result_json(result))
+    else:
+        print(format_result_text(result))
+
+    # Exit 1 if there are MISSING or TEST_GAP issues
+    critical = [i for i in result.issues if i.kind in ("MISSING", "TEST_GAP")]
+    if critical:
         sys.exit(1)
 
 
