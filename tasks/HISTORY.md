@@ -26,6 +26,7 @@ Append-only log of completed tasks and roadmap phases, in order of completion.
 | 16 | `--quiet` / `--json` flags | 2026-03-15 | `--quiet` global flag (sp --quiet <cmd>) silences Rich output; `--json` per-subcommand flag on status/compile/validate emits structured JSON; `ui.configure()` reinitialises console; 13 new tests |
 | 17 | Model pinning in arrangements | 2026-03-15 | Optional `model` field in Arrangement; `_resolve_model()` applies CLI > arrangement > env precedence; conductor.build passes model through; score/arrangement.spec.md updated; 12 new tests |
 | 18 | Quine CI | 2026-03-15 | `.github/workflows/quine.yaml` — weekly schedule + workflow_dispatch; claude-haiku + --auto-accept + --resume; quine tests run; artifact uploaded 30 days; CONTRIBUTING.md note added |
+| 19 | `sp vibe` | 2026-03-15 | Single-command compose→conduct pipeline; reads .md brief or plain string; --pause-for-review; --resume for addendum mode; README updated; 11 new tests |
 
 ## Housekeeping Tasks
 

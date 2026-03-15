@@ -49,7 +49,6 @@ sp conduct score/ --model haiku --auto-accept   # quine attempt
 
 | # | Task | Effort | Depends on | Summary |
 |---|------|--------|------------|---------|
-| **19** | `sp vibe` | Medium | — | Single-command hands-off pipeline: compose → conduct → test; prompt file preferred; works on existing projects |
 | **20** | Pydantic AI provider | Medium–Large | — | Replace hand-rolled `LLMProvider` with Pydantic AI; Anthropic, OpenAI, Gemini, OpenRouter, Ollama |
 
 ---
