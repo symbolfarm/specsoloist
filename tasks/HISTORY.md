@@ -23,6 +23,7 @@ Append-only log of completed tasks and roadmap phases, in order of completion.
 | 13 | Incremental adoption guide | 2026-03-13 | `docs/incremental-adoption.md` (6-step guide); `examples/fasthtml_incremental/` with `original/app.py`, three hand-reviewed specs, `arrangement.yaml`, `README.md`; README link added |
 | 14 | Database persistence patterns | 2026-03-13 | `fastlite_interface.spec.md` + `db.spec.md` + `routes_db.spec.md` for FastHTML; `prisma_interface.spec.md` for Next.js; `docs/database-patterns.md` (5 patterns); arrangement updated with fastlite note |
 | 15 | `sp diff` spec-drift mode | 2026-03-15 | `sp diff <name>` compares spec symbols vs compiled Python using AST; reports MISSING/UNDOCUMENTED/TEST_GAP; `--json` flag; 22 new tests in `test_spec_diff.py`; backward-compatible (two-arg build-diff mode preserved) |
+| 16 | `--quiet` / `--json` flags | 2026-03-15 | `--quiet` global flag (sp --quiet <cmd>) silences Rich output; `--json` per-subcommand flag on status/compile/validate emits structured JSON; `ui.configure()` reinitialises console; 13 new tests |
 
 ## Housekeeping Tasks
 

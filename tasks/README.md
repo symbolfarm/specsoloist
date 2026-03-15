@@ -49,7 +49,6 @@ sp conduct score/ --model haiku --auto-accept   # quine attempt
 
 | # | Task | Effort | Depends on | Summary |
 |---|------|--------|------------|---------|
-| **16** | `--quiet` / `--json` flags | Small | — | Scripting and CI-friendly output for all commands |
 | **17** | Model pinning in arrangements | Small | — | `model:` field in arrangement YAML; CLI flag > arrangement > env var |
 | **18** | Quine CI | Small | — | Weekly scheduled GitHub Actions workflow; score freshness canary |
 | **19** | `sp vibe` | Medium | — | Single-command hands-off pipeline: compose → conduct → test; prompt file preferred; works on existing projects |
