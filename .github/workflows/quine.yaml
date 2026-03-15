@@ -1,0 +1,56 @@
+name: Quine Validation
+
+# Run weekly to verify sp conduct score/ can regenerate src/ from specs.
+# This is the canary for spec quality — a regression here means the Score
+# no longer accurately describes the implementation.
+#
+# Cost management:
+#   - Uses --model claude-haiku-4-5-20251001 (~$0.50–2.00/run)
+#   - Weekly schedule only (not on push/PR) to keep monthly cost under ~$10
+#   - Uses --resume to skip specs unchanged since last run
+
+on:
+  schedule:
+    - cron: '0 2 * * 0'   # Sunday 2am UTC (weekly)
+  workflow_dispatch:        # allow manual trigger via GitHub UI or gh CLI
+
+jobs:
+  quine:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Set up Python
+        run: uv python install 3.10
+
+      - name: Install dependencies
+        run: uv sync --all-extras --dev
+
+      - name: Install claude CLI
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: Run quine
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          uv run sp conduct score/ \
+            --model claude-haiku-4-5-20251001 \
+            --auto-accept \
+            --resume
+
+      - name: Run quine tests
+        run: |
+          PYTHONPATH=build/quine/src uv run python -m pytest build/quine/tests/ -q
+
+      - name: Upload quine output
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: quine-output-${{ github.run_id }}
+          path: build/quine/
+          retention-days: 30

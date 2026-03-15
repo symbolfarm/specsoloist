@@ -69,6 +69,8 @@ See `score/spec_format.spec.md` Section 2 for the full philosophy.
 
 The `score/` directory contains SpecSoloist's own specifications. The goal is for `sp conduct score/` to regenerate the entire `src/` directory with passing tests.
 
+**Weekly Quine CI**: `.github/workflows/quine.yaml` runs every Sunday at 2am UTC. It regenerates `src/` from `score/`, runs the full test suite against the quine output, and uploads the results as a GitHub Actions artifact. This is the primary signal for spec quality regressions. If the quine CI fails after your change, review whether `score/` specs need updating.
+
 **Preferred Workflow: Respec**
 Use `sp respec` to extract requirements from existing code into a spec:
 

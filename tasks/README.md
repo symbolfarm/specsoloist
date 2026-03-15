@@ -22,7 +22,7 @@ and Next.js web applications.**
 |-------|--------|
 | Core framework | Stable — parser, compiler, runner, resolver, manifest |
 | Agent-first CLI | Done — `sp conduct`, `sp compose`, `sp respec`, `sp fix` |
-| Quine (self-hosting) | Validated — `sp conduct score/` regenerates `src/` with 563 tests passing |
+| Quine (self-hosting) | Validated — `sp conduct score/` regenerates `src/` with 563 tests passing; weekly CI in `.github/workflows/quine.yaml` |
 | FastHTML example | Validated — 23 tests passing (`examples/fasthtml_app/`) |
 | Next.js example | Validated — 22 tests passing (`examples/nextjs_ai_chat/`) |
 | Web-dev readiness | In progress — tasks 08–14 cover the remaining gaps |
