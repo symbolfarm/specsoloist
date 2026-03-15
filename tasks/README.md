@@ -49,7 +49,7 @@ sp conduct score/ --model haiku --auto-accept   # quine attempt
 
 | # | Task | Effort | Depends on | Summary |
 |---|------|--------|------------|---------|
-| **20** | Pydantic AI provider | Medium–Large | — | Replace hand-rolled `LLMProvider` with Pydantic AI; Anthropic, OpenAI, Gemini, OpenRouter, Ollama |
+| *(none — all tasks complete)* | | | | |
 
 ---
 

@@ -27,6 +27,7 @@ Append-only log of completed tasks and roadmap phases, in order of completion.
 | 17 | Model pinning in arrangements | 2026-03-15 | Optional `model` field in Arrangement; `_resolve_model()` applies CLI > arrangement > env precedence; conductor.build passes model through; score/arrangement.spec.md updated; 12 new tests |
 | 18 | Quine CI | 2026-03-15 | `.github/workflows/quine.yaml` — weekly schedule + workflow_dispatch; claude-haiku + --auto-accept + --resume; quine tests run; artifact uploaded 30 days; CONTRIBUTING.md note added |
 | 19 | `sp vibe` | 2026-03-15 | Single-command compose→conduct pipeline; reads .md brief or plain string; --pause-for-review; --resume for addendum mode; README updated; 11 new tests |
+| 20 | Pydantic AI provider | 2026-03-15 | PydanticAIProvider added alongside existing gemini/anthropic providers; supports openai/openrouter/ollama via pydantic-ai-slim; sp doctor updated; backward compat preserved; 27 new tests |
 
 ## Housekeeping Tasks
 
