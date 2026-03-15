@@ -5,6 +5,7 @@ Tests for spec_diff — spec vs code drift detection.
 import json
 import os
 import textwrap
+from pathlib import Path
 
 import pytest
 
@@ -436,7 +437,7 @@ class TestCLISpDiff:
         result = subprocess.run(
             ["uv", "run", "sp", "diff", "--help"],
             capture_output=True, text=True,
-            cwd="/home/toby/_code/symbolfarm/specsoloist"
+            cwd=Path(__file__).parent.parent
         )
         assert result.returncode == 0
         assert "diff" in result.stdout.lower()
@@ -447,7 +448,7 @@ class TestCLISpDiff:
         result = subprocess.run(
             ["uv", "run", "sp", "diff", "parser"],
             capture_output=True, text=True,
-            cwd="/home/toby/_code/symbolfarm/specsoloist"
+            cwd=Path(__file__).parent.parent
         )
         # Should not raise an unhandled exception (output may have issues but mustn't crash)
         assert result.returncode in (0, 1), f"Unexpected exit code: {result.returncode}\n{result.stderr}"
@@ -460,7 +461,7 @@ class TestCLISpDiff:
         result = subprocess.run(
             ["uv", "run", "sp", "diff", "parser", "--json"],
             capture_output=True, text=True,
-            cwd="/home/toby/_code/symbolfarm/specsoloist"
+            cwd=Path(__file__).parent.parent
         )
         assert result.returncode in (0, 1)
         data = json.loads(result.stdout)

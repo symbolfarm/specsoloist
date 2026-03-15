@@ -5,10 +5,11 @@ Tests for --quiet and --json CLI output flags (task 16).
 import json
 import subprocess
 import sys
+from pathlib import Path
 
 import pytest
 
-SPECSOLOIST_ROOT = "/home/toby/_code/symbolfarm/specsoloist"
+SPECSOLOIST_ROOT = Path(__file__).parent.parent
 
 
 def run_sp(*args, **kwargs):

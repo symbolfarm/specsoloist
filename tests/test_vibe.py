@@ -4,6 +4,7 @@ Tests for sp vibe — single-command compose-then-conduct pipeline (task 19).
 
 import os
 import textwrap
+from pathlib import Path
 from unittest.mock import MagicMock, patch, call
 
 import pytest
@@ -132,7 +133,7 @@ class TestVibeHelp:
         result = subprocess.run(
             ["uv", "run", "sp", "vibe", "--help"],
             capture_output=True, text=True,
-            cwd="/home/toby/_code/symbolfarm/specsoloist",
+            cwd=Path(__file__).parent.parent,
         )
         assert result.returncode == 0
         assert "brief" in result.stdout.lower()
@@ -146,7 +147,7 @@ class TestVibeHelp:
         result = subprocess.run(
             ["uv", "run", "sp", "--help"],
             capture_output=True, text=True,
-            cwd="/home/toby/_code/symbolfarm/specsoloist",
+            cwd=Path(__file__).parent.parent,
         )
         assert result.returncode == 0
         assert "vibe" in result.stdout
