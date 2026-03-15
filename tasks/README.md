@@ -44,6 +44,7 @@ sp conduct score/ --model haiku --auto-accept   # quine attempt
 |---|------|--------|---------|
 | **HK-07** | Fix quine naming mismatch | Tiny | Score specs should use `composer.py`/`conductor.py`, not `speccomposer`/`specconductor` |
 | **HK-08** | Review and update docs/ | Small | Check all guides in `docs/` for drift; add mkdocstrings for API reference |
+| **HK-09** | Ban hardcoded paths in tests | Tiny | Add a Working Principles note: subprocess `cwd=` must use `Path(__file__).parent.parent`, never a literal path |
 
 ### 🔲 To Do — in priority order
 
