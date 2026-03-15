@@ -39,15 +39,19 @@ pip install specsoloist
     sp init --list-templates                        # see all options
     ```
 
-3.  Draft specs from natural language:
+3.  Write a brief and vibe:
     ```bash
     cd my-app
-    sp compose "A todo app with auth"
+    sp vibe "A todo app with auth"          # compose → conduct in one command
+    sp vibe brief.md                        # read brief from a Markdown file
+    sp vibe brief.md --pause-for-review     # pause to edit specs before building
+    sp vibe brief.md --resume               # treat brief as addendum (skip compiled specs)
     ```
 
-4.  Build with agents:
+    Or run the steps separately:
     ```bash
-    sp conduct specs/
+    sp compose "A todo app with auth"       # draft specs
+    sp conduct specs/                       # build
     ```
 
 ### Manual workflow (single spec)
@@ -94,8 +98,9 @@ sp conduct specs/mymodule.spec.md --arrangement arrangement.yaml
 | Command | Description |
 | :--- | :--- |
 | `sp init [name]` | Scaffold a new project (`--template`, `--list-templates`) |
-| `sp compose` | **Draft architecture & specs from natural language** |
-| `sp conduct [dir]` | **Build project via conductor/soloist agents** |
+| `sp vibe [brief]` | **Single-command pipeline: compose → conduct** (`--pause-for-review`, `--resume`) |
+| `sp compose` | Draft architecture & specs from natural language |
+| `sp conduct [dir]` | Build project via conductor/soloist agents |
 | `sp respec` | **Reverse engineer code to spec** |
 | `sp fix` | **Auto-fix failing tests (Agent-first)** |
 | `sp validate` | Check spec structure |
@@ -110,7 +115,7 @@ sp conduct specs/mymodule.spec.md --arrangement arrangement.yaml
 | `sp graph` | Export dependency graph (Mermaid.js) |
 | `sp verify` | Verify schemas and interface compatibility |
 
-Commands that use agents (`compose`, `conduct`, `respec`, `fix`) default to detecting an available agent CLI (Claude Code or Gemini CLI). Use `--no-agent` to fall back to direct LLM API calls.
+Commands that use agents (`vibe`, `compose`, `conduct`, `respec`, `fix`) default to detecting an available agent CLI (Claude Code or Gemini CLI). Use `--no-agent` to fall back to direct LLM API calls.
 
 > **Running inside Claude Code?** `sp conduct` spawns a Claude subprocess, which is blocked inside an active Claude Code session. If you see a "Heads Up" warning, either open a separate terminal, use `--no-agent`, or use the `Agent` tool to spawn the conductor directly (see `AGENTS.md`).
 

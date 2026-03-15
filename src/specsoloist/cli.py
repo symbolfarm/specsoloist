@@ -127,6 +127,37 @@ def main():
         help="Recompile all specs regardless of manifest state"
     )
 
+    # vibe
+    vibe_parser = subparsers.add_parser(
+        "vibe",
+        help="Single-command pipeline: compose specs from a brief, then build"
+    )
+    vibe_parser.add_argument(
+        "brief", nargs="?", default=None,
+        help="Brief as a .md file path or a plain string description"
+    )
+    vibe_parser.add_argument(
+        "--template", metavar="NAME",
+        help="Arrangement template to use for the project (e.g. python-fasthtml, nextjs-vitest)"
+    )
+    vibe_parser.add_argument(
+        "--pause-for-review", action="store_true",
+        help="Pause after composing specs so you can review and edit before building"
+    )
+    vibe_parser.add_argument(
+        "--resume", action="store_true",
+        help="Skip already-compiled specs (incremental build; treats brief as an addendum)"
+    )
+    vibe_parser.add_argument(
+        "--no-agent", action="store_true",
+        help="Use direct LLM API instead of agent CLI"
+    )
+    vibe_parser.add_argument(
+        "--auto-accept", action="store_true",
+        help="Skip interactive review in compose and conduct steps"
+    )
+    vibe_parser.add_argument("--model", help="Override LLM model for both compose and conduct")
+
     # diff
     diff_parser = subparsers.add_parser(
         "diff",
@@ -271,6 +302,9 @@ def main():
             cmd_build(core, args.incremental, args.parallel, args.workers, args.model, not args.no_tests, args.arrangement)
         elif args.command == "compose":
             cmd_compose(core, args.request, args.no_agent, args.auto_accept, args.model)
+        elif args.command == "vibe":
+            cmd_vibe(core, args.brief, args.template, args.pause_for_review,
+                     args.resume, args.no_agent, args.auto_accept, args.model)
         elif args.command == "conduct":
             cmd_conduct(core, args.src_dir, args.no_agent, args.auto_accept,
                         args.incremental, args.parallel, args.workers, args.model, args.arrangement,
@@ -924,6 +958,67 @@ def _compose_with_llm(core: SpecSoloistCore, request: str, auto_accept: bool):
         ui.console.print(f"  - [bold]{rel_path}[/]")
 
     ui.print_info("Review specs, then run 'sp conduct' to build.")
+
+
+def cmd_vibe(
+    core: SpecSoloistCore,
+    brief: str | None,
+    template: str | None,
+    pause_for_review: bool,
+    resume: bool,
+    no_agent: bool,
+    auto_accept: bool,
+    model: str | None,
+):
+    """Single-command pipeline: compose specs from a brief, then build."""
+
+    if brief is None:
+        ui.print_error("Provide a brief as a .md file path or a plain string.")
+        ui.print_info("Example: sp vibe brief.md  or  sp vibe 'Add a todo app'")
+        sys.exit(1)
+
+    # Resolve brief content
+    if brief.endswith(".md") and os.path.exists(brief):
+        with open(brief, "r", encoding="utf-8") as fh:
+            request = fh.read().strip()
+        ui.print_info(f"Reading brief from [bold]{brief}[/]")
+    else:
+        request = brief
+
+    ui.print_header("SpecSoloist Vibe", request[:60] + "..." if len(request) > 60 else request)
+
+    # Step 1: Compose specs from the brief
+    ui.print_step("Step 1 / 2: Composing specs from brief...")
+    cmd_compose(core, request, no_agent=no_agent, auto_accept=auto_accept or True, model=model)
+
+    # Step 2: Optional pause for review
+    if pause_for_review:
+        # List specs written to the project src dir
+        specs = core.list_specs()
+        if specs:
+            ui.print_info("Specs written:")
+            for s in specs:
+                ui.console.print(f"  - [bold]{s}[/]")
+        try:
+            input("\nEdit specs if needed, then press Enter to build: ")
+        except (EOFError, KeyboardInterrupt):
+            ui.print_warning("\nSkipping pause (non-interactive mode).")
+
+    # Step 3: Build (conduct)
+    ui.print_step("Step 2 / 2: Building specs...")
+    cmd_conduct(
+        core,
+        src_dir=None,
+        no_agent=no_agent,
+        auto_accept=auto_accept or True,
+        incremental=False,
+        parallel=False,
+        workers=4,
+        model=model,
+        arrangement_arg=None,
+        resume=resume,
+        force=False,
+    )
 
 
 def cmd_conduct(core: SpecSoloistCore, src_dir: str | None, no_agent: bool, auto_accept: bool,
