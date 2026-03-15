@@ -6,7 +6,7 @@ import os
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 
-from .providers import LLMProvider, GeminiProvider, AnthropicProvider
+from .providers import LLMProvider, GeminiProvider, AnthropicProvider, PydanticAIProvider
 
 
 @dataclass
@@ -68,6 +68,12 @@ class SpecSoloistConfig:
 
         if provider == "anthropic":
             api_key = os.environ.get("ANTHROPIC_API_KEY")
+        elif provider == "openai":
+            api_key = os.environ.get("OPENAI_API_KEY")
+        elif provider == "openrouter":
+            api_key = os.environ.get("OPENROUTER_API_KEY")
+        elif provider == "ollama":
+            api_key = None  # Ollama doesn't require an API key
         else:
             api_key = os.environ.get("GEMINI_API_KEY")
 
@@ -91,10 +97,13 @@ class SpecSoloistConfig:
             return GeminiProvider(**kwargs)
         elif self.llm_provider == "anthropic":
             return AnthropicProvider(**kwargs)
+        elif self.llm_provider in ("openai", "openrouter", "ollama", "google"):
+            # New providers backed by pydantic-ai
+            return PydanticAIProvider(provider=self.llm_provider, **kwargs)
         else:
             raise ValueError(
                 f"Unknown LLM provider: {self.llm_provider}. "
-                "Supported: 'gemini', 'anthropic'"
+                "Supported: 'gemini', 'anthropic', 'openai', 'openrouter', 'ollama'"
             )
 
     def ensure_directories(self):

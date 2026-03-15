@@ -1409,22 +1409,31 @@ def cmd_doctor(arrangement_arg: str | None = None):
         ui.console.print(f"[error]✗[/] Python {py_str} — requires Python >=3.10")
         critical_failure = True
 
-    # API keys
-    has_anthropic = "ANTHROPIC_API_KEY" in os.environ
-    has_gemini = "GEMINI_API_KEY" in os.environ
+    # API keys — check all supported providers
+    _provider_keys = {
+        "ANTHROPIC_API_KEY": "anthropic",
+        "GEMINI_API_KEY": "gemini/google",
+        "OPENAI_API_KEY": "openai",
+        "OPENROUTER_API_KEY": "openrouter",
+    }
+    has_any_key = False
+    for key_name, provider_label in _provider_keys.items():
+        if key_name in os.environ:
+            ui.console.print(f"[success]✓[/] {key_name} set  [dim]({provider_label})[/]")
+            has_any_key = True
+        else:
+            ui.console.print(f"[warning]~[/] {key_name} not set  [dim]({provider_label})[/]")
 
-    if has_anthropic:
-        ui.console.print("[success]✓[/] ANTHROPIC_API_KEY set")
+    # Check Ollama
+    ollama_base = os.environ.get("OLLAMA_BASE_URL", "")
+    if ollama_base:
+        ui.console.print(f"[success]✓[/] OLLAMA_BASE_URL set → {ollama_base}  [dim](ollama)[/]")
+        has_any_key = True
     else:
-        ui.console.print("[warning]~[/] ANTHROPIC_API_KEY not set")
+        ui.console.print("[dim]~  OLLAMA_BASE_URL not set  (ollama — optional)[/]")
 
-    if has_gemini:
-        ui.console.print("[success]✓[/] GEMINI_API_KEY set")
-    else:
-        ui.console.print("[warning]~[/] GEMINI_API_KEY not set")
-
-    if not has_anthropic and not has_gemini:
-        ui.console.print("[error]✗[/] No API key set — at least one of ANTHROPIC_API_KEY or GEMINI_API_KEY is required")
+    if not has_any_key:
+        ui.console.print("[error]✗[/] No API key set — set at least one of ANTHROPIC_API_KEY, GEMINI_API_KEY, or OPENAI_API_KEY")
         critical_failure = True
 
     # Agent CLIs
@@ -2115,14 +2124,20 @@ def _resolve_model(cli_model: str | None, arrangement) -> str | None:
 def _check_api_key():
     """Check that an API key is configured."""
     provider = os.environ.get("SPECSOLOIST_LLM_PROVIDER", "gemini")
-    if provider == "gemini" and "GEMINI_API_KEY" not in os.environ:
-        ui.print_error("GEMINI_API_KEY not set")
-        ui.print_info("Run: export GEMINI_API_KEY='your-key-here'")
-        sys.exit(1)
-    elif provider == "anthropic" and "ANTHROPIC_API_KEY" not in os.environ:
-        ui.print_error("ANTHROPIC_API_KEY not set")
-        ui.print_info("Run: export ANTHROPIC_API_KEY='your-key-here'")
-        sys.exit(1)
+    _KEY_REQS = {
+        "gemini": ("GEMINI_API_KEY", "export GEMINI_API_KEY='your-key-here'"),
+        "google": ("GEMINI_API_KEY", "export GEMINI_API_KEY='your-key-here'"),
+        "anthropic": ("ANTHROPIC_API_KEY", "export ANTHROPIC_API_KEY='your-key-here'"),
+        "openai": ("OPENAI_API_KEY", "export OPENAI_API_KEY='your-key-here'"),
+        "openrouter": ("OPENROUTER_API_KEY", "export OPENROUTER_API_KEY='your-key-here'"),
+        # ollama: no key needed
+    }
+    if provider in _KEY_REQS:
+        key_name, hint = _KEY_REQS[provider]
+        if key_name not in os.environ:
+            ui.print_error(f"{key_name} not set")
+            ui.print_info(f"Run: {hint}")
+            sys.exit(1)
 
 
 if __name__ == "__main__":
