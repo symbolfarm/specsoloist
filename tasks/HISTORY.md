@@ -1,6 +1,6 @@
 # SpecSoloist — Task History
 
-Append-only log of completed tasks, in order of completion.
+Append-only log of completed tasks and roadmap phases, in order of completion.
 
 ---
 
@@ -33,6 +33,22 @@ Append-only log of completed tasks, in order of completion.
 | HK-04 | Conductor writes `config_files` | 2026-03-13 | Always overwrite from arrangement (was skipping existing files); fixed typo in log message |
 | HK-05 | Bundle spec docs vs parser | 2026-03-13 | Validator now accepts prose `##` headings in addition to `yaml:functions` blocks; all score specs now pass `sp validate` |
 | HK-06 | Release v0.4.0 | 2026-03-13 | Released as v0.4.1 (README fix caught post-tag); publish workflow now auto-creates GitHub releases; release checklist added to CONTRIBUTING.md |
+
+## Completed Roadmap Phases
+
+| Phase | Completed | Summary |
+|-------|-----------|---------|
+| 1: Core Framework | 2025 | Spec-as-Source, LLM compilation, test generation, self-healing fix loop, MCP server |
+| 1.5: Foundation Hardening | 2025 | Modular architecture (parser/compiler/runner), LLM provider abstraction, config system |
+| 2a: Multi-Spec Architecture | 2025 | Dependency syntax, dependency graph, type specs, multi-spec builds |
+| 2b: Build Optimization | 2025 | Incremental builds, build caching, parallel compilation |
+| 2c: Release Prep | 2025 | `sp` CLI, PyPI publication |
+| 3: Polish | 2025 | Rich terminal output, multi-language config, MkDocs docs site |
+| 4: Spechestra Architecture | 2026-02 | Language-agnostic specs, bundle type, SpecComposer, SpecConductor, `sp compose`/`conduct`/`respec` |
+| 5: Agent-First Architecture | 2026-02 | Agent-first commands, native subagents (`.claude/agents/`, `.gemini/agents/`), requirements-oriented specs |
+| 6: The Quine | 2026-02 | `sp conduct score/` regenerates `src/` — 563 generated tests passing |
+| 7: Robustness & Polish | 2026-02 | `sp fix` agent, arrangement system, sandboxed execution, MCP server removed |
+| 8: Web-Dev Readiness | 2026-03-14 | `type: reference`, arrangement templates, FastHTML + Next.js examples, E2E pattern, `--resume`/`--force`, `env_vars`, nested session detection, incremental adoption guide, database patterns. 270 tests. |
 
 ## Decisions
 
