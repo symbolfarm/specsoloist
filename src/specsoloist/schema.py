@@ -151,6 +151,11 @@ class Arrangement(BaseModel):
         description="Declared environment variable names with descriptions and requirements. "
                     "Values are never stored — only names, descriptions, and whether required."
     )
+    model: Optional[str] = Field(
+        default=None,
+        description="LLM model to use for compilation. Overridden by the --model CLI flag. "
+                    "Falls back to SPECSOLOIST_LLM_MODEL env var or provider default if unset."
+    )
 
 
 class InterfaceSchema(BaseModel):

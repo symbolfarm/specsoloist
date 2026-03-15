@@ -76,7 +76,8 @@ class SpecConductor:
         parallel: bool = True,
         incremental: bool = True,
         max_workers: int = 4,
-        arrangement: Optional[Arrangement] = None
+        arrangement: Optional[Arrangement] = None,
+        model: Optional[str] = None,
     ) -> BuildResult:
         """
         Build specs in dependency order.
@@ -96,6 +97,7 @@ class SpecConductor:
 
         return self._core.compile_project(
             specs=specs,
+            model=model,
             generate_tests=True,
             incremental=incremental,
             parallel=parallel,

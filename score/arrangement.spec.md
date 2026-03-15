@@ -80,6 +80,13 @@ properties:
       type: string
     description: Non-functional constraints for the Soloist to follow during generation.
 
+  model:
+    type: string
+    description: >
+      LLM model identifier to use for all spec compilation in this arrangement
+      (e.g., "claude-haiku-4-5-20251001", "gemini-2.0-flash"). Optional.
+      Precedence: --model CLI flag > model field > SPECSOLOIST_LLM_MODEL env var > provider default.
+
   env_vars:
     type: object
     description: >

@@ -560,6 +560,7 @@ def cmd_compile(core: SpecSoloistCore, name: str, model: str, generate_tests: bo
 
     arrangement = _resolve_arrangement(core, arrangement_arg)
     _apply_arrangement(core, arrangement)
+    model = _resolve_model(model, arrangement)
 
     # Validate first
     validation = core.validate_spec(name)
@@ -764,6 +765,7 @@ def cmd_build(core: SpecSoloistCore, incremental: bool, parallel: bool, workers:
 
     arrangement = _resolve_arrangement(core, arrangement_arg)
     _apply_arrangement(core, arrangement)
+    model = _resolve_model(model, arrangement)
 
     with ui.spinner("Compiling project..."):
         result = core.compile_project(
@@ -933,8 +935,9 @@ def cmd_conduct(core: SpecSoloistCore, src_dir: str | None, no_agent: bool, auto
 
     if no_agent:
         arrangement = _resolve_arrangement(core, arrangement_arg)
+        effective_model = _resolve_model(model, arrangement)
         _conduct_with_llm(core, src_dir, incremental, parallel, workers, arrangement=arrangement,
-                          resume=resume, force=force)
+                          model=effective_model, resume=resume, force=force)
     else:
         _conduct_with_agent(src_dir, auto_accept, model=model, arrangement_arg=arrangement_arg,
                             resume=resume, force=force)
@@ -1028,7 +1031,7 @@ def _conduct_with_agent(src_dir: str | None, auto_accept: bool, model: str | Non
 
 
 def _conduct_with_llm(core: SpecSoloistCore, src_dir: str | None, incremental: bool, parallel: bool, workers: int,
-                      arrangement=None, resume: bool = False, force: bool = False):
+                      arrangement=None, model: str | None = None, resume: bool = False, force: bool = False):
     """Direct LLM build (single-shot compilation, no agent iteration)."""
     _check_api_key()
 
@@ -1073,6 +1076,7 @@ def _conduct_with_llm(core: SpecSoloistCore, src_dir: str | None, incremental: b
             parallel=parallel,
             max_workers=workers,
             arrangement=arrangement,
+            model=model,
         )
 
     table = ui.create_table(["Result", "Spec", "Details"], title="Conductor Report")
@@ -1994,6 +1998,23 @@ def _resolve_arrangement(core, arrangement_arg):
     for warning in _check_arrangement_dependencies(arr):
         ui.console.print(f"[warning]⚠[/] {warning}")
     return arr
+
+
+def _resolve_model(cli_model: str | None, arrangement) -> str | None:
+    """
+    Resolve the LLM model to use, applying precedence:
+      1. --model CLI flag  (cli_model)
+      2. model field in arrangement
+      3. SPECSOLOIST_LLM_MODEL env var  (handled by providers / config layer)
+      4. Provider default
+
+    Returns the model string or None (which lets the provider use its default).
+    """
+    if cli_model:
+        return cli_model
+    if arrangement and getattr(arrangement, "model", None):
+        return arrangement.model
+    return None
 
 
 def _check_api_key():
