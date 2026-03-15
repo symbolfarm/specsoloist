@@ -1,12 +1,13 @@
 # SpecSoloist — Product & Technical Improvement Notes
 
 > Brainstorm document. Not a roadmap — just thinking out loud about where this could go.
-> Last updated: 2026-03-11
+> Last updated: 2026-03-15
 >
 > **v0.3.2 (2026-02-19):** All of Section 0 shipped. Also fix 1c (pytest warnings).
 > **2026-03-11:** Task 04 done — `type: reference` spec type fully implemented (§4e ✅).
 > **2026-03-13:** Task 07 done — Next.js AI chat validated, 22 tests passing (§1h ✅).
 > **v0.4.1 (2026-03-13):** Web app readiness — `type: reference`, arrangement `dependencies`, FastHTML + Next.js examples validated, `sp perform` removed.
+> **2026-03-14:** Phase 8 complete — tasks 08–14 done via ralph loop: arrangement templates, E2E pattern, `--resume`/`--force`, `env_vars`, nested session detection, incremental adoption guide, database patterns. 270 tests passing.
 
 ---
 
@@ -597,7 +598,7 @@ to be explored in a future session.
 
 ## Summary: What to Do Next
 
-Rough priority ordering given current state of the project:
+Rough priority ordering given current state of the project (updated 2026-03-15):
 
 | Priority | Item | Why |
 |----------|------|-----|
@@ -608,23 +609,31 @@ Rough priority ordering given current state of the project:
 | ✅ done | Fix pytest warnings in runner.py (1c) | Noise in every test run |
 | ✅ done | `validate_inputs()` raises `NotImplementedError` (0b) | Silent broken promise |
 | ✅ done | Write Arrangement + agents docs (0d) | Two shipped features with zero docs |
-| ★★★ | Fix quine naming mismatch (1d) | Correctness; blocks quine_diff |
-| ★★★ | `sp doctor` (1a) | #1 new-user pain point |
+| ✅ done | `sp doctor` (1a) | #1 new-user pain point |
 | ✅ done | `sp init` — scaffold new project (1e) | Entry point for real-world adoption |
 | ✅ done | fasthtml_app validated + reference type (1h, 4e) | Proper type: reference; 23 tests passing |
 | ✅ done | TypeScript conduct validated via ts_demo (5a) | Working end-to-end with Gemini CLI |
 | ✅ done | `sp status` (1b) | Compilation state table from manifest |
 | ✅ done | `sp validate` quality hints (4d) | Warnings for missing test scenarios, short descriptions |
 | ✅ done | `sp test --all` (7c) | Summary table across all compiled specs |
-| ★★☆ | Multi-spec web app pattern (4f) | Prevents UI gaps; tracked as task 06 |
+| ✅ done | Multi-spec web app pattern (4f) | Implemented in task 06 |
 | ✅ done | Next.js AI chat example (1h, task 07) | vercel_ai_interface reference spec; 22 tests passing |
-| ★★☆ | `quine_diff` — compile from existing spec (3a) | Spec already written, just needs `sp compile` |
-| ★★☆ | Fix or remove `sp perform` (1f) | Placeholder code in production |
+| ✅ done | Fix or remove `sp perform` (1f) | Removed in HK-03 |
+| ✅ done | Arrangement templates (1e) | `sp init --template`; task 08 |
+| ✅ done | E2E testing pattern (task 09) | Playwright arrangement + data-testid contract |
+| ✅ done | `sp conduct --resume` / `--force` (task 10) | Incremental builds, cascade recompile |
+| ✅ done | `env_vars` in arrangement (task 11) | `sp doctor` warns on unset required vars |
+| ✅ done | Nested session detection (task 12) | Friendly warning when inside Claude/Gemini CLI |
+| ✅ done | Incremental adoption guide (task 13) | `sp respec` workflow for existing projects |
+| ✅ done | Database persistence patterns (task 14) | fastlite + Prisma reference specs |
+| ★★★ | Fix quine naming mismatch (1d) | Correctness; blocks quine_diff meaningful use |
+| ★★★ | `sp diff` — generalised spec vs code diff (3a+) | Detect drift between spec and implementation; generalise beyond quine |
+| ★★☆ | LLM provider abstraction via Pydantic AI (6a+) | Most providers for free; path away from CLI lock-in |
 | ★★☆ | `--quiet` / `--json` output flags (1g) | Makes tool scriptable |
-| ★★☆ | Fix `_compile_single_spec` for reference specs (0g) | Wrong manifest entries via `sp build` |
-| ★☆☆ | OpenAI provider (6a) | Unlocks a large existing user base |
-| ★☆☆ | Homebrew formula (8a) | Low effort, broad reach |
+| ★★☆ | Model pinning in arrangements (6d) | Cost/quality tradeoffs per-spec |
+| ★★☆ | Quine CI / score freshness check (3c) | Canary for spec quality; catch drift early |
 | ★☆☆ | Watch mode (2a) | Convenience; needs watchdog dep |
+| ★☆☆ | `.specsoloist/` directory consolidation (8c) | Cleaner project root |
 | ★☆☆ | VS Code extension (9a) | High impact but significant effort |
 | ★☆☆ | Spec registry (9b) | Requires infrastructure; too early |
 | ★☆☆ | Multi-language quine (5b) | Great story, not urgent |

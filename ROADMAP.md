@@ -160,23 +160,35 @@ All modules have requirements-oriented specs in `score/`. All validated via quin
 - [x] **Sandboxed Execution**: Run generated code in Docker/Wasm containers for safety
 - [x] **Drop MCP server**: `specsoloist-mcp` removed; agent-first CLI is the better abstraction
 
-## Phase 8: Web-Dev Readiness (In Progress)
+## Phase 8: Web-Dev Readiness (Completed 2026-03-14)
 
 - [x] **`sp init`**: Scaffold a new project (`specs/`, `arrangement.yaml`, `.gitignore`)
 - [x] **`type: reference` spec type**: Third-party API docs injected as soloist context; `# Verification` compiled to tests (task 04)
 - [x] **FastHTML example validated**: `examples/fasthtml_app/` — 23 tests passing, `fasthtml_interface.spec.md` migrated to `type: reference`
-- [ ] **Arrangement `dependencies` field**: Machine-readable version constraints injected into soloist prompts (task 05)
-- [ ] **FastHTML app refactor**: Split `app.spec.md` into layout/routes/state; multi-spec web app pattern (task 06)
-- [ ] **Next.js AI chat example**: `vercel_ai_interface` as `type: reference`; validate end-to-end (task 07)
-- [ ] **Arrangement templates**: `sp init --template python-fasthtml/nextjs-vitest` (task 08)
-- [ ] **E2E testing pattern**: Playwright arrangement, `data-testid` spec contract (task 09)
-- [ ] **`sp conduct --resume`**: Skip already-compiled specs; cascade recompile on dep change (task 10)
-- [ ] **Quine diff report**: Implement the `quine_diff` tool for semantic fidelity analysis (task 03a)
-- [ ] **SKILLS.md**: Adopt the standard for user-invocable slash commands (distinct from `.claude/agents/` spawnable subagents)
-- [ ] **Interactive Mode**: Terminal UI for reviewing/approving specs and architecture
-- [ ] **VS Code Extension**: Live preview while editing specs
-- [ ] **Multi-language quine**: Prove specs can compile to TypeScript/Go/Rust, not just Python
-- [ ] **Spec coverage**: Tooling to measure how much of the public API is covered by specs
+- [x] **Arrangement `dependencies` field**: Machine-readable version constraints injected into soloist prompts (task 05)
+- [x] **FastHTML app refactor**: Split `app.spec.md` into layout/routes/state; multi-spec web app pattern (task 06)
+- [x] **Next.js AI chat example**: `vercel_ai_interface` as `type: reference`; 22 tests passing (task 07)
+- [x] **Arrangement templates**: `sp init --template python-fasthtml/nextjs-vitest/nextjs-playwright` (task 08)
+- [x] **E2E testing pattern**: Playwright arrangement, `data-testid` spec contract, FastHTML E2E example (task 09)
+- [x] **`sp conduct --resume` / `--force`**: Skip already-compiled specs; cascade recompile on dep change (task 10)
+- [x] **`env_vars` in Arrangement**: Declared env var names; `sp doctor` warns if unset (task 11)
+- [x] **Nested session detection**: Friendly warning when running inside Claude Code or Gemini CLI (task 12)
+- [x] **Incremental adoption guide**: `sp respec` workflow for existing FastHTML/Next.js projects (task 13)
+- [x] **Database persistence patterns**: fastlite + Prisma reference specs; test fixture patterns (task 14)
+
+270 tests passing at phase close.
+
+## Phase 9: Distribution & Developer Experience (Planned)
+
+- [ ] **Fix quine naming mismatch**: Score specs instruct soloists to use `composer.py`/`conductor.py` (not `speccomposer.py`)
+- [ ] **`sp diff` — spec vs code drift detection**: Compare a compiled module against its spec; enumerate missing/extra symbols and behaviour gaps. Generalised from the quine_diff concept to work on any project.
+- [ ] **Pydantic AI provider abstraction**: Replace bespoke `LLMProvider` with Pydantic AI; get most LLM providers (OpenAI, Gemini, Anthropic, Ollama) for free; opens path to custom agents independent of Claude/Gemini CLI
+- [ ] **`--quiet` / `--json` output flags**: Scripting and CI-friendly output (1g)
+- [ ] **Model pinning in arrangements**: `model:` field in arrangement YAML; cost/quality control per-spec (6d)
+- [ ] **Quine CI**: Scheduled GitHub Actions workflow running `sp conduct score/` nightly; score freshness check (3c)
+- [ ] **Watch mode `sp watch`**: Recompile specs on file change via `watchdog` (2a)
+- [ ] **`.specsoloist/` directory consolidation**: Gather manifest, build artifacts, traces under one directory (8c)
+- [ ] **VS Code extension**: Syntax highlighting, inline validation, compile action for `.spec.md` files (9a)
 
 ---
 
