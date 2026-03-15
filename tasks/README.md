@@ -40,13 +40,20 @@ sp conduct score/ --model haiku --auto-accept   # quine attempt
 
 ### 🔲 Housekeeping
 
-*No active housekeeping tasks.*
+| # | Task | Effort | Summary |
+|---|------|--------|---------|
+| **HK-07** | Fix quine naming mismatch | Tiny | Score specs should use `composer.py`/`conductor.py`, not `speccomposer`/`specconductor` |
 
 ### 🔲 To Do — in priority order
 
 | # | Task | Effort | Depends on | Summary |
 |---|------|--------|------------|---------|
-*No active feature tasks.*
+| **15** | `sp diff` | Small–Medium | — | Spec vs code drift detection; missing/undocumented symbols; test gaps |
+| **16** | `--quiet` / `--json` flags | Small | — | Scripting and CI-friendly output for all commands |
+| **17** | Model pinning in arrangements | Small | — | `model:` field in arrangement YAML; CLI flag > arrangement > env var |
+| **18** | Quine CI | Small | — | Weekly scheduled GitHub Actions workflow; score freshness canary |
+| **19** | `sp vibe` | Medium | — | Single-command pipeline: compose → pause-for-review → conduct → test. **Discuss with user first.** |
+| **20** | Pydantic AI provider | Medium–Large | — | Replace hand-rolled `LLMProvider`; get most providers free; Ollama support. **Discuss with user first.** |
 
 ---
 
