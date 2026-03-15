@@ -43,6 +43,7 @@ sp conduct score/ --model haiku --auto-accept   # quine attempt
 | # | Task | Effort | Summary |
 |---|------|--------|---------|
 | **HK-07** | Fix quine naming mismatch | Tiny | Score specs should use `composer.py`/`conductor.py`, not `speccomposer`/`specconductor` |
+| **HK-08** | Review and update docs/ | Small | Check all guides in `docs/` for drift; add mkdocstrings for API reference |
 
 ### 🔲 To Do — in priority order
 

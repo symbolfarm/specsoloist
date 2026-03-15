@@ -93,18 +93,22 @@ sp conduct specs/mymodule.spec.md --arrangement arrangement.yaml
 
 | Command | Description |
 | :--- | :--- |
-| `sp list` | List all specs in `src/` |
-| `sp create` | Create a new spec manually |
+| `sp init [name]` | Scaffold a new project (`--template`, `--list-templates`) |
 | `sp compose` | **Draft architecture & specs from natural language** |
 | `sp conduct [dir]` | **Build project via conductor/soloist agents** |
-| `sp validate` | Check spec structure |
-| `sp verify` | Verify schemas and interface compatibility |
-| `sp compile` | Compile single spec to code + tests |
-| `sp test` | Run tests for a spec |
-| `sp fix` | **Auto-fix failing tests (Agent-first)** |
 | `sp respec` | **Reverse engineer code to spec** |
+| `sp fix` | **Auto-fix failing tests (Agent-first)** |
+| `sp validate` | Check spec structure |
+| `sp status` | Show compilation state of each spec |
+| `sp doctor` | Check environment health (API keys, CLIs, tools, env vars) |
+| `sp compile` | Compile single spec to code + tests |
+| `sp test [--all]` | Run tests for a spec (or all compiled specs) |
+| `sp diff` | Compare spec against compiled implementation (drift detection) |
 | `sp build` | Compile all specs (direct LLM, no agents) |
+| `sp list` | List all specs |
+| `sp create` | Create a new spec manually |
 | `sp graph` | Export dependency graph (Mermaid.js) |
+| `sp verify` | Verify schemas and interface compatibility |
 
 Commands that use agents (`compose`, `conduct`, `respec`, `fix`) default to detecting an available agent CLI (Claude Code or Gemini CLI). Use `--no-agent` to fall back to direct LLM API calls.
 
@@ -169,20 +173,21 @@ constraints:
   - Use Tailwind CSS for styling
 ```
 
-### 2. Obscure or new libraries — interface spec
+### 2. Obscure or new libraries — reference spec
 
-For newer libraries (e.g. FastHTML) where LLMs may hallucinate the API, write a `type` spec capturing the subset you actually use. Your other specs list it as a dependency, giving every soloist accurate documentation:
+For newer libraries (e.g. FastHTML) where LLMs may hallucinate the API, write a
+`type: reference` spec documenting the subset you actually use. No code is generated —
+the spec body is injected as context into every dependent soloist's prompt:
 
 ```markdown
 ---
 name: fasthtml_interface
-type: type
-status: stable
+type: reference
 ---
-# FastHTML Interface Contract
+# Overview
+FastHTML is a Python web framework. Package: `python-fasthtml`. Import: `from fasthtml.common import *`.
 
-The subset of FastHTML used in this project.
-
+# API
 ## Components
 - `Div(**attrs, *children)` — renders a div
 - `Form(hx_post, hx_swap, *children)` — HTMX-enabled form
@@ -191,6 +196,12 @@ The subset of FastHTML used in this project.
 ## App
 - `@rt(path)` — route decorator
 - `serve()` — start dev server
+
+# Verification
+```python
+from fasthtml.common import Div, Form, Input
+assert callable(Div)
+```
 ```
 
 ### 3. Complex SDKs — adapter spec

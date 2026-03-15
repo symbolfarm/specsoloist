@@ -71,7 +71,7 @@ Specs are language-agnostic Markdown files. The `type` field determines structur
 ### Key Commands
 
 ```bash
-uv run python -m pytest tests/   # Run tests (52 tests)
+uv run python -m pytest tests/   # Run tests (270 tests)
 uv run ruff check src/           # Lint (must pass with 0 errors)
 ```
 
@@ -93,13 +93,13 @@ src/specsoloist/       # Core package - individual spec compilation
 
 src/spechestra/        # Orchestration package - high-level workflows
   composer.py          # SpecComposer: Plain English -> specs
-  conductor.py         # SpecConductor: Parallel builds + perform
+  conductor.py         # SpecConductor: Parallel builds
 
 docker/                # Dockerfiles for framework and sandboxed execution
   specsoloist.Dockerfile
   sandbox.Dockerfile
 
-tests/                 # pytest tests (52 tests)
+tests/                 # pytest tests (270 tests)
 
 score/                 # The Score - SpecSoloist's own specs (The Quine)
   spec_format.spec.md  # The spec format itself
@@ -144,20 +144,22 @@ src/specsoloist/skills/  # Cross-platform skill definitions (agentskills format)
 
 `score/` contains SpecSoloist's own specifications - it describes itself. The goal is for `sp conduct score/` to regenerate the entire `src/` directory with passing tests.
 
-### Current State (Phase 6: The Quine)
+### Current State (Phase 9: Distribution & DX)
 
-**Phase 5 Completed:**
-- ✅ Agent-first CLI: `sp compose`, `sp conduct`, `sp respec`, `sp fix` all default to agent mode
-- ✅ Native subagents: `.claude/agents/` and `.gemini/agents/` fully defined
-- ✅ Requirements-oriented specs: All modules in `score/` rewritten to describe requirements, not implementation
-- ✅ Round-trip validated: resolver, config, manifest regenerated from specs with all tests passing
-- ✅ Soloist agents write code directly from specs (agent IS the compiler)
+**Phases 1–8 Completed.** See `tasks/HISTORY.md` for full history.
 
-**Phase 6 Completed:**
-- ✅ Quine attempt: `sp conduct score/` to regenerate entire `src/` directory with 52+ tests passing
+**Phase 8 highlights:**
+- ✅ `type: reference` spec type for third-party API documentation
+- ✅ Arrangement templates (`sp init --template python-fasthtml/nextjs-vitest/nextjs-playwright`)
+- ✅ FastHTML + Next.js examples validated end-to-end
+- ✅ `sp conduct --resume` / `--force` for incremental builds
+- ✅ `env_vars` in arrangements; `sp doctor --arrangement` warns on unset required vars
+- ✅ Nested session detection with friendly warning
+- ✅ Incremental adoption guide + database persistence patterns
+- ✅ 270 tests passing
 
 **Current Goal:**
-- Phase 7: Robustness & Polish (Arrangement system, Quine diff tool)
+- Phase 9: Distribution & DX — `sp diff`, `sp vibe`, Pydantic AI providers, quine CI
 
 ### Native Subagent Architecture
 
@@ -223,6 +225,7 @@ See `CONTRIBUTING.md` for required checks and conventions.
 ## See Also
 
 - `README.md` - User documentation and CLI reference
-- `ROADMAP.md` - Development phases and next steps (detailed task breakdown)
+- `ROADMAP.md` - Development phases (high-level); `IDEAS.md` - future directions
+- `tasks/README.md` - Active task backlog; `tasks/HISTORY.md` - completed work
 - `CONTRIBUTING.md` - Contribution guidelines and required checks
 - `score/spec_format.spec.md` - The spec format specification
