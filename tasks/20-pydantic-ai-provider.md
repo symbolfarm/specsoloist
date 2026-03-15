@@ -1,47 +1,123 @@
 # Task 20: Pydantic AI Provider Abstraction
 
-## Status: DISCUSS WITH USER BEFORE STARTING
-
-This is an architectural change with significant scope. Read this task and
-output `NEEDS_HUMAN` if picked up by the ralph loop.
-
 ## Why
 
-The hand-rolled `LLMProvider` abstraction covers only Gemini and Anthropic, requires
-maintenance per-provider, and locks the `--no-agent` path to a small set of models.
-Pydantic AI provides:
-- Most major providers (OpenAI, Gemini, Anthropic, Ollama, Mistral, Groq...) for free
-- Structured outputs via Pydantic models rather than prompt-parsed text
-- Consistent retry, timeout, and error handling across providers
-- A path to writing custom agents in pure Python, independent of Claude Code / Gemini CLI
+The hand-rolled `LLMProvider` covers only Gemini and Anthropic and requires maintenance
+per-provider. Pydantic AI provides a clean model-agnostic interface with support for
+Anthropic, OpenAI, Google Gemini, OpenRouter, Ollama, and others — most of which come
+for free via the OpenAI-compatible endpoint pattern.
 
-Ollama support (via Pydantic AI) is specifically needed for local LLM use cases
-(e.g. TamaTalky's pet personality).
+This migration improves the `--no-agent` path significantly and unblocks Ollama support
+for local LLM use cases (e.g. TamaTalky).
 
-## Scope Questions (discuss with user)
+## Design Decisions (resolved)
 
-1. **Replace or wrap?** Replace `LLMProvider` entirely, or wrap Pydantic AI behind the
-   existing interface to minimise blast radius?
+- **Replace `LLMProvider` with Pydantic AI.** The existing abstraction is thin enough
+  that a clean replacement is better than wrapping.
+- **Priority providers:** Anthropic, OpenAI, Google Gemini, OpenRouter.
+- **Ollama** comes for free via the OpenAI-compatible endpoint — include it.
+- **CLI agent abstraction** (replacing Claude Code / Gemini CLI as the agent runtime)
+  is later work. This task only improves the `--no-agent` / direct LLM path.
+- **Version bump:** This is a minor version bump (0.5.0) — `LLMProvider` is internal
+  but the config keys (`SPECSOLOIST_LLM_PROVIDER`) may change.
 
-2. **Agent independence timeline.** The current architecture uses Claude Code / Gemini CLI
-   as the agent runtime for `sp conduct` (agent mode). Pydantic AI opens the door to
-   writing conductor/soloist agents in pure Python. Is this a Phase 9 goal, or Phase 10?
+## Pydantic AI Overview
 
-3. **Breaking change risk.** Replacing the provider abstraction may change behaviour
-   for existing users. Is a major version bump (0.5.0) appropriate for this change?
+Pydantic AI (`pydantic-ai`) provides:
+- `Agent` class with model-agnostic interface
+- Structured outputs via Pydantic models
+- Built-in retry, timeout, and error handling
+- Provider strings like `"anthropic:claude-sonnet-4-6"`, `"openai:gpt-4o"`,
+  `"google-gla:gemini-2.0-flash"`, `"ollama:llama3"`
+- OpenRouter via `"openai:model-name"` with `base_url` override
 
-4. **Ollama first?** Ollama support may be the most immediately useful addition
-   (enables local LLM use, zero cost, privacy). Could be added to the existing provider
-   abstraction without the full Pydantic AI migration.
+## Files to Read
 
-## Files to Read (when starting)
+- `src/specsoloist/providers/` — existing `LLMProvider` implementations (Gemini, Anthropic)
+- `src/specsoloist/compiler.py` — how providers are called to generate code
+- `src/specsoloist/config.py` — `SPECSOLOIST_LLM_PROVIDER` and `SPECSOLOIST_LLM_MODEL`
+- `src/specsoloist/schema.py` — `Arrangement` model (model pinning from task 17 may land first)
 
-- `src/specsoloist/providers/` — existing LLMProvider implementations
-- `src/specsoloist/compiler.py` — how providers are called
-- `src/specsoloist/config.py` — how provider and model are configured
-- Pydantic AI docs: https://ai.pydantic.dev
+## Implementation Plan
 
-## Estimated Effort
+### 1. Add dependency
 
-Medium-Large. The provider abstraction itself is Small, but testing across providers
-and ensuring backward compat is Medium. Full agent independence is Large.
+```toml
+# pyproject.toml
+dependencies = [
+    "pydantic-ai>=0.0.14",
+    ...
+]
+```
+
+### 2. Replace provider implementations
+
+Remove `src/specsoloist/providers/gemini.py` and `providers/anthropic.py`.
+
+Create `src/specsoloist/providers/pydantic_ai_provider.py`:
+
+```python
+from pydantic_ai import Agent
+from pydantic_ai.models import Model
+
+def get_model(provider: str, model_name: str) -> str:
+    """Map SpecSoloist provider/model config to Pydantic AI model string."""
+    if provider == "anthropic":
+        return f"anthropic:{model_name}"
+    elif provider == "gemini":
+        return f"google-gla:{model_name}"
+    elif provider == "openai":
+        return f"openai:{model_name}"
+    elif provider == "openrouter":
+        return f"openai:{model_name}"  # uses OpenAI-compat with base_url
+    elif provider == "ollama":
+        return f"ollama:{model_name}"
+    else:
+        return model_name  # pass-through for future providers
+
+def generate_code(prompt: str, model_str: str) -> str:
+    agent = Agent(model_str)
+    result = agent.run_sync(prompt)
+    return result.data
+```
+
+### 3. Update config
+
+Map the existing `SPECSOLOIST_LLM_PROVIDER` values to Pydantic AI provider strings.
+Add `OPENROUTER_API_KEY` and `OLLAMA_BASE_URL` support.
+
+### 4. OpenRouter support
+
+OpenRouter uses OpenAI-compatible API. Pydantic AI supports this via:
+```python
+from pydantic_ai.models.openai import OpenAIModel
+model = OpenAIModel("anthropic/claude-3-5-sonnet", base_url="https://openrouter.ai/api/v1",
+                    api_key=os.environ["OPENROUTER_API_KEY"])
+```
+
+### 5. Update `sp doctor`
+
+Add checks for `OPENAI_API_KEY`, `OPENROUTER_API_KEY`. Show which providers are available
+based on which API keys are set.
+
+## Backward Compatibility
+
+- `SPECSOLOIST_LLM_PROVIDER=gemini` and `SPECSOLOIST_LLM_PROVIDER=anthropic` continue
+  to work with the same env var values
+- Existing `--model` flag continues to work
+- Add `SPECSOLOIST_LLM_PROVIDER=openai`, `openrouter`, `ollama` as new valid values
+
+## Success Criteria
+
+- `SPECSOLOIST_LLM_PROVIDER=anthropic` compiles a spec using Pydantic AI → Anthropic
+- `SPECSOLOIST_LLM_PROVIDER=openai` works with `OPENAI_API_KEY`
+- `SPECSOLOIST_LLM_PROVIDER=ollama` works with local Ollama (integration test, skip in CI)
+- OpenRouter works via `SPECSOLOIST_LLM_PROVIDER=openrouter` + `OPENROUTER_API_KEY`
+- All 270 existing tests pass
+- `sp doctor` shows available providers based on env vars set
+
+## Tests
+
+- Unit tests for `get_model()` mapping function
+- Mock Pydantic AI calls in existing compiler tests (swap the mock target)
+- Skip Ollama integration test if `OLLAMA_BASE_URL` not set
