@@ -23,6 +23,41 @@ theme = Theme({
 
 console = Console(theme=theme, no_color="NO_COLOR" in os.environ)
 
+# Module-level flags for output mode
+_quiet: bool = False
+_json_mode: bool = False
+
+
+def configure(quiet: bool = False, json_mode: bool = False) -> None:
+    """
+    Configure the UI output mode.
+
+    Call this once at startup (e.g. after parsing --quiet / --json flags).
+
+    - quiet=True: suppress all non-error output (Rich console set to quiet=True)
+    - json_mode=True: disable Rich output entirely; commands emit plain JSON
+    """
+    global console, _quiet, _json_mode
+    _quiet = quiet
+    _json_mode = json_mode
+    no_color = "NO_COLOR" in os.environ or json_mode
+    # In JSON or quiet mode, suppress Rich decorations
+    console = Console(
+        theme=theme,
+        no_color=no_color,
+        quiet=quiet or json_mode,
+    )
+
+
+def is_json_mode() -> bool:
+    """Return True if JSON output mode is active."""
+    return _json_mode
+
+
+def is_quiet() -> bool:
+    """Return True if quiet mode is active."""
+    return _quiet
+
 def print_header(title: str, subtitle: str = ""):
     """Print a styled header."""
     console.print()

@@ -31,6 +31,17 @@ def main():
         prog="sp",
         description="Spec-as-Source AI coding framework"
     )
+
+    # Global output-control flags (work on any command)
+    parser.add_argument(
+        "--quiet", action="store_true",
+        help="Suppress all non-error output (useful for CI and scripting)"
+    )
+    parser.add_argument(
+        "--json", dest="json_output", action="store_true",
+        help="Emit machine-readable JSON instead of Rich terminal output"
+    )
+
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
     # list
@@ -46,6 +57,8 @@ def main():
     validate_parser = subparsers.add_parser("validate", help="Validate a spec's structure")
     validate_parser.add_argument("name", help="Spec name to validate")
     validate_parser.add_argument("--arrangement", metavar="FILE", help="Path to arrangement YAML file")
+    validate_parser.add_argument("--json", dest="json_output", action="store_true",
+                                 help="Emit machine-readable JSON output")
 
     # verify
     subparsers.add_parser("verify", help="Verify all specs for orchestration readiness")
@@ -59,6 +72,8 @@ def main():
     compile_parser.add_argument("--model", help="Override LLM model")
     compile_parser.add_argument("--no-tests", action="store_true", help="Skip test generation")
     compile_parser.add_argument("--arrangement", metavar="FILE", help="Path to arrangement YAML file")
+    compile_parser.add_argument("--json", dest="json_output", action="store_true",
+                                help="Emit machine-readable JSON output")
 
     # test
     test_parser = subparsers.add_parser("test", help="Run tests for a spec")
@@ -187,9 +202,17 @@ def main():
     doctor_parser.add_argument("--arrangement", metavar="FILE", help="Path to arrangement YAML; checks declared env_vars")
 
     # status
-    subparsers.add_parser("status", help="Show compilation state of each spec")
+    status_parser = subparsers.add_parser("status", help="Show compilation state of each spec")
+    status_parser.add_argument("--json", dest="json_output", action="store_true",
+                               help="Emit machine-readable JSON output")
 
     args = parser.parse_args()
+
+    # Apply global output flags early so all subsequent ui calls respect them
+    ui.configure(
+        quiet=getattr(args, "quiet", False),
+        json_mode=getattr(args, "json_output", False),
+    )
 
     if args.command is None:
         parser.print_help()
@@ -225,13 +248,15 @@ def main():
         elif args.command == "create":
             cmd_create(core, args.name, args.description, args.type)
         elif args.command == "validate":
-            cmd_validate(core, args.name, getattr(args, "arrangement", None))
+            cmd_validate(core, args.name, getattr(args, "arrangement", None),
+                         json_output=getattr(args, "json_output", False))
         elif args.command == "verify":
             cmd_verify(core)
         elif args.command == "graph":
             cmd_graph(core)
         elif args.command == "compile":
-            cmd_compile(core, args.name, args.model, not args.no_tests, args.arrangement)
+            cmd_compile(core, args.name, args.model, not args.no_tests, args.arrangement,
+                        json_output=getattr(args, "json_output", False))
         elif args.command == "test":
             if args.test_all:
                 cmd_test_all(core)
@@ -260,7 +285,7 @@ def main():
         elif args.command == "respec":
             cmd_respec(core, args.file, args.test, args.out, args.no_agent, args.model, args.auto_accept)
         elif args.command == "status":
-            cmd_status(core)
+            cmd_status(core, json_output=getattr(args, "json_output", False))
     except KeyboardInterrupt:
         ui.print_warning("\nOperation cancelled by user.")
         sys.exit(130)
@@ -379,13 +404,18 @@ def _check_spec_quality(spec_content: str, spec_type: str) -> list[str]:
     return warnings
 
 
-def cmd_validate(core: SpecSoloistCore, name: str, arrangement_arg: str | None = None):
-    ui.print_header("Validating Spec", name)
+def cmd_validate(core: SpecSoloistCore, name: str, arrangement_arg: str | None = None,
+                 json_output: bool = False):
+    import json as _json
+
+    if not json_output:
+        ui.print_header("Validating Spec", name)
     result = core.validate_spec(name)
 
+    warnings: list[str] = []
+
     if result["valid"]:
-        ui.print_success(f"{name} is VALID")
-        # Emit quality hints
+        # Collect quality hints
         try:
             spec_content = core.read_spec(name)
             parsed = core.parser.parse_spec(name)
@@ -396,22 +426,43 @@ def cmd_validate(core: SpecSoloistCore, name: str, arrangement_arg: str | None =
             parsed = None
 
         if spec_type == "reference":
-            ui.print_info("type: reference — context only, no implementation will be generated")
-            # For reference specs, show reference-specific warnings (not standard quality warnings)
+            if not json_output:
+                ui.print_info("type: reference — context only, no implementation will be generated")
             if parsed is not None:
-                for warning in core.parser.get_reference_warnings(parsed):
-                    ui.console.print(f"[warning]⚠[/] {warning}")
+                for w in core.parser.get_reference_warnings(parsed):
+                    warnings.append(w)
+                    if not json_output:
+                        ui.console.print(f"[warning]⚠[/] {w}")
         else:
-            for warning in _check_spec_quality(spec_content, spec_type):
-                ui.console.print(f"[warning]⚠[/] {warning}")
+            for w in _check_spec_quality(spec_content, spec_type):
+                warnings.append(w)
+                if not json_output:
+                    ui.console.print(f"[warning]⚠[/] {w}")
 
-        # Warn about unset required env vars declared in arrangement
-        _check_validate_env_vars(arrangement_arg, core)
+        if json_output:
+            print(_json.dumps({
+                "spec": name,
+                "valid": True,
+                "errors": [],
+                "warnings": warnings,
+            }))
+        else:
+            ui.print_success(f"{name} is VALID")
+            # Warn about unset required env vars declared in arrangement
+            _check_validate_env_vars(arrangement_arg, core)
 
     else:
-        ui.print_error(f"{name} is INVALID")
-        for error in result["errors"]:
-            ui.print_step(f"[red]{error}[/]")
+        if json_output:
+            print(_json.dumps({
+                "spec": name,
+                "valid": False,
+                "errors": result["errors"],
+                "warnings": [],
+            }))
+        else:
+            ui.print_error(f"{name} is INVALID")
+            for error in result["errors"]:
+                ui.print_step(f"[red]{error}[/]")
         sys.exit(1)
 
 
@@ -499,10 +550,13 @@ def cmd_graph(core: SpecSoloistCore):
 
 
 def cmd_compile(core: SpecSoloistCore, name: str, model: str, generate_tests: bool,
-                arrangement_arg: str | None = None):
+                arrangement_arg: str | None = None, json_output: bool = False):
+    import json as _json
+
     _check_api_key()
 
-    ui.print_header("Compiling Spec", name)
+    if not json_output:
+        ui.print_header("Compiling Spec", name)
 
     arrangement = _resolve_arrangement(core, arrangement_arg)
     _apply_arrangement(core, arrangement)
@@ -510,29 +564,58 @@ def cmd_compile(core: SpecSoloistCore, name: str, model: str, generate_tests: bo
     # Validate first
     validation = core.validate_spec(name)
     if not validation["valid"]:
-        ui.print_error("Invalid spec")
-        for error in validation["errors"]:
-            ui.print_step(f"[red]{error}[/]")
+        if json_output:
+            print(_json.dumps({
+                "spec": name,
+                "success": False,
+                "tests_pass": False,
+                "errors": validation["errors"],
+            }))
+        else:
+            ui.print_error("Invalid spec")
+            for error in validation["errors"]:
+                ui.print_step(f"[red]{error}[/]")
         sys.exit(1)
 
     try:
         # Compile code
         with ui.spinner(f"Compiling [bold]{name}[/] implementation..."):
             result = core.compile_spec(name, model=model, arrangement=arrangement)
-        ui.print_success(result)
+        if not json_output:
+            ui.print_success(result)
 
         # Generate tests
+        tests_compiled = False
         if generate_tests:
             spec = core.parser.parse_spec(name)
             if spec.metadata.type != "typedef":
                 with ui.spinner(f"Generating tests for [bold]{name}[/]..."):
                     result = core.compile_tests(name, model=model, arrangement=arrangement)
-                ui.print_success(result)
+                if not json_output:
+                    ui.print_success(result)
+                tests_compiled = True
             else:
-                ui.print_info("Skipping tests for typedef spec")
+                if not json_output:
+                    ui.print_info("Skipping tests for typedef spec")
+
+        if json_output:
+            print(_json.dumps({
+                "spec": name,
+                "success": True,
+                "tests_pass": tests_compiled,
+                "errors": [],
+            }))
 
     except Exception as e:
-        ui.print_error(str(e))
+        if json_output:
+            print(_json.dumps({
+                "spec": name,
+                "success": False,
+                "tests_pass": False,
+                "errors": [str(e)],
+            }))
+        else:
+            ui.print_error(str(e))
         sys.exit(1)
 
 
@@ -1342,19 +1425,21 @@ def cmd_doctor(arrangement_arg: str | None = None):
         ui.print_success("All critical checks passed.")
 
 
-def cmd_status(core: SpecSoloistCore):
+def cmd_status(core: SpecSoloistCore, json_output: bool = False):
     """Show compilation state of each spec from the build manifest."""
+    import json as _json
     from datetime import datetime, timezone
 
     manifest = core._get_manifest()
     specs = core.list_specs()
 
     if not specs:
-        ui.print_warning("No specs found.")
-        ui.print_info("Create one with: sp create <name> '<description>'")
+        if json_output:
+            print(_json.dumps({"specs": []}))
+        else:
+            ui.print_warning("No specs found.")
+            ui.print_info("Create one with: sp create <name> '<description>'")
         return
-
-    table = ui.create_table(["Spec", "Compiled", "Tests", "Last Built"], title="Spec Status")
 
     now = datetime.now(timezone.utc)
 
@@ -1375,6 +1460,11 @@ def cmd_status(core: SpecSoloistCore):
         except Exception:
             return "unknown"
 
+    spec_records = []
+    table = None if json_output else ui.create_table(
+        ["Spec", "Compiled", "Tests", "Last Built"], title="Spec Status"
+    )
+
     for spec_file in specs:
         name = spec_file.replace(".spec.md", "")
 
@@ -1382,7 +1472,16 @@ def cmd_status(core: SpecSoloistCore):
         try:
             parsed = core.parser.parse_spec(name)
             if parsed.metadata.type == "reference":
-                table.add_row(name, "[blue]CONTEXT[/]", "[dim]—[/]", "[dim]—[/]")
+                if json_output:
+                    spec_records.append({
+                        "name": name,
+                        "type": "reference",
+                        "compiled": None,
+                        "tests_pass": None,
+                        "last_built": None,
+                    })
+                else:
+                    table.add_row(name, "[blue]CONTEXT[/]", "[dim]—[/]", "[dim]—[/]")
                 continue
         except Exception:
             pass
@@ -1390,7 +1489,16 @@ def cmd_status(core: SpecSoloistCore):
         info = manifest.get_spec_info(name)
 
         if info is None:
-            table.add_row(name, "[red]✗[/]", "[red]✗[/]", "never")
+            if json_output:
+                spec_records.append({
+                    "name": name,
+                    "type": "spec",
+                    "compiled": False,
+                    "tests_pass": False,
+                    "last_built": None,
+                })
+            else:
+                table.add_row(name, "[red]✗[/]", "[red]✗[/]", "never")
             continue
 
         # Check implementation file on disk
@@ -1398,21 +1506,35 @@ def cmd_status(core: SpecSoloistCore):
             os.path.exists(f) for f in info.output_files
             if not os.path.basename(f).startswith("test_")
         )
-        compiled_cell = "[green]✓[/]" if impl_exists else "[red]✗[/]"
 
         # Check test file on disk
         test_files = [f for f in info.output_files if os.path.basename(f).startswith("test_")]
-        if test_files and os.path.exists(test_files[0]):
-            tests_cell = "[green]✓[/]"
-        elif test_files:
-            tests_cell = "[red]FAIL[/]"
+        tests_ok = bool(test_files and os.path.exists(test_files[0]))
+        has_tests = bool(test_files)
+
+        if json_output:
+            spec_records.append({
+                "name": name,
+                "type": "spec",
+                "compiled": impl_exists,
+                "tests_pass": tests_ok if has_tests else None,
+                "last_built": info.built_at,
+            })
         else:
-            tests_cell = "[red]✗[/]"
+            compiled_cell = "[green]✓[/]" if impl_exists else "[red]✗[/]"
+            if has_tests and tests_ok:
+                tests_cell = "[green]✓[/]"
+            elif has_tests:
+                tests_cell = "[red]FAIL[/]"
+            else:
+                tests_cell = "[red]✗[/]"
+            last_built = _rel_time(info.built_at)
+            table.add_row(name, compiled_cell, tests_cell, last_built)
 
-        last_built = _rel_time(info.built_at)
-        table.add_row(name, compiled_cell, tests_cell, last_built)
-
-    ui.console.print(table)
+    if json_output:
+        print(_json.dumps({"specs": spec_records}, indent=2))
+    else:
+        ui.console.print(table)
 
 
 _INIT_ARRANGEMENT = """\
