@@ -43,7 +43,6 @@ sp conduct score/ --model haiku --auto-accept   # quine attempt
 | # | Task | Effort | Summary |
 |---|------|--------|---------|
 | **HK-07** | Fix quine naming mismatch | Tiny | Score specs should use `composer.py`/`conductor.py`, not `speccomposer`/`specconductor` |
-| ~~HK-08~~ | ~~Review and update docs/~~ | ~~Small~~ | ~~Done — see HISTORY.md~~ |
 | **HK-09** | Ban hardcoded paths in tests | Tiny | Add a Working Principles note: subprocess `cwd=` must use `Path(__file__).parent.parent`, never a literal path |
 | **HK-10** | Add mkdocstrings + Google docstrings | Medium | `mkdocstrings[python]` in MkDocs; Google-style docstrings across all modules; `docs/reference/api.md` (public) + `docs/reference/internals.md` (contributors); ruff D rules enforced in CI |
 

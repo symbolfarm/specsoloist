@@ -8,7 +8,6 @@ Append-only log of completed tasks and roadmap phases, in order of completion.
 
 | # | Task | Completed | Notes |
 |---|------|-----------|-------|
-| HK-08 | Review and update docs/ content | 2026-03-18 | Updated cli.md (all 18 commands + flags), getting_started.md (sp command, vibe-coding intro), workflow.md (sp vibe, --resume/--force, sp diff, sp status), arrangement.md (env_vars, dependencies, model, sp init templates), agents.md (nested session warning) |
 | 01 | Fix `--auto-accept` scoping | 2026-02-18 | `bypassPermissions` now scoped to quine runs only |
 | 02 | Implement `sp test --all` | 2026-02-18 | Runs tests for every compiled spec, shows summary table |
 | 03 | Validate FastHTML example | 2026-02-18 | `examples/fasthtml_app/` — 23 tests passing, README written |
@@ -40,6 +39,7 @@ Append-only log of completed tasks and roadmap phases, in order of completion.
 | HK-04 | Conductor writes `config_files` | 2026-03-13 | Always overwrite from arrangement (was skipping existing files); fixed typo in log message |
 | HK-05 | Bundle spec docs vs parser | 2026-03-13 | Validator now accepts prose `##` headings in addition to `yaml:functions` blocks; all score specs now pass `sp validate` |
 | HK-06 | Release v0.4.0 | 2026-03-13 | Released as v0.4.1 (README fix caught post-tag); publish workflow now auto-creates GitHub releases; release checklist added to CONTRIBUTING.md |
+| HK-08 | Review and update docs/ content | 2026-03-18 | Updated cli.md (all 18 commands + flags), getting_started.md (sp command, vibe-coding intro), workflow.md (sp vibe, --resume/--force, sp diff, sp status), arrangement.md (env_vars, dependencies, model, sp init templates), agents.md (nested session warning) |
 
 ## Completed Roadmap Phases
 
