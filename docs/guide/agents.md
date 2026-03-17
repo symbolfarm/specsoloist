@@ -86,6 +86,16 @@ sp conduct score/ --auto-accept
 sp conduct src/ --model claude-haiku-4-5-20251001
 ```
 
+!!! warning "Running sp conduct inside a Claude Code session"
+    `sp conduct` (agent mode) spawns a new Claude Code subprocess. This is blocked when
+    you are already inside an active Claude Code session — the subprocess cannot start.
+
+    **The right approach from within Claude Code:** use the `Agent` tool to spawn the
+    `conductor` agent directly. No subprocess needed — you *are* the runtime.
+
+    Alternatively, use `sp conduct --no-agent`, which uses direct LLM API calls and
+    works from within a Claude Code session (requires `ANTHROPIC_API_KEY` or `GEMINI_API_KEY`).
+
 ## Usage with Gemini CLI
 
 If `claude` is not installed but `gemini` is, SpecSoloist automatically falls back to Gemini:

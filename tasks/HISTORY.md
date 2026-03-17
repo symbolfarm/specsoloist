@@ -8,6 +8,7 @@ Append-only log of completed tasks and roadmap phases, in order of completion.
 
 | # | Task | Completed | Notes |
 |---|------|-----------|-------|
+| HK-08 | Review and update docs/ content | 2026-03-18 | Updated cli.md (all 18 commands + flags), getting_started.md (sp command, vibe-coding intro), workflow.md (sp vibe, --resume/--force, sp diff, sp status), arrangement.md (env_vars, dependencies, model, sp init templates), agents.md (nested session warning) |
 | 01 | Fix `--auto-accept` scoping | 2026-02-18 | `bypassPermissions` now scoped to quine runs only |
 | 02 | Implement `sp test --all` | 2026-02-18 | Runs tests for every compiled spec, shows summary table |
 | 03 | Validate FastHTML example | 2026-02-18 | `examples/fasthtml_app/` — 23 tests passing, README written |

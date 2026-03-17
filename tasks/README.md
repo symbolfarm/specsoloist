@@ -21,15 +21,15 @@ and Next.js web applications.**
 | Layer | Status |
 |-------|--------|
 | Core framework | Stable — parser, compiler, runner, resolver, manifest |
-| Agent-first CLI | Done — `sp conduct`, `sp compose`, `sp respec`, `sp fix` |
+| Agent-first CLI | Done — `sp conduct`, `sp compose`, `sp respec`, `sp fix`, `sp vibe`, `sp diff` |
 | Quine (self-hosting) | Validated — `sp conduct score/` regenerates `src/` with 563 tests passing; weekly CI in `.github/workflows/quine.yaml` |
 | FastHTML example | Validated — 23 tests passing (`examples/fasthtml_app/`) |
 | Next.js example | Validated — 22 tests passing (`examples/nextjs_ai_chat/`) |
-| Web-dev readiness | In progress — tasks 08–14 cover the remaining gaps |
+| Documentation | In progress — HK-08 Track 1 done; Track 2 (mkdocstrings + docstrings) pending HK-10 |
 
 Key commands:
 ```bash
-uv run python -m pytest tests/   # 247 tests — must stay green
+uv run python -m pytest tests/   # 355 tests — must stay green
 uv run ruff check src/           # must pass with 0 errors
 sp conduct score/ --model haiku --auto-accept   # quine attempt
 ```
@@ -43,8 +43,9 @@ sp conduct score/ --model haiku --auto-accept   # quine attempt
 | # | Task | Effort | Summary |
 |---|------|--------|---------|
 | **HK-07** | Fix quine naming mismatch | Tiny | Score specs should use `composer.py`/`conductor.py`, not `speccomposer`/`specconductor` |
-| **HK-08** | Review and update docs/ | Small | Check all guides in `docs/` for drift; add mkdocstrings for API reference |
+| ~~HK-08~~ | ~~Review and update docs/~~ | ~~Small~~ | ~~Done — see HISTORY.md~~ |
 | **HK-09** | Ban hardcoded paths in tests | Tiny | Add a Working Principles note: subprocess `cwd=` must use `Path(__file__).parent.parent`, never a literal path |
+| **HK-10** | Add mkdocstrings + Google docstrings | Medium | `mkdocstrings[python]` in MkDocs; Google-style docstrings across all modules; `docs/reference/api.md` (public) + `docs/reference/internals.md` (contributors); ruff D rules enforced in CI |
 
 ### 🔲 To Do — in priority order
 

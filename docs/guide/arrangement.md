@@ -14,6 +14,23 @@ sp conduct --arrangement path/to/arrangement.yaml
 sp test mymodule   # also picks up arrangement.yaml automatically
 ```
 
+## Scaffolding
+
+Generate an arrangement for your project with `sp init`:
+
+```bash
+# Generic Python arrangement
+sp init myproject --arrangement python
+
+# Named template (includes language-specific tools and examples)
+sp init myproject --template python-fasthtml
+sp init myproject --template nextjs-vitest
+sp init myproject --template nextjs-playwright
+
+# List all available templates
+sp init --list-templates
+```
+
 ## Annotated Example
 
 ```yaml
@@ -32,10 +49,27 @@ environment:
   setup_commands:
     # These run in the build directory before each test run
     - uv sync
+  dependencies:
+    # Package name → version specifier (PEP 440 for Python, semver for npm)
+    # Injected into soloist prompts so agents know exact API versions to target
+    python-fasthtml: ">=0.12,<0.13"
+    starlette: ">=0.27"
 
 build_commands:
   lint: uv run ruff check src/
   test: uv run python -m pytest {file} -v
+
+env_vars:
+  DATABASE_URL:
+    description: "PostgreSQL connection string"
+    required: true
+    example: "postgres://user:pass@localhost:5432/mydb"
+  OPENAI_API_KEY:
+    description: "OpenAI key for AI features"
+    required: false
+    example: "sk-..."
+
+model: claude-haiku-4-5-20251001   # optional: pin LLM model for this project
 ```
 
 ## Fields
@@ -43,16 +77,19 @@ build_commands:
 | Field | Description |
 | --- | --- |
 | `target_language` | Target language (e.g. `python`, `typescript`) |
-| `output_paths.implementation` | Path template for generated implementation files |
+| `output_paths.implementation` | Path template for generated implementation files (`{name}` = spec name) |
 | `output_paths.tests` | Path template for generated test files |
-| `environment.tools` | List of tools the agent should use (informational) |
+| `environment.tools` | Tools the agent should use (informational, injected into prompts) |
 | `environment.setup_commands` | Shell commands run before each test invocation |
-| `build_commands.lint` | Command to lint the generated code |
+| `environment.dependencies` | Package versions to pin (name → specifier); injected as a "Dependency Versions" table in prompts |
+| `build_commands.lint` | Command to lint the generated code (optional) |
 | `build_commands.test` | Command template to run tests (`{file}` is the test path) |
+| `env_vars` | Declared environment variable names — values never stored (see below) |
+| `model` | LLM model to use; overridden by `--model` CLI flag or `SPECSOLOIST_LLM_MODEL` env var |
 
-## setup_commands
+## `setup_commands`
 
-`setup_commands` are shell commands executed in the build directory **before** running tests. Use them to install dependencies or prepare the environment:
+Shell commands executed in the build directory **before** running tests. Use them to install dependencies or prepare the environment:
 
 ```yaml
 environment:
@@ -61,6 +98,49 @@ environment:
 ```
 
 Commands run in order. If any command fails, the test run is aborted and the failure is reported.
+
+## `dependencies`
+
+Pin the exact package versions your project uses. SpecSoloist injects these into every soloist prompt as a "Dependency Versions" table, so agents target the right API:
+
+```yaml
+environment:
+  dependencies:
+    python-fasthtml: ">=0.12,<0.13"
+    starlette: ">=0.27"
+```
+
+For Python use PEP 440 specifiers; for npm use semver ranges.
+
+## `env_vars`
+
+Declare the environment variables your project expects. **Values are never stored** — only names, descriptions, and whether they're required:
+
+```yaml
+env_vars:
+  DATABASE_URL:
+    description: "PostgreSQL connection string"
+    required: true
+    example: "postgres://user:pass@localhost:5432/mydb"
+  STRIPE_KEY:
+    description: "Stripe secret key"
+    required: false
+    example: "sk_live_..."
+```
+
+`sp doctor --arrangement arrangement.yaml` checks that all `required: true` variables are set in your environment and warns about any that are missing.
+
+Soloist agents are also informed of these variables (names and descriptions only) so generated code can reference them correctly.
+
+## `model`
+
+Pin the LLM model for this project:
+
+```yaml
+model: claude-haiku-4-5-20251001
+```
+
+Precedence (highest to lowest): `--model` CLI flag → arrangement `model` field → `SPECSOLOIST_LLM_MODEL` env var → provider default.
 
 ## Example: A TypeScript Project
 
@@ -77,10 +157,19 @@ environment:
     - npm
   setup_commands:
     - npm install
+  dependencies:
+    "@ai-sdk/openai": "^0.0.9"
+    next: "^14"
 
 build_commands:
   lint: npx eslint src/
   test: npx vitest run {file}
+
+env_vars:
+  OPENAI_API_KEY:
+    description: "OpenAI API key for AI SDK"
+    required: true
+    example: "sk-..."
 ```
 
-See `arrangements/arrangement.python.yaml` in the project root for a complete reference example.
+See `src/specsoloist/arrangements/` for the bundled template files.
