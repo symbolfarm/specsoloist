@@ -48,7 +48,7 @@ sp conduct score/ --model haiku --auto-accept   # quine attempt
 
 | # | Task | Effort | Depends on | Summary |
 |---|------|--------|------------|---------|
-| *(none — all tasks complete)* | | | | |
+| **21** | Quine refresh | Medium | — | Re-run `sp conduct score/`; triage and fix regressions from ~20 features shipped since last run; prerequisite for promotion |
 
 ---
 
