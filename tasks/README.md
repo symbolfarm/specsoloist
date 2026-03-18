@@ -42,8 +42,7 @@ sp conduct score/ --model haiku --auto-accept   # quine attempt
 
 | # | Task | Effort | Summary |
 |---|------|--------|---------|
-| **HK-07** | Fix quine naming mismatch | Tiny | Score specs should use `composer.py`/`conductor.py`, not `speccomposer`/`specconductor` |
-| **HK-09** | Ban hardcoded paths in tests | Tiny | Add a Working Principles note: subprocess `cwd=` must use `Path(__file__).parent.parent`, never a literal path |
+*(none)*
 
 ### 🔲 To Do — in priority order
 
@@ -94,6 +93,11 @@ arrangements, READMEs, and framework source committed.
 **`sp conduct` nested session.** Running `sp conduct` inside Claude Code blocks subprocess
 spawning. Run from a terminal outside Claude Code, or use `--no-agent`. Alternatively, use
 the `Agent` tool with `subagent_type="conductor"` from within a Claude Code session.
+
+**Subprocess `cwd=` must use `Path(__file__).parent.parent`.** Never pass a literal string
+like `cwd="."` — it breaks when tests are run from any directory other than the repo root.
+Use `Path(__file__).parent.parent` to resolve the repo root relative to the test file, or
+define a module-level `REPO_ROOT = Path(__file__).parent.parent` constant and reference it.
 
 ---
 
