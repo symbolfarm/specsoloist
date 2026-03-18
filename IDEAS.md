@@ -1,7 +1,7 @@
 # SpecSoloist — Ideas & Future Directions
 
 > Brainstorm document. Not a roadmap — just thinking out loud about where this could go.
-> Last updated: 2026-03-18
+> Last updated: 2026-03-19
 >
 > Consolidated from IMPROVEMENTS.md and PROPOSALS.md.
 > Actionable tasks live in `tasks/README.md`. Completed work in `tasks/HISTORY.md`.
@@ -199,7 +199,62 @@ environment:
 
 Deliverable: `QUINE_RESULTS_TS.md` parallel to `QUINE_RESULTS.md`.
 
-### 5b. Go and Rust
+### 5b. TypeScript port + NPM distribution
+
+A full TypeScript port of the `sp` CLI published to NPM. Opens up the Node ecosystem
+without requiring Python. Maintenance burden is real — any new feature must ship twice
+until one implementation is deprecated — so this is a Phase 11+ project, not Phase 10.
+
+`npm info specsoloist` — reserve the name with a placeholder package before someone
+else does. The placeholder README should link to the PyPI package and note the TS port
+is planned.
+
+The TypeScript quine (§5a) is a prerequisite: if the score can't generate working
+TypeScript, the port isn't ready.
+
+### 5c. Arrangement-level reference spec abstraction
+
+Reference specs are necessarily language-specific (import paths, API shapes, package
+names are all stack-tied). This conflicts with the language-agnostic spec goal.
+
+**The idea:** specs declare abstract dependency names; the arrangement resolves them to
+concrete reference specs for the target stack.
+
+```
+project/
+  specs/
+    state.spec.md       # depends on: db_interface  (abstract name)
+    routes.spec.md      # depends on: ui_framework, db_interface  (abstract)
+  arrangements/
+    python-fasthtml/
+      arrangement.yaml  # maps ui_framework → ./ui_framework.spec.md
+      ui_framework.spec.md   # FastHTML reference spec
+      db_interface.spec.md   # fastlite reference spec
+    nextjs/
+      arrangement.yaml  # maps ui_framework → ./ui_framework.spec.md
+      ui_framework.spec.md   # React/Next.js reference spec
+      db_interface.spec.md   # Prisma reference spec
+```
+
+The arrangement adds a `reference_specs` mapping block:
+```yaml
+reference_specs:
+  ui_framework: ui_framework.spec.md   # relative to arrangements/ subdir
+  db_interface: db_interface.spec.md
+```
+
+The resolver maps abstract dependency names to concrete reference spec paths at build
+time. Specs themselves stay language-agnostic. Swapping stacks = pointing to a different
+arrangements/ subdirectory.
+
+**Implementation scope:** Arrangement schema change + resolver lookup extension. Spec
+format unchanged. Validate by building the same `state.spec.md` against two different
+arrangements and confirming both compile correctly.
+
+**When to build:** After at least two real multi-stack projects demonstrate where the
+natural seams are. Don't design the abstraction in the abstract.
+
+### 5d. Go and Rust
 
 Longer-term. Both languages benefit from correct-by-construction patterns. Specs map
 naturally to Go interfaces and Rust traits.
@@ -357,6 +412,12 @@ sp install specsoloist/rest-api-patterns
 
 Shared specs for common patterns. Requires infrastructure — too early, but worth
 keeping in mind when designing the `sp init` experience.
+
+### 9f. NPM placeholder
+
+Reserve `specsoloist` on NPM with a minimal placeholder package pointing to the PyPI
+package. Do this before anyone else does. Publish once, then replace with the real
+TypeScript port (§5b) when it's ready.
 
 ### 9e. GitHub App / PR checks
 
