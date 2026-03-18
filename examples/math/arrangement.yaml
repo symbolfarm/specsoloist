@@ -1,0 +1,24 @@
+# Math Examples — Arrangement
+#
+# Build: sp conduct . --arrangement arrangement.yaml
+#
+# These specs are a showcase of all six spec types and require no external
+# dependencies beyond pytest.
+
+target_language: python
+
+output_paths:
+  implementation: src/{name}.py
+  tests: tests/test_{name}.py
+
+environment:
+  tools:
+    - uv
+    - pytest
+  setup_commands:
+    - uv sync
+  dependencies:
+    pytest: ">=7.0"
+
+build_commands:
+  test: uv run pytest

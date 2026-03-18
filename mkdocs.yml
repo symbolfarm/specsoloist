@@ -73,5 +73,6 @@ nav:
       - E2E Testing: e2e-testing.md
   - Examples:
       - Math (Python): examples/math_demo.md
-      - FastHTML Todo App: examples/ml_demo.md
-      - Next.js AI Chat: examples/ts_demo.md
+      - FastHTML Todo App: examples/fasthtml_app.md
+      - FastHTML Incremental: examples/fasthtml_incremental.md
+      - Next.js AI Chat: examples/nextjs_ai_chat.md
