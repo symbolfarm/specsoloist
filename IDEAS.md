@@ -503,3 +503,41 @@ of a feature description. A strong proof-of-concept for the framework.
 - Bidirectional sync (local edits → update Issue) or one-way pull only?
 - Where does the enrichment LLM call live — local CLI, CI action, or GitHub App?
 - Could this be a `sp issues` subcommand, or a standalone tool?
+
+### 11b. User Acceptance Stories / "Did it meet requirements?"
+
+**The gap:** The spec-as-source model verifies that generated code matches specs, and that
+tests pass. But it doesn't verify that the specs themselves match what the *user actually
+wanted*. There's a missing feedback loop: the user described something in plain English,
+specs were generated, code was generated — but did the result deliver the original intent?
+
+**The insight:** Unit tests verify correctness against the spec. User acceptance verifies the
+spec was the *right spec*. These are different validation layers. You can have 100% test
+coverage and completely miss what the user needed.
+
+**Possible approaches:**
+
+*Scenario / story specs* — a first-class spec type (`type: story`) written from the user's
+perspective in plain language. Before the quine, but after compose:
+```
+"As a user, I can add a todo item and see it appear in the list."
+```
+Stories get compiled into E2E / acceptance tests rather than unit tests. The soloist for a
+story reads the scenario and writes a playwright/cypress test. The presence of a failing story
+test is a signal the specs didn't capture the requirement.
+
+*Acceptance criteria in the brief* — `sp vibe` could prompt for acceptance criteria alongside
+the brief. These get passed into the compose step so specs are shaped around verifiable
+outcomes from the start.
+
+*Post-build review loop* — after `sp conduct`, a "did this work?" step where the user runs
+the app and confirms or rejects user stories. Rejections feed back as updated briefs.
+
+**Relationship to spec format:** Stories would complement, not replace, existing spec types.
+The spec-as-source model stays intact — stories just add the user's perspective as a
+validation layer on top of the generated specs.
+
+**Open questions:**
+- Should stories be in the score (framework validates itself via stories) or only in user projects?
+- Is `type: story` a new spec type, or are E2E specs (§6.7) sufficient?
+- How does `sp vibe --pause-for-review` fit here — is that already the acceptance gate?

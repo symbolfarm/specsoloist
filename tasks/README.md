@@ -42,13 +42,20 @@ sp conduct score/ --model haiku --auto-accept   # quine attempt
 
 | # | Task | Effort | Summary |
 |---|------|--------|---------|
-*(none)*
+| **HK-12** | Fix pytest TestResult/TestRunner warnings | Tiny | Add constraint to `runner.spec.md` so quine tests don't trigger collection warnings |
+| **HK-13** | Remove non-code overview specs from score/ | Tiny | Delete `arrangement.spec.md`, `specsoloist.spec.md`, `spechestra.spec.md` from score/ |
+
+### 🔲 User Actions
+
+| # | Action | Summary |
+|---|--------|---------|
+| **UA-01** | Add `ANTHROPIC_API_KEY` to GitHub repo secrets | Required for quine CI (`.github/workflows/quine.yaml`) to run. Settings → Secrets → Actions → New secret. |
 
 ### 🔲 To Do — in priority order
 
 | # | Task | Effort | Depends on | Summary |
 |---|------|--------|------------|---------|
-*(none)*
+| **22** | Add spec_diff to score | Small | — | Respec `spec_diff.py` into `score/spec_diff.spec.md`; plug the last quine hole |
 
 ---
 
