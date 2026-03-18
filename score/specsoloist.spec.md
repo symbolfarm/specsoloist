@@ -1,7 +1,6 @@
 ---
 name: specsoloist
-type: module
-language_target: python
+type: specification
 status: stable
 ---
 

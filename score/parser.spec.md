@@ -22,7 +22,7 @@ Spec file discovery, reading, parsing, creation, and validation. This module is 
 
 # SPEC_TYPES
 
-A set containing all recognized spec type strings: `"function"`, `"type"`, `"bundle"`, `"module"`, `"workflow"`, `"typedef"`, `"class"`, `"orchestrator"`.
+A set containing all recognized spec type strings: `"function"`, `"type"`, `"bundle"`, `"module"`, `"workflow"`, `"typedef"`, `"class"`, `"orchestrator"`, `"reference"`.
 
 # SpecMetadata
 
@@ -159,6 +159,15 @@ Validate a spec for structural correctness based on its type.
 ### get_module_name(name) -> string
 
 Extract the module name from a spec filename by stripping the `.spec.md` suffix.
+
+### extract_verification_snippet(body) -> string
+
+Extract the code block from the `# Verification` section of a spec body.
+
+**Behavior:**
+- Returns the content of the first fenced code block inside the `# Verification` section.
+- Returns empty string if there is no `# Verification` heading or no code block within it.
+- Stops looking at the next heading (line starting with `#`).
 
 ### load_global_context() -> string
 

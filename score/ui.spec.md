@@ -13,6 +13,25 @@ Terminal UI utilities for the SpecSoloist CLI. Provides styled output functions 
 # Functions
 
 ```yaml:functions
+configure:
+  inputs:
+    quiet: {type: boolean, optional: true, description: "Suppress all non-error output"}
+    json_mode: {type: boolean, optional: true, description: "Disable Rich; emit plain JSON"}
+  outputs: {}
+  behavior: "Set module-level output flags. Must be called once at startup after parsing --quiet / --json flags. In JSON or quiet mode, Rich decorations are suppressed."
+
+is_json_mode:
+  inputs: {}
+  outputs:
+    result: {type: boolean}
+  behavior: "Return true if JSON output mode is active"
+
+is_quiet:
+  inputs: {}
+  outputs:
+    result: {type: boolean}
+  behavior: "Return true if quiet mode is active"
+
 print_header:
   inputs:
     title: {type: string, description: Main title text}

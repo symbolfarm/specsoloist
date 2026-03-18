@@ -1,10 +1,7 @@
 ---
 name: spechestra
-type: module
-language_target: python
+type: specification
 status: draft
-dependencies:
-  - {name: SpecSoloist, from: specsoloist.spec.md}
 ---
 
 # 1. Overview

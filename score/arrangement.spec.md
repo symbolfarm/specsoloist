@@ -1,6 +1,6 @@
 ---
 name: arrangement
-type: type
+type: specification
 status: draft
 version: 1.0.0
 description: Specification for the Arrangement file, which bridges a Score (spec) to a specific Build Environment.

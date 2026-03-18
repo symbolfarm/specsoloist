@@ -49,12 +49,12 @@ Main configuration dataclass for the framework.
 Class method. Load configuration from environment variables.
 
 **Environment variables:**
-- `SPECSOLOIST_LLM_PROVIDER`: `"gemini"` or `"anthropic"` (default: `"gemini"`)
+- `SPECSOLOIST_LLM_PROVIDER`: provider name (default: `"gemini"`). Supported: `"gemini"`, `"anthropic"`, `"openai"`, `"openrouter"`, `"ollama"`, `"google"`
 - `SPECSOLOIST_LLM_MODEL`: model identifier (optional)
 - `SPECSOLOIST_SRC_DIR`: source directory name (default: `"src"`)
 - `SPECSOLOIST_SANDBOX`: set to `"true"` to enable sandboxing
 - `SPECSOLOIST_SANDBOX_IMAGE`: Docker image for sandboxing
-- API key: `GEMINI_API_KEY` if provider is gemini, `ANTHROPIC_API_KEY` if provider is anthropic
+- API key: `GEMINI_API_KEY` for gemini/google; `ANTHROPIC_API_KEY` for anthropic; `OPENAI_API_KEY` for openai; `OPENROUTER_API_KEY` for openrouter; none required for ollama
 
 ## SpecSoloistConfig.create_provider() -> LLMProvider
 
@@ -62,6 +62,7 @@ Create and return an LLM provider instance based on current config.
 
 - If `llm_provider` is `"gemini"`, return a `GeminiProvider`
 - If `llm_provider` is `"anthropic"`, return an `AnthropicProvider`
+- If `llm_provider` is `"openai"`, `"openrouter"`, `"ollama"`, or `"google"`, return a `PydanticAIProvider` with the provider name forwarded
 - Pass `api_key` and `llm_model` (if set) to the provider constructor
 - Raise `ValueError` for unknown providers
 

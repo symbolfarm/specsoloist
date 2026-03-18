@@ -51,9 +51,9 @@ Exposes `project_dir`, `config`, `parser`, `runner`, `resolver` as public attrib
 
 ## Compilation
 
-- `compile_spec(name, model=None, skip_tests=False)` -> string: Compile one spec to code, using appropriate method based on spec type (typedef, orchestrator, or regular)
-- `compile_tests(name, model=None)` -> string: Generate test suite for a spec (skips typedef specs)
-- `compile_project(specs=None, model=None, generate_tests=True, incremental=False, parallel=False, max_workers=4)` -> BuildResult: Compile multiple specs in dependency order, with optional incremental and parallel modes
+- `compile_spec(name, model=None, skip_tests=False, arrangement=None)` -> string: Compile one spec to code, using appropriate method based on spec type (typedef, orchestrator, or regular). For `type: reference` specs, returns immediately without generating code.
+- `compile_tests(name, model=None, arrangement=None)` -> string: Generate test suite for a spec. Skips typedef specs. For `type: reference` specs, extracts the `# Verification` snippet and wraps it in a test function (skips if no snippet).
+- `compile_project(specs=None, model=None, generate_tests=True, incremental=False, parallel=False, max_workers=4, arrangement=None)` -> BuildResult: Compile multiple specs in dependency order, with optional incremental and parallel modes
 
 ## Build Order
 
@@ -67,16 +67,23 @@ Exposes `project_dir`, `config`, `parser`, `runner`, `resolver` as public attrib
 
 ## Self-Healing
 
-- `attempt_fix(name, model=None)` -> string: Run tests, analyze failures with LLM, apply generated fixes
+- `attempt_fix(name, model=None, arrangement=None)` -> string: Run tests, analyze failures with LLM, apply generated fixes
 
 # Behavior
 
 ## Compilation dispatch
 
 `compile_spec` dispatches to the appropriate compiler method based on spec type:
+- `reference` specs: return early with a "no code generated" message (documentation only)
 - `typedef` specs use `compile_typedef`
 - `orchestrator`/`workflow` specs use `compile_orchestrator`
 - All others use `compile_code`
+
+Before calling `compile_code`, `compile_spec` collects any `type: reference` deps into a `reference_specs` dict, which is forwarded to `compile_code` and `compile_tests` so the soloist has accurate third-party API context.
+
+## Reference spec test generation
+
+For `type: reference` specs, `compile_tests` extracts the `# Verification` snippet from the spec body via `parser.extract_verification_snippet()`. If a snippet exists, it wraps it in a `test_verify()` function and writes it as the test file. If no snippet, the method returns without creating a test file.
 
 ## Parallel builds
 

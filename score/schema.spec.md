@@ -101,6 +101,49 @@ parse_steps_block:
   behavior: "Parse a yaml:steps block into WorkflowStep objects"
 ```
 
+# Arrangement Types
+
+These Pydantic models are also defined in this module and describe the build arrangement schema.
+
+## ArrangementOutputPathOverride
+
+Per-spec output path overrides. **Fields:** `implementation` (optional string), `tests` (optional string).
+
+## ArrangementOutputPaths
+
+Output paths for implementation and tests, with optional per-spec overrides.
+
+**Fields:** `implementation` (string), `tests` (string), `overrides` (dict of spec name to ArrangementOutputPathOverride, default empty).
+
+**Methods:**
+- `resolve_implementation(name)` -> string: return the implementation path for the spec, applying override if present; otherwise format `implementation` with `{name}`.
+- `resolve_tests(name)` -> string: same for tests path.
+
+## ArrangementEnvironment
+
+**Fields:** `tools` (list of strings, default empty), `setup_commands` (list of strings, default empty), `config_files` (dict of filename to content, default empty), `dependencies` (dict of package name to version specifier, default empty).
+
+## ArrangementBuildCommands
+
+**Fields:** `compile` (optional string), `lint` (optional string), `test` (string, required).
+
+## ArrangementEnvVar
+
+Declaration of a single environment variable. **Fields:** `description` (string), `required` (bool, default true), `example` (string, default `""`).
+
+## Arrangement
+
+Top-level build arrangement model.
+
+**Fields:**
+- `target_language` (string): e.g., `"python"` or `"typescript"`
+- `output_paths` (ArrangementOutputPaths)
+- `environment` (ArrangementEnvironment, default empty)
+- `build_commands` (ArrangementBuildCommands)
+- `constraints` (list of strings, default empty)
+- `env_vars` (dict of var name to ArrangementEnvVar, default empty)
+- `model` (optional string): LLM model override for this arrangement. Precedence: `--model` CLI flag > `model` field > `SPECSOLOIST_LLM_MODEL` env var > provider default.
+
 # Constraints
 
 - All parse functions raise `ValueError` with descriptive messages on invalid input

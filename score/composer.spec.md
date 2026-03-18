@@ -37,7 +37,7 @@ Result of a compose operation.
 
 # Functions
 
-## Composer (class)
+## SpecComposer (class)
 
 The main composer class. Constructed with a project directory path, an optional `SpecSoloistConfig`, and an optional `LLMProvider`. If config is not provided, loads from environment. The LLM provider is created lazily from the config when first needed.
 
@@ -101,7 +101,7 @@ Existing spec files are never overwritten. If a spec with the same name already 
 
 | Scenario | Input | Expected |
 |----------|-------|----------|
-| Initialize composer | `Composer("/path/to/project")` | `project_dir` is set to the absolute path |
+| Initialize composer | `SpecComposer("/path/to/project")` | `project_dir` is set to the absolute path |
 | Architecture with dependencies | Components: add (function), calc (module depending on add) | `arch.build_order == ["add", "calc"]`, `arch.dependencies == {"calc": ["add"]}` |
 | Composition result | Architecture with no components | `result.cancelled == True`, `result.ready_for_build == False` |
 | Composition result | Architecture with components | `result.ready_for_build == True`, `result.spec_paths` contains created paths |
