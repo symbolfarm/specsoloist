@@ -40,6 +40,7 @@ Append-only log of completed tasks and roadmap phases, in order of completion.
 | HK-05 | Bundle spec docs vs parser | 2026-03-13 | Validator now accepts prose `##` headings in addition to `yaml:functions` blocks; all score specs now pass `sp validate` |
 | HK-06 | Release v0.4.0 | 2026-03-13 | Released as v0.4.1 (README fix caught post-tag); publish workflow now auto-creates GitHub releases; release checklist added to CONTRIBUTING.md |
 | HK-08 | Review and update docs/ content | 2026-03-18 | Updated cli.md (all 18 commands + flags), getting_started.md (sp command, vibe-coding intro), workflow.md (sp vibe, --resume/--force, sp diff, sp status), arrangement.md (env_vars, dependencies, model, sp init templates), agents.md (nested session warning) |
+| HK-10 | Add mkdocstrings + Google docstrings | 2026-03-18 | mkdocstrings[python] + ruff D/Google convention in pyproject.toml; docs/reference/api.md (public API) + internals.md (contributors); Google-style docstrings across all 20 modules (63 violations fixed); site/ added to .gitignore; broken nav links fixed; mkdocs build --strict passes | Updated cli.md (all 18 commands + flags), getting_started.md (sp command, vibe-coding intro), workflow.md (sp vibe, --resume/--force, sp diff, sp status), arrangement.md (env_vars, dependencies, model, sp init templates), agents.md (nested session warning) |
 
 ## Completed Roadmap Phases
 
