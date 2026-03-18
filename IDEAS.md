@@ -1,7 +1,7 @@
 # SpecSoloist — Ideas & Future Directions
 
 > Brainstorm document. Not a roadmap — just thinking out loud about where this could go.
-> Last updated: 2026-03-15
+> Last updated: 2026-03-18
 >
 > Consolidated from IMPROVEMENTS.md and PROPOSALS.md.
 > Actionable tasks live in `tasks/README.md`. Completed work in `tasks/HISTORY.md`.
@@ -386,3 +386,59 @@ A running service that reflects on its own spec at runtime. Error messages that
 reference the spec. Auto-generated API docs always in sync because they come from
 the spec, not the code. Long-term vision for what "specs as source of truth" means
 at runtime.
+
+---
+
+## 11. Adjacent Tooling & Ecosystem Ideas
+
+### 11a. Issue-to-Task Bridge ("briefer")
+
+**The gap:** GitHub Issues (and equivalents) are where communities raise problems.
+Agent task files (like SpecSoloist's `tasks/` format) are where AI agents get their
+working context. No mature tool bridges these two worlds.
+
+**The insight:** A raw issue ("fix login bug") is too sparse for an agent to act on.
+The value isn't syncing — it's *enriching*: turning a sparse human issue into a
+structured, agent-readable task brief with steps, success criteria, and context.
+
+**The pipeline:**
+
+```
+Issue Source        Enrichment              Output
+──────────────      ──────────────────      ──────────────────────────
+GitHub Issues  →                       →   tasks/42-fix-login.md
+GitLab Issues  →   LLM briefer         →   (agent-readable task brief)
+Linear         →   (like sp compose    →
+Jira           →    but for issues)    →
+Plain markdown →   (pass-through)      →   (no enrichment needed)
+```
+
+**Provider strategy:** Provider-agnostic core with thin adapters. The issue data
+model is just `{id, title, body, labels, url}` — any tracker can supply this.
+GitHub is the pragmatic starting point (80% of open source) but should never
+leak into the core format. The task file stands alone without provider context.
+
+**The loop:**
+1. Community member opens a GitHub Issue
+2. Briefer fetches it and runs it through an LLM to produce a structured task file
+3. Maintainer reviews/edits the brief (same as reviewing a spec)
+4. Agent executes the task, opens a PR
+5. PR merge closes the Issue (cheap to add as a provider-specific step)
+
+**Self-hosting opportunity:** This could be built *with* SpecSoloist — the briefer
+is essentially a `sp compose`-style agent that takes an issue body as input instead
+of a feature description. A strong proof-of-concept for the framework.
+
+**Prior art to study:**
+- **Beads / bd** (Steve Yegge) — Dolt-backed local issue tracker with hash-based
+  IDs; Molecules/Wisps pattern. Local-first, not provider-integrated. Key insight:
+  issues as structured local data for agent consumption. Originally noted in
+  IMPROVEMENTS.md §11a before consolidation.
+- **git-bug** — stores issues in git objects (not browsable files)
+- **gh CLI** — pull-on-demand JSON export, not a live mirror
+
+**Open questions:**
+- Should the brief format be SpecSoloist's `tasks/` style, or a more general standard?
+- Bidirectional sync (local edits → update Issue) or one-way pull only?
+- Where does the enrichment LLM call live — local CLI, CI action, or GitHub App?
+- Could this be a `sp issues` subcommand, or a standalone tool?
