@@ -25,7 +25,7 @@ and Next.js web applications.**
 | Quine (self-hosting) | Validated — `sp conduct score/` regenerates `src/` with 563 tests passing; weekly CI in `.github/workflows/quine.yaml` |
 | FastHTML example | Validated — 23 tests passing (`examples/fasthtml_app/`) |
 | Next.js example | Validated — 22 tests passing (`examples/nextjs_ai_chat/`) |
-| Documentation | Solid — mkdocstrings + Google docstrings live (HK-10 done); HK-11 (spec type examples) pending |
+| Documentation | Solid — mkdocstrings + Google docstrings live; spec-types.md + example docs complete (HK-11 done) |
 
 Key commands:
 ```bash
@@ -44,7 +44,6 @@ sp conduct score/ --model haiku --auto-accept   # quine attempt
 |---|------|--------|---------|
 | **HK-07** | Fix quine naming mismatch | Tiny | Score specs should use `composer.py`/`conductor.py`, not `speccomposer`/`specconductor` |
 | **HK-09** | Ban hardcoded paths in tests | Tiny | Add a Working Principles note: subprocess `cwd=` must use `Path(__file__).parent.parent`, never a literal path |
-| **HK-11** | Spec type examples in docs | Small | Rewrite `docs/reference/template.md` → `spec-types.md` with one real embedded example per type (using MkDocs snippets from `score/`); document `reference` type conventions; replace empty `docs/examples/` stubs |
 
 ### 🔲 To Do — in priority order
 

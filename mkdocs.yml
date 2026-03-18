@@ -45,7 +45,8 @@ markdown_extensions:
   - pymdownx.highlight:
       anchor_linenums: true
   - pymdownx.inlinehilite
-  - pymdownx.snippets
+  - pymdownx.snippets:
+      base_path: ["."]
   - pymdownx.superfences
   - pymdownx.tabbed:
       alternate_style: true
@@ -63,7 +64,7 @@ nav:
       - Self-Healing: concepts/self_healing.md
   - Reference:
       - CLI: reference/cli.md
-      - Spec Template: reference/template.md
+      - Spec Types: reference/spec-types.md
       - Public API: reference/api.md
       - Internals: reference/internals.md
   - Patterns:
@@ -71,6 +72,6 @@ nav:
       - Database Patterns: database-patterns.md
       - E2E Testing: e2e-testing.md
   - Examples:
-      - Math Demo (Python): examples/math_demo.md
-      - TS Demo (TypeScript): examples/ts_demo.md
-      - ML Research (PyTorch): examples/ml_demo.md
+      - Math (Python): examples/math_demo.md
+      - FastHTML Todo App: examples/ml_demo.md
+      - Next.js AI Chat: examples/ts_demo.md

@@ -41,6 +41,7 @@ Append-only log of completed tasks and roadmap phases, in order of completion.
 | HK-06 | Release v0.4.0 | 2026-03-13 | Released as v0.4.1 (README fix caught post-tag); publish workflow now auto-creates GitHub releases; release checklist added to CONTRIBUTING.md |
 | HK-08 | Review and update docs/ content | 2026-03-18 | Updated cli.md (all 18 commands + flags), getting_started.md (sp command, vibe-coding intro), workflow.md (sp vibe, --resume/--force, sp diff, sp status), arrangement.md (env_vars, dependencies, model, sp init templates), agents.md (nested session warning) |
 | HK-10 | Add mkdocstrings + Google docstrings | 2026-03-18 | mkdocstrings[python] + ruff D/Google convention in pyproject.toml; docs/reference/api.md (public API) + internals.md (contributors); Google-style docstrings across all 20 modules (63 violations fixed); site/ added to .gitignore; broken nav links fixed; mkdocs build --strict passes | Updated cli.md (all 18 commands + flags), getting_started.md (sp command, vibe-coding intro), workflow.md (sp vibe, --resume/--force, sp diff, sp status), arrangement.md (env_vars, dependencies, model, sp init templates), agents.md (nested session warning) |
+| HK-11 | Spec type examples in docs | 2026-03-18 | New `docs/reference/spec-types.md` (replaces `template.md`) with one real embedded example per type using MkDocs snippets; `reference` type conventions documented; example docs rewritten for fasthtml_app + nextjs_ai_chat + math; stale examples removed (demo.py, user_project/, ml_demo/, ts_demo/) |
 
 ## Completed Roadmap Phases
 

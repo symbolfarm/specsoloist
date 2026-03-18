@@ -1,20 +1,59 @@
-# ML Research (PyTorch)
+# FastHTML Todo App (Python)
 
-This example demonstrates the **Hybrid Workflow** for Machine Learning research.
+`examples/fasthtml_app/` is a minimal todo list web app built with
+[FastHTML](https://fastht.ml) and HTMX, generated entirely from specs. It is one of
+SpecSoloist's two primary validated examples.
 
-In research, you need **Reproducibility** for your infrastructure (data loaders, model definitions) but **Flexibility** for your experiments (training loops, logging).
+## What it demonstrates
 
-[View the Code in the repository](https://github.com/symbolfarm/specsoloist/blob/main/examples/ml_demo)
+- **Three-spec decomposition**: separate data model (`state`), UI components (`layout`),
+  and HTTP handlers (`routes`) — each independently testable
+- **`type: reference` spec**: `fasthtml_interface` documents the FastHTML API without
+  generating any code — soloists read it as context so they use the real API correctly
+- **Dependency ordering**: the conductor compiles `state` → `layout` → `routes`, with
+  `fasthtml_interface` injected as context into each
+- **UI completeness testing**: `test_routes.py` verifies that the home page renders
+  `hx-delete` attributes — catching the case where a DELETE route passes its own tests
+  but the button never appears in the rendered HTML
 
-### The Architecture
+## Spec structure
 
-1.  **Specs (Infrastructure)**:
-    *   `model.spec.md`: Defines the Neural Network architecture (layers, dimensions).
-    *   `data.spec.md`: Defines the Data Pipeline (shapes, preprocessing).
-2.  **Manual Code (Experiment)**:
-    *   `train.py`: A hand-written script that imports the generated components and runs the training loop.
+| Spec | Type | Description |
+|------|------|-------------|
+| `fasthtml_interface` | `reference` | FastHTML API docs (no code generated) |
+| `state` | `bundle` | In-memory todo list: `add_todo`, `delete_todo`, `get_todos` |
+| `layout` | `bundle` | FastHTML components: `home_page`, `todo_item`, `add_form` |
+| `routes` | `bundle` | Route handlers: `GET /`, `POST /todos`, `DELETE /todos/{index}` |
 
-### Why this approach?
+## Running it
 
-*   **Prevent Drift**: Your model architecture is locked in a spec. You can't accidentally change a layer size without updating the requirements.
-*   **Rapid Iteration**: You can tweak hyperparameters, logging, and optimizers in `train.py` without needing to recompile the whole system.
+```bash
+cd examples/fasthtml_app
+uv sync
+sp conduct specs/ --arrangement arrangement.yaml --auto-accept
+uv run python -m pytest tests/ -v
+```
+
+Expected: **23 tests passed** across `test_state.py`, `test_layout.py`,
+`test_routes.py`.
+
+## Why three specs?
+
+A single `app.spec.md` can describe routes, but it can't easily verify that the UI
+renders correctly. Separating concerns means:
+
+- `state.spec.md` — pure data logic, testable with no HTTP or HTML
+- `layout.spec.md` — UI components, testable by rendering to strings and checking attributes
+- `routes.spec.md` — route handlers, testable via Starlette `TestClient`
+
+This decomposition catches the "delete button gap": the DELETE route can pass its tests
+while the home page never actually renders a delete button. With layout and routes as
+separate specs, the layout tests verify the button exists and `test_routes.py` verifies
+it appears in the rendered response.
+
+## Database variant
+
+`examples/fasthtml_app/specs/` also includes `db.spec.md`, `routes_db.spec.md`, and
+`fastlite_interface.spec.md` — a database-backed version using
+[fastlite](https://github.com/AnswerDotAI/fastlite). See [Database Patterns](../database-patterns.md)
+for the full pattern.
