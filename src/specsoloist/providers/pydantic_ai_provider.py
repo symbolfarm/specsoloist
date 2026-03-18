@@ -1,5 +1,4 @@
-"""
-Pydantic AI LLM provider.
+"""Pydantic AI LLM provider.
 
 Supports Anthropic, OpenAI, Google Gemini, OpenRouter, and Ollama via the
 pydantic-ai library's model-agnostic interface.
@@ -12,8 +11,7 @@ from typing import Optional
 
 
 def _get_model_string(provider: str, model_name: str) -> str:
-    """
-    Map SpecSoloist provider/model config to a Pydantic AI model string.
+    """Map SpecSoloist provider/model config to a Pydantic AI model string.
 
     Args:
         provider: SpecSoloist provider name (anthropic, gemini, openai,
@@ -42,8 +40,7 @@ def _get_model_string(provider: str, model_name: str) -> str:
 
 
 class PydanticAIProvider:
-    """
-    LLM provider backed by pydantic-ai.
+    """LLM provider backed by pydantic-ai.
 
     Supports Anthropic, OpenAI, Google Gemini, OpenRouter, and Ollama.
 
@@ -70,8 +67,7 @@ class PydanticAIProvider:
         model: Optional[str] = None,
         api_key: Optional[str] = None,
     ):
-        """
-        Initialize the Pydantic AI provider.
+        """Initialize the Pydantic AI provider.
 
         Args:
             provider: Provider name (anthropic, gemini, openai, openrouter, ollama).
@@ -126,8 +122,7 @@ class PydanticAIProvider:
         temperature: float = 0.1,
         model: Optional[str] = None,
     ) -> str:
-        """
-        Generate a response using pydantic-ai.
+        """Generate a response using pydantic-ai.
 
         Args:
             prompt: The prompt to send to the LLM.

@@ -1,6 +1,4 @@
-"""
-Respec - Reverse engineering source code into specs.
-"""
+"""Respec - Reverse engineering source code into specs."""
 
 import os
 from typing import Optional
@@ -10,8 +8,7 @@ from .providers import LLMProvider
 
 
 class Respecer:
-    """
-    Reverse engineers Python source code into SpecSoloist specifications.
+    """Reverse engineers Python source code into SpecSoloist specifications.
 
     This is the fallback implementation used when --no-agent is specified.
     The preferred approach is agent-first (see score/prompts/respec.md).
@@ -22,6 +19,12 @@ class Respecer:
         config: Optional[SpecSoloistConfig] = None,
         provider: Optional[LLMProvider] = None
     ):
+        """Initialize the Respecer.
+
+        Args:
+            config: Framework configuration. Defaults to config from environment.
+            provider: LLM provider. Defaults to the provider configured in config.
+        """
         self.config = config or SpecSoloistConfig.from_env()
         self.provider = provider or self.config.create_provider()
 
@@ -31,9 +34,7 @@ class Respecer:
         test_path: Optional[str] = None,
         model: Optional[str] = None
     ) -> str:
-        """
-        Generate a spec from source code (single-shot LLM call).
-        """
+        """Generate a spec from source code (single-shot LLM call)."""
         if not os.path.exists(source_path):
             raise FileNotFoundError(f"Source file not found: {source_path}")
 

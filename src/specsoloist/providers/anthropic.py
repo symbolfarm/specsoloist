@@ -1,6 +1,4 @@
-"""
-Anthropic Claude LLM provider.
-"""
+"""Anthropic Claude LLM provider."""
 
 import json
 import os
@@ -10,8 +8,7 @@ from typing import Optional
 
 
 class AnthropicProvider:
-    """
-    LLM provider for Anthropic Claude API.
+    """LLM provider for Anthropic Claude API.
 
     Uses urllib for HTTP requests to avoid external dependencies.
     """
@@ -27,8 +24,7 @@ class AnthropicProvider:
         model: str = DEFAULT_MODEL,
         max_tokens: int = DEFAULT_MAX_TOKENS
     ):
-        """
-        Initialize the Anthropic provider.
+        """Initialize the Anthropic provider.
 
         Args:
             api_key: Anthropic API key. Falls back to ANTHROPIC_API_KEY env var.
@@ -51,8 +47,7 @@ class AnthropicProvider:
         temperature: float = 0.1,
         model: Optional[str] = None
     ) -> str:
-        """
-        Generate a response from Claude.
+        """Generate a response from Claude.
 
         Args:
             prompt: The prompt to send.

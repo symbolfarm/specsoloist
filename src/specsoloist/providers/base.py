@@ -1,13 +1,10 @@
-"""
-Base protocol for LLM providers.
-"""
+"""Base protocol for LLM providers."""
 
 from typing import Optional, Protocol
 
 
 class LLMProvider(Protocol):
-    """
-    Protocol defining the interface for LLM providers.
+    """Protocol defining the interface for LLM providers.
 
     Any LLM provider (Gemini, Anthropic, OpenAI, local models, etc.)
     must implement this interface to be used with SpecSoloist.
@@ -19,8 +16,7 @@ class LLMProvider(Protocol):
         temperature: float = 0.1,
         model: Optional[str] = None
     ) -> str:
-        """
-        Generate a response from the LLM.
+        """Generate a response from the LLM.
 
         Args:
             prompt: The prompt to send to the LLM.

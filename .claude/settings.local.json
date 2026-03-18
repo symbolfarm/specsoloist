@@ -1,6 +1,9 @@
 {
   "permissions": {
     "allow": [
+      "Bash(*)",
+      "Edit",
+      "Write",
       "Bash(find:*)",
       "Bash(uv run python:*)",
       "Bash(uv pip install:*)",
@@ -22,7 +25,8 @@
       "Bash(uv build:*)",
       "Bash(python3:*)",
       "Bash(gemini:*)",
-      "Bash(sp validate:*)"
+      "Bash(sp validate:*)",
+      "Bash(npx vitest:*)"
     ],
     "deny": [],
     "ask": []

@@ -1,5 +1,4 @@
-"""
-Spec vs code drift detection for SpecSoloist.
+"""Spec vs code drift detection for SpecSoloist.
 
 Compares a spec's declared public symbols against the compiled implementation,
 reporting missing symbols, undocumented symbols, and test gaps.
@@ -35,9 +34,11 @@ class SpecDiffResult:
 
     @property
     def issue_count(self) -> int:
+        """Total number of drift issues found."""
         return len(self.issues)
 
     def to_dict(self) -> dict:
+        """Serialize to a JSON-compatible dict."""
         return {
             "spec_name": self.spec_name,
             "code_path": self.code_path,
@@ -55,8 +56,7 @@ class SpecDiffResult:
 # ---------------------------------------------------------------------------
 
 def extract_spec_symbols(parsed_spec) -> List[str]:
-    """
-    Extract the declared public symbol names from a ParsedSpec.
+    """Extract the declared public symbol names from a ParsedSpec.
 
     For bundle specs, returns keys from bundle_functions + bundle_types plus
     any ## HeadingName symbols found in the body.
@@ -93,8 +93,7 @@ def extract_spec_symbols(parsed_spec) -> List[str]:
 
 
 def _extract_heading_symbols(body: str) -> List[str]:
-    """
-    Extract symbol names from Markdown headings that look like code identifiers.
+    """Extract symbol names from Markdown headings that look like code identifiers.
 
     Handles three heading depths:
     - `# Name` or `# Name(...)` — top-level class/type name
@@ -184,11 +183,9 @@ def _deduplicate(seq: List[str]) -> List[str]:
 # ---------------------------------------------------------------------------
 
 def extract_code_symbols(code_path: str) -> List[str]:
-    """
-    Return a list of top-level function/class names AND public class method names
-    defined in a Python source file.  Uses the AST module — the file is never
-    imported/executed.
+    """Return top-level function/class names and public class method names from a Python source file.
 
+    Uses the AST module — the file is never imported or executed.
     Returns an empty list if the file does not exist or cannot be parsed.
     """
     if not os.path.exists(code_path):
@@ -219,8 +216,8 @@ def extract_code_symbols(code_path: str) -> List[str]:
 # ---------------------------------------------------------------------------
 
 def extract_test_names(test_path: str) -> List[str]:
-    """
-    Return all function names beginning with 'test_' from a Python test file.
+    """Return all function names beginning with 'test_' from a Python test file.
+
     Returns an empty list if the file does not exist or cannot be parsed.
     """
     if not test_path or not os.path.exists(test_path):
@@ -241,10 +238,9 @@ def extract_test_names(test_path: str) -> List[str]:
 
 
 def extract_test_scenarios(body: str) -> List[str]:
-    """
-    Extract scenario descriptions from a '## Test Scenarios' section in the
-    spec body.  Returns the first sentence / heading text for each list item
-    or sub-heading.
+    """Extract scenario descriptions from a '## Test Scenarios' section in the spec body.
+
+    Returns the first sentence / heading text for each list item or sub-heading.
     """
     if "## Test Scenarios" not in body and "# Test Scenarios" not in body:
         return []
@@ -273,10 +269,9 @@ def extract_test_scenarios(body: str) -> List[str]:
 
 
 def _scenario_has_test(scenario: str, test_names: List[str]) -> bool:
-    """
-    Returns True if at least one test name contains any significant word
-    from the scenario description.  A word is 'significant' if it is at
-    least 4 characters long and not a stop word.
+    """Return True if at least one test name contains a significant word from the scenario.
+
+    A word is 'significant' if it is at least 4 characters long and not a stop word.
     """
     _STOP = {
         "when", "with", "that", "this", "from", "into", "have", "been",
@@ -299,8 +294,7 @@ def _scenario_has_test(scenario: str, test_names: List[str]) -> bool:
 # ---------------------------------------------------------------------------
 
 def _find_code_file(spec_name: str, root_dir: str, arrangement=None) -> Optional[str]:
-    """
-    Locate the compiled implementation file for a spec.
+    """Locate the compiled implementation file for a spec.
 
     Search order:
     1. arrangement.output_paths.resolve_implementation(spec_name) if arrangement provided
@@ -336,8 +330,7 @@ def _find_code_file(spec_name: str, root_dir: str, arrangement=None) -> Optional
 
 
 def _find_test_file(spec_name: str, root_dir: str, arrangement=None) -> Optional[str]:
-    """
-    Locate the test file for a spec.
+    """Locate the test file for a spec.
 
     Search order:
     1. arrangement.output_paths.resolve_tests(spec_name) if arrangement provided
@@ -376,8 +369,7 @@ def diff_spec(
     code_path: Optional[str] = None,
     test_path: Optional[str] = None,
 ) -> SpecDiffResult:
-    """
-    Compare a spec against its compiled implementation.
+    """Compare a spec against its compiled implementation.
 
     Args:
         spec_name: The spec name (e.g. 'parser', 'manifest').

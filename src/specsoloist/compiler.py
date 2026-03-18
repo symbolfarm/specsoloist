@@ -1,6 +1,4 @@
-"""
-Spec compilation: prompt construction and code generation.
-"""
+"""Spec compilation: prompt construction and code generation."""
 
 import re
 from typing import Optional
@@ -14,6 +12,12 @@ class SpecCompiler:
     """Compiles specs to code using an LLM provider."""
 
     def __init__(self, provider: LLMProvider, global_context: str = ""):
+        """Initialize the compiler.
+
+        Args:
+            provider: LLM provider used for code generation.
+            global_context: Optional project-level context injected into every prompt.
+        """
         self.provider = provider
         self.global_context = global_context
 
@@ -24,13 +28,13 @@ class SpecCompiler:
         arrangement: Optional[Arrangement] = None,
         reference_specs: Optional[dict] = None
     ) -> str:
-        """
-        Compiles a spec to implementation code.
+        """Compiles a spec to implementation code.
 
         Args:
             spec: The parsed specification.
             model: Optional model override.
             arrangement: Optional build arrangement.
+            reference_specs: Optional dict of reference spec name to ParsedSpec, injected as context.
 
         Returns:
             The generated code.
@@ -74,8 +78,7 @@ Your task is to implement the code described in the following specification.
         model: Optional[str] = None,
         arrangement: Optional[Arrangement] = None
     ) -> str:
-        """
-        Compiles a typedef spec to type definitions (dataclasses, TypedDicts, etc.).
+        """Compiles a typedef spec to type definitions (dataclasses, TypedDicts, etc.).
 
         Args:
             spec: The parsed specification (must be type: typedef).
@@ -117,8 +120,7 @@ Your task is to define the data types described in the following specification.
         model: Optional[str] = None,
         arrangement: Optional[Arrangement] = None
     ) -> str:
-        """
-        Compiles an orchestrator spec to workflow execution code.
+        """Compiles an orchestrator spec to workflow execution code.
 
         Args:
             spec: The parsed specification (must be type: orchestrator).
@@ -268,13 +270,13 @@ Your task is to implement the workflow described in the following specification.
         arrangement: Optional[Arrangement] = None,
         reference_specs: Optional[dict] = None
     ) -> str:
-        """
-        Generates a test suite for a spec.
+        """Generates a test suite for a spec.
 
         Args:
             spec: The parsed specification.
             model: Optional model override.
             arrangement: Optional build arrangement.
+            reference_specs: Optional dict of reference spec name to ParsedSpec, injected as context.
 
         Returns:
             The generated test code.
@@ -321,8 +323,7 @@ Your task is to write a comprehensive unit test suite for the component describe
         model: Optional[str] = None,
         arrangement: Optional[Arrangement] = None
     ) -> str:
-        """
-        Generates a fix for failing tests.
+        """Generates a fix for failing tests.
 
         Args:
             spec: The parsed specification (source of truth).
@@ -394,8 +395,8 @@ Only provide the file(s) that need to change.
         return self.provider.generate(prompt, model=model)
 
     def parse_fix_response(self, response: str) -> dict[str, str]:
-        """
-        Parses the fix response to extract file contents.
+        """Parses the fix response to extract file contents.
+
         Returns a dict mapping filename -> content.
         """
         fixes = {}

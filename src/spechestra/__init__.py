@@ -1,5 +1,4 @@
-"""
-Spechestra - Orchestration layer for spec-driven development.
+"""Spechestra - Orchestration layer for spec-driven development.
 
 Provides high-level workflows for turning plain English requests into working software.
 

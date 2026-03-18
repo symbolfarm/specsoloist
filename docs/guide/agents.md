@@ -42,7 +42,7 @@ They cannot be mechanically unified because tool names differ per platform:
 | Run a shell command | `Bash` | `run_shell_command` |
 | Spawn a subagent | `Task` (`subagent_type: <name>`) | platform-specific |
 
-When you change agent behavior, update all three: the skill and both native agent files. See [Contributing](../../CONTRIBUTING.md) for the full sync checklist.
+When you change agent behavior, update all three: the skill and both native agent files. See `CONTRIBUTING.md` in the repository root for the full sync checklist.
 
 ## How sp Commands Use Agents
 

@@ -1,6 +1,4 @@
-"""
-Google Gemini LLM provider.
-"""
+"""Google Gemini LLM provider."""
 
 import json
 import os
@@ -10,8 +8,7 @@ from typing import Optional
 
 
 class GeminiProvider:
-    """
-    LLM provider for Google Gemini API.
+    """LLM provider for Google Gemini API.
 
     Uses urllib for HTTP requests to avoid external dependencies.
     """
@@ -24,8 +21,7 @@ class GeminiProvider:
         api_key: Optional[str] = None,
         model: str = DEFAULT_MODEL
     ):
-        """
-        Initialize the Gemini provider.
+        """Initialize the Gemini provider.
 
         Args:
             api_key: Google AI API key. Falls back to GEMINI_API_KEY env var.
@@ -46,8 +42,7 @@ class GeminiProvider:
         temperature: float = 0.1,
         model: Optional[str] = None
     ) -> str:
-        """
-        Generate a response from Gemini.
+        """Generate a response from Gemini.
 
         Args:
             prompt: The prompt to send.

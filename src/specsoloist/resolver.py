@@ -1,5 +1,4 @@
-"""
-Dependency resolution for multi-spec builds.
+"""Dependency resolution for multi-spec builds.
 
 Builds dependency graphs from specs and computes valid build orders.
 """
@@ -15,6 +14,11 @@ class CircularDependencyError(Exception):
     """Raised when specs form a dependency cycle."""
 
     def __init__(self, cycle: List[str]):
+        """Initialize with the detected cycle path.
+
+        Args:
+            cycle: Ordered list of spec names forming the cycle.
+        """
         self.cycle = cycle
         path = " -> ".join(cycle + [cycle[0]])
         super().__init__(f"Circular dependency detected: {path}")
@@ -24,6 +28,12 @@ class MissingDependencyError(Exception):
     """Raised when a spec depends on one that doesn't exist."""
 
     def __init__(self, spec: str, missing: str):
+        """Initialize with the spec and the missing dependency name.
+
+        Args:
+            spec: Name of the spec that has an unresolvable dependency.
+            missing: Name of the dependency that could not be found.
+        """
         self.spec = spec
         self.missing = missing
         super().__init__(f"Spec '{spec}' depends on '{missing}', which does not exist")
@@ -38,6 +48,12 @@ class DependencyGraph:
     specs: Set[str] = field(default_factory=set)
 
     def add_spec(self, name: str, depends_on: List[str] = None):
+        """Register a spec and its dependencies in the graph.
+
+        Args:
+            name: Spec name to register.
+            depends_on: List of spec names this spec depends on.
+        """
         depends_on = depends_on or []
         self.specs.add(name)
         self._forward[name] = depends_on
@@ -48,9 +64,11 @@ class DependencyGraph:
             self._reverse[dep].append(name)
 
     def get_dependencies(self, name: str) -> List[str]:
+        """Return the list of specs that the given spec depends on."""
         return self._forward.get(name, [])
 
     def get_dependents(self, name: str) -> List[str]:
+        """Return the list of specs that depend on the given spec."""
         return self._reverse.get(name, [])
 
 
@@ -58,9 +76,25 @@ class DependencyResolver:
     """Resolves dependencies between specs and computes build orders."""
 
     def __init__(self, parser: SpecParser):
+        """Initialize the resolver.
+
+        Args:
+            parser: SpecParser used to read spec frontmatter and list specs.
+        """
         self.parser = parser
 
     def build_graph(self, spec_names: List[str] = None) -> DependencyGraph:
+        """Build a DependencyGraph from spec frontmatter.
+
+        Args:
+            spec_names: Specs to include. Defaults to all specs in the src directory.
+
+        Returns:
+            DependencyGraph with all dependency relationships populated.
+
+        Raises:
+            MissingDependencyError: If a spec depends on a name that doesn't exist.
+        """
         if spec_names is None:
             spec_names = [s.replace(".spec.md", "") for s in self.parser.list_specs()]
 
@@ -102,14 +136,30 @@ class DependencyResolver:
         return result
 
     def resolve_build_order(self, spec_names: List[str] = None) -> List[str]:
+        """Return a linear build order with dependencies before dependents.
+
+        Raises:
+            CircularDependencyError: If specs form a dependency cycle.
+        """
         graph = self.build_graph(spec_names)
         return self._sorted_linear(graph)
 
     def get_parallel_build_order(self, spec_names: List[str] = None) -> List[List[str]]:
+        """Return specs grouped into parallel build levels.
+
+        Each level is a list of specs that can be compiled concurrently because
+        all their dependencies appear in earlier levels.
+        """
         graph = self.build_graph(spec_names)
         return self._sorted_levels(graph)
 
     def get_affected_specs(self, changed_spec: str, graph: DependencyGraph = None) -> List[str]:
+        """Return all specs that transitively depend on changed_spec, in build order.
+
+        Args:
+            changed_spec: The spec that changed.
+            graph: Pre-built dependency graph. Built from all specs if not provided.
+        """
         if graph is None:
             graph = self.build_graph()
 

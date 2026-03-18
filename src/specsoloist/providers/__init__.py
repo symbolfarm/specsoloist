@@ -1,6 +1,4 @@
-"""
-LLM Provider implementations.
-"""
+"""LLM Provider implementations."""
 
 from .base import LLMProvider
 from .gemini import GeminiProvider

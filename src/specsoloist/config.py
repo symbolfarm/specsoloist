@@ -1,6 +1,4 @@
-"""
-Configuration management for SpecSoloist.
-"""
+"""Configuration management for SpecSoloist."""
 
 import os
 from dataclasses import dataclass, field
@@ -53,6 +51,7 @@ class SpecSoloistConfig:
     build_path: str = field(init=False, default="")
 
     def __post_init__(self):
+        """Compute derived absolute paths from root_dir."""
         root = os.path.abspath(self.root_dir)
         self.src_path = os.path.join(root, self.src_dir)
         self.build_path = os.path.join(root, self.build_dir)

@@ -1,5 +1,4 @@
-"""
-SpecSoloistCore: The main orchestrator for spec-driven development.
+"""SpecSoloistCore: The main orchestrator for spec-driven development.
 
 This module provides the high-level API for compiling specs to code.
 It delegates to specialized modules for parsing, compilation, and testing.
@@ -33,8 +32,7 @@ class BuildResult:
 
 
 class SpecSoloistCore:
-    """
-    Main orchestrator for the SpecSoloist framework.
+    """Main orchestrator for the SpecSoloist framework.
 
     Coordinates spec parsing, code compilation, test generation,
     and the self-healing fix loop.
@@ -46,8 +44,7 @@ class SpecSoloistCore:
         api_key: Optional[str] = None,
         config: Optional[SpecSoloistConfig] = None
     ):
-        """
-        Initialize SpecSoloistCore.
+        """Initialize SpecSoloistCore.
 
         Args:
             root_dir: Project root directory.
@@ -125,8 +122,7 @@ class SpecSoloistCore:
         description: str,
         type: str = "function"
     ) -> str:
-        """
-        Create a new specification file from the template.
+        """Create a new specification file from the template.
 
         Args:
             name: Component name (e.g., "auth" creates "auth.spec.md").
@@ -140,8 +136,7 @@ class SpecSoloistCore:
         return f"Created spec: {path}"
 
     def validate_spec(self, name: str) -> Dict[str, Any]:
-        """
-        Validate a spec for basic structure and SRS compliance.
+        """Validate a spec for basic structure and SRS compliance.
 
         Returns:
             Dict with 'valid' (bool) and 'errors' (list) keys.
@@ -153,9 +148,7 @@ class SpecSoloistCore:
     # =========================================================================
 
     def verify_project(self) -> Dict[str, Any]:
-        """
-        Verifies all specs in the project for strict schema compliance
-        and dependency integrity.
+        """Verifies all specs in the project for strict schema compliance and dependency integrity.
         
         Returns:
             Dict containing verification results per spec and global success status.
@@ -335,8 +328,7 @@ class SpecSoloistCore:
         skip_tests: bool = False,
         arrangement: Optional[Arrangement] = None
     ) -> str:
-        """
-        Compile a spec to implementation code.
+        """Compile a spec to implementation code.
 
         Args:
             name: Spec filename (with or without .spec.md extension).
@@ -399,8 +391,7 @@ class SpecSoloistCore:
             return f"Compiled to {output_path}"
 
     def compile_tests(self, name: str, model: Optional[str] = None, arrangement: Optional[Arrangement] = None) -> str:
-        """
-        Generate a test suite for a spec.
+        """Generate a test suite for a spec.
 
         Args:
             name: Spec filename (with or without .spec.md extension).
@@ -455,8 +446,7 @@ class SpecSoloistCore:
         max_workers: int = 4,
         arrangement: Optional[Arrangement] = None
     ) -> BuildResult:
-        """
-        Compile multiple specs in dependency order.
+        """Compile multiple specs in dependency order.
 
         This is the main entry point for building a project with
         interdependent specs.
@@ -596,8 +586,7 @@ class SpecSoloistCore:
         generate_tests: bool,
         arrangement: Optional[Arrangement] = None
     ) -> Dict[str, Any]:
-        """
-        Compile a single spec and return result.
+        """Compile a single spec and return result.
 
         Returns dict with 'success' (bool) and 'error' (str if failed).
         """
@@ -667,8 +656,7 @@ class SpecSoloistCore:
         return builder.get_rebuild_plan(build_order, spec_hashes, spec_deps)
 
     def get_build_order(self, specs: List[str] = None) -> List[str]:
-        """
-        Get the build order for specs without actually compiling.
+        """Get the build order for specs without actually compiling.
 
         Useful for previewing what would be built and in what order.
 
@@ -681,8 +669,7 @@ class SpecSoloistCore:
         return self.resolver.resolve_build_order(specs)
 
     def get_dependency_graph(self, specs: List[str] = None) -> DependencyGraph:
-        """
-        Get the dependency graph for specs.
+        """Get the dependency graph for specs.
 
         Args:
             specs: List of spec names. If None, includes all specs.
@@ -697,8 +684,7 @@ class SpecSoloistCore:
     # =========================================================================
 
     def run_tests(self, name: str) -> Dict[str, Any]:
-        """
-        Run the tests for a specific component.
+        """Run the tests for a specific component.
 
         Returns:
             Dict with 'success' (bool) and 'output' (str) keys.
@@ -721,8 +707,7 @@ class SpecSoloistCore:
         }
 
     def run_all_tests(self) -> Dict[str, Any]:
-        """
-        Run tests for all compiled specs.
+        """Run tests for all compiled specs.
 
         Returns:
             Dict with overall 'success' and per-spec results.
@@ -761,8 +746,7 @@ class SpecSoloistCore:
     # =========================================================================
 
     def attempt_fix(self, name: str, model: Optional[str] = None, arrangement: Optional[Arrangement] = None) -> str:
-        """
-        Attempt to fix a failing component.
+        """Attempt to fix a failing component.
 
         Analyzes test output and rewrites either the code or tests
         to fix the failure.

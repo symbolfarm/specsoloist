@@ -27,6 +27,20 @@ theme:
     - content.code.copy
     - content.code.annotate
 
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [src]
+          options:
+            docstring_style: google
+            show_source: false
+            show_root_heading: true
+            show_root_full_path: false
+            members_order: source
+            separate_signature: true
+
 markdown_extensions:
   - pymdownx.highlight:
       anchor_linenums: true
@@ -42,12 +56,20 @@ nav:
   - Getting Started: getting_started.md
   - Guide:
       - The Workflow: guide/workflow.md
+      - Arrangement: guide/arrangement.md
+      - Agents: guide/agents.md
   - Core Concepts:
       - Spec-as-Source: concepts/spec_as_source.md
       - Self-Healing: concepts/self_healing.md
   - Reference:
       - CLI: reference/cli.md
       - Spec Template: reference/template.md
+      - Public API: reference/api.md
+      - Internals: reference/internals.md
+  - Patterns:
+      - Incremental Adoption: incremental-adoption.md
+      - Database Patterns: database-patterns.md
+      - E2E Testing: e2e-testing.md
   - Examples:
       - Math Demo (Python): examples/math_demo.md
       - TS Demo (TypeScript): examples/ts_demo.md

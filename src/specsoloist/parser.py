@@ -1,5 +1,4 @@
-"""
-Spec parsing, validation, creation, and frontmatter extraction.
+"""Spec parsing, validation, creation, and frontmatter extraction.
 
 Supports the language-agnostic spec format with:
 - function, type, bundle, module, workflow spec types
@@ -64,8 +63,7 @@ class SpecParser:
     """Handles spec file discovery, reading, parsing, creation, and validation."""
 
     def __init__(self, src_dir: str, template_dir: Optional[str] = None):
-        """
-        Initialize the parser.
+        """Initialize the parser.
 
         Args:
             src_dir: Directory where spec files are stored.
@@ -116,8 +114,7 @@ class SpecParser:
         description: str,
         spec_type: str = "function"
     ) -> str:
-        """
-        Creates a new specification file from the template.
+        """Creates a new specification file from the template.
 
         Args:
             name: Component name (e.g., "auth" creates "auth.spec.md").
@@ -525,8 +522,8 @@ Describe each export's public interface and behavior below.
         return content
 
     def validate_spec(self, name: str) -> Dict[str, Any]:
-        """
-        Validates a spec for basic structure based on its type.
+        """Validates a spec for basic structure based on its type.
+
         Returns a dict with 'valid' bool and 'errors' list.
         """
         try:

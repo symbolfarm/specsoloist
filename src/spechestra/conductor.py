@@ -1,5 +1,4 @@
-"""
-SpecConductor - Manages parallel builds.
+"""SpecConductor - Manages parallel builds.
 
 The Conductor orchestrates multiple SpecSoloist instances for parallel
 compilation.
@@ -23,8 +22,7 @@ class VerifyResult:
 
 
 class SpecConductor:
-    """
-    Manages parallel builds.
+    """Manages parallel builds.
 
     Usage:
         conductor = SpecConductor("/path/to/project")
@@ -38,8 +36,7 @@ class SpecConductor:
         project_dir: str,
         config: Optional[SpecSoloistConfig] = None
     ):
-        """
-        Initialize the conductor.
+        """Initialize the conductor.
 
         Args:
             project_dir: Path to project root.
@@ -58,8 +55,7 @@ class SpecConductor:
         self.resolver = self._core.resolver
 
     def verify(self) -> VerifyResult:
-        """
-        Verify all specs for schema compliance and interface compatibility.
+        """Verify all specs for schema compliance and interface compatibility.
 
         Returns:
             VerifyResult with per-spec verification details.
@@ -79,8 +75,7 @@ class SpecConductor:
         arrangement: Optional[Arrangement] = None,
         model: Optional[str] = None,
     ) -> BuildResult:
-        """
-        Build specs in dependency order.
+        """Build specs in dependency order.
 
         Args:
             specs: List of spec names to build. If None, builds all specs.
@@ -88,6 +83,7 @@ class SpecConductor:
             incremental: If True, only recompile changed specs.
             max_workers: Maximum number of parallel workers.
             arrangement: Optional build arrangement.
+            model: Optional LLM model override applied to all compilations.
 
         Returns:
             BuildResult with compilation status.
@@ -136,8 +132,7 @@ class SpecConductor:
                     ui.print_warning(f"Setup command failed: {cmd}\n{result.output}")
 
     def get_build_order(self, specs: Optional[List[str]] = None) -> List[str]:
-        """
-        Get the build order without actually building.
+        """Get the build order without actually building.
 
         Args:
             specs: List of spec names. If None, includes all specs.
@@ -151,8 +146,7 @@ class SpecConductor:
         self,
         specs: Optional[List[str]] = None
     ) -> DependencyGraph:
-        """
-        Get the dependency graph for visualization.
+        """Get the dependency graph for visualization.
 
         Args:
             specs: List of spec names. If None, includes all specs.

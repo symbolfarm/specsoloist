@@ -1,5 +1,4 @@
-"""
-Command-line interface for SpecSoloist.
+"""Command-line interface for SpecSoloist.
 
 Usage:
     sp init <name>              Scaffold a new project
@@ -27,6 +26,7 @@ from . import ui
 
 
 def main():
+    """Entry point for the sp CLI."""
     parser = argparse.ArgumentParser(
         prog="sp",
         description="Spec-as-Source AI coding framework"
@@ -336,6 +336,7 @@ def main():
 
 
 def cmd_list(core: SpecSoloistCore):
+    """List all spec files found in the src directory."""
     specs = core.list_specs()
     if not specs:
         ui.print_warning("No specs found in src/")
@@ -368,6 +369,7 @@ def cmd_list(core: SpecSoloistCore):
 
 
 def cmd_create(core: SpecSoloistCore, name: str, description: str, spec_type: str):
+    """Create a new spec file from the standard template."""
     ui.print_header("Creating Spec", name)
     try:
         path = core.create_spec(name, description, type=spec_type)
@@ -440,6 +442,7 @@ def _check_spec_quality(spec_content: str, spec_type: str) -> list[str]:
 
 def cmd_validate(core: SpecSoloistCore, name: str, arrangement_arg: str | None = None,
                  json_output: bool = False):
+    """Validate a spec's structure and frontmatter."""
     import json as _json
 
     if not json_output:
@@ -534,6 +537,7 @@ def _check_validate_env_vars(arrangement_arg: str | None, core) -> None:
 
 
 def cmd_verify(core: SpecSoloistCore):
+    """Verify all specs for orchestration readiness (dependency integrity, valid types)."""
     ui.print_header("Verifying Project", "Checking schemas")
     
     with ui.spinner("Verifying all specs..."):
@@ -566,6 +570,7 @@ def cmd_verify(core: SpecSoloistCore):
 
 
 def cmd_graph(core: SpecSoloistCore):
+    """Print the spec dependency graph in Mermaid format."""
     ui.print_header("Dependency Graph", "Mermaid format")
     
     graph = core.get_dependency_graph()
@@ -585,6 +590,7 @@ def cmd_graph(core: SpecSoloistCore):
 
 def cmd_compile(core: SpecSoloistCore, name: str, model: str, generate_tests: bool,
                 arrangement_arg: str | None = None, json_output: bool = False):
+    """Compile a single spec to implementation code and tests."""
     import json as _json
 
     _check_api_key()
@@ -655,6 +661,7 @@ def cmd_compile(core: SpecSoloistCore, name: str, model: str, generate_tests: bo
 
 
 def cmd_test(core: SpecSoloistCore, name: str):
+    """Run the test suite for a compiled spec."""
     ui.print_header("Running Tests", name)
 
     arrangement = _resolve_arrangement(core, None)
@@ -781,6 +788,7 @@ def _fix_with_llm(core: SpecSoloistCore, name: str, model: str | None = None):
 
 def cmd_build(core: SpecSoloistCore, incremental: bool, parallel: bool, workers: int, model: str,
               generate_tests: bool, arrangement_arg: str | None = None):
+    """Compile all specs in dependency order using direct LLM API calls (non-agent)."""
     _check_api_key()
 
     specs = core.list_specs()
@@ -839,7 +847,6 @@ def cmd_build(core: SpecSoloistCore, incremental: bool, parallel: bool, workers:
 def cmd_compose(core: SpecSoloistCore, request: str, no_agent: bool, auto_accept: bool,
                 model: str | None = None):
     """Draft architecture and specs from natural language."""
-
     ui.print_header("Composing System", request[:50] + "..." if len(request) > 50 else request)
 
     if no_agent:
@@ -971,7 +978,6 @@ def cmd_vibe(
     model: str | None,
 ):
     """Single-command pipeline: compose specs from a brief, then build."""
-
     if brief is None:
         ui.print_error("Provide a brief as a .md file path or a plain string.")
         ui.print_info("Example: sp vibe brief.md  or  sp vibe 'Add a todo app'")
@@ -1025,7 +1031,6 @@ def cmd_conduct(core: SpecSoloistCore, src_dir: str | None, no_agent: bool, auto
                  incremental: bool, parallel: bool, workers: int, model: str | None = None,
                  arrangement_arg: str | None = None, resume: bool = False, force: bool = False):
     """Orchestrate project build."""
-
     ui.print_header("Conducting Build", src_dir or "project specs")
 
     if no_agent:
@@ -1330,7 +1335,6 @@ def cmd_spec_diff(core: SpecSoloistCore, spec_name: str, json_output: bool = Fal
 
 def cmd_respec(core: SpecSoloistCore, file_path: str, test_path: str, out_path: str, no_agent: bool, model: str, auto_accept: bool):
     """Reverse engineer code to spec."""
-
     ui.print_header("Respec: Code → Spec", file_path)
 
     if no_agent:
@@ -2105,8 +2109,8 @@ def _resolve_arrangement(core, arrangement_arg):
 
 
 def _resolve_model(cli_model: str | None, arrangement) -> str | None:
-    """
-    Resolve the LLM model to use, applying precedence:
+    """Resolve the LLM model to use, applying CLI > arrangement > env var precedence.
+
       1. --model CLI flag  (cli_model)
       2. model field in arrangement
       3. SPECSOLOIST_LLM_MODEL env var  (handled by providers / config layer)

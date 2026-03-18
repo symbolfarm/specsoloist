@@ -1,6 +1,4 @@
-"""
-Test execution and result handling.
-"""
+"""Test execution and result handling."""
 
 import os
 import subprocess
@@ -20,14 +18,11 @@ class TestResult:
 
 
 class TestRunner:
-    """
-    Handles execution of tests for different languages.
-    """
+    """Handles execution of tests for different languages."""
     __test__ = False  # prevent pytest collection
 
     def __init__(self, build_dir: str, config: Optional[SpecSoloistConfig] = None):
-        """
-        Initialize the test runner.
+        """Initialize the test runner.
 
         Args:
             build_dir: Directory where code and tests are built.
@@ -111,8 +106,8 @@ class TestRunner:
             return f.read()
 
     def write_file(self, filename: str, content: str) -> str:
-        """
-        Writes a file to a specific path.
+        """Writes a file to a specific path.
+
         If filename is relative, it's relative to build_dir.
         """
         if os.path.isabs(filename):
@@ -154,9 +149,7 @@ class TestRunner:
         return TestResult(success=True, output="", return_code=0)
 
     def run_tests(self, module_name: str, language: str = "python") -> TestResult:
-        """
-        Runs the test command for a module based on its language configuration.
-        """
+        """Runs the test command for a module based on its language configuration."""
         cfg = self._get_lang_config(language)
         test_path = self.get_test_path(module_name, language)
 

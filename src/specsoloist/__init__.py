@@ -1,5 +1,4 @@
-"""
-SpecSoloist: Spec-as-Source AI Coding Framework
+"""SpecSoloist: Spec-as-Source AI Coding Framework.
 
 SpecSoloist treats rigorous SRS-style Markdown specifications as the
 single source of truth, using LLMs to compile them into code.

@@ -1,5 +1,4 @@
-"""
-build_diff: Compare build outputs produced from specs.
+"""build_diff: Compare build outputs produced from specs.
 
 Supports semantic (not syntactic) comparison of generated source code directories,
 producing both human-readable (colored) and machine-readable (JSON) reports.
@@ -157,8 +156,7 @@ class _DocstringStripper(ast.NodeTransformer):
 
 
 def normalize_source(content: str, filename: str) -> str:
-    """
-    Reduce source code to a canonical semantic form.
+    """Reduce source code to a canonical semantic form.
 
     - .py: AST round-trip (strips comments and docstrings); falls back to comment
       stripping on SyntaxError.
@@ -199,8 +197,7 @@ def normalize_source(content: str, filename: str) -> str:
 def compare_files(
     left_path: str, right_path: str, relative_path: str
 ) -> DiffResult:
-    """
-    Compare two files at arbitrary absolute paths.
+    """Compare two files at arbitrary absolute paths.
 
     Returns DiffResult with status PASS, FAIL, MISSING_LEFT, or MISSING_RIGHT.
     FAIL includes a unified diff of the original (un-normalised) file contents.
@@ -279,9 +276,7 @@ def compare_directories(
     label_left: str = "left",
     label_right: str = "right",
 ) -> DiffSummary:
-    """
-    Recursively walk both directories, compare each file, and aggregate results.
-    """
+    """Recursively walk both directories, compare each file, and aggregate results."""
     ldir = Path(left_dir)
     rdir = Path(right_dir)
 
@@ -316,8 +311,7 @@ def compare_directories(
 
 
 def list_build_runs(build_dir: str) -> List[BuildRun]:
-    """
-    Discover and return all recorded build runs under build_dir.
+    """Discover and return all recorded build runs under build_dir.
 
     Looks for subdirectories containing a run_meta.json file.
     Returns runs sorted by timestamp, oldest first.
@@ -371,8 +365,7 @@ def record_build_run(
     arrangement: Optional[str] = None,
     meta: Optional[Dict] = None,
 ) -> BuildRun:
-    """
-    Record a build run by writing a run_meta.json manifest inside output_dir.
+    """Record a build run by writing a run_meta.json manifest inside output_dir.
 
     Raises FileNotFoundError if output_dir does not exist.
     """
@@ -442,8 +435,7 @@ def run_diff(
     label_left: str = "left",
     label_right: str = "right",
 ) -> DiffSummary:
-    """
-    Main entry point for a single diff operation.
+    """Main entry point for a single diff operation.
 
     1. Compares directories.
     2. Prints a summary table (colored by status).

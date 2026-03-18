@@ -1,5 +1,4 @@
-"""
-Build manifest for tracking spec compilation state.
+"""Build manifest for tracking spec compilation state.
 
 Enables incremental builds by recording what was built, when, and
 from what inputs.
@@ -22,10 +21,12 @@ class SpecBuildInfo:
     output_files: List[str]
 
     def to_dict(self) -> dict:
+        """Serialize to a JSON-compatible dict."""
         return asdict(self)
 
     @classmethod
     def from_dict(cls, data: dict) -> "SpecBuildInfo":
+        """Deserialize from a dict produced by to_dict."""
         return cls(**data)
 
 
@@ -39,12 +40,14 @@ class BuildManifest:
     specs: Dict[str, SpecBuildInfo] = field(default_factory=dict)
 
     def get_spec_info(self, name: str) -> Optional[SpecBuildInfo]:
+        """Return the build record for a spec, or None if not yet built."""
         return self.specs.get(name)
 
     def update_spec(
         self, name: str, spec_hash: str,
         dependencies: List[str], output_files: List[str]
     ):
+        """Record a successful build for a spec, stamped with the current UTC time."""
         self.specs[name] = SpecBuildInfo(
             spec_hash=spec_hash,
             built_at=datetime.utcnow().isoformat(),
@@ -53,9 +56,11 @@ class BuildManifest:
         )
 
     def remove_spec(self, name: str):
+        """Remove a spec's build record from the manifest (no-op if absent)."""
         self.specs.pop(name, None)
 
     def save(self, build_dir: str):
+        """Persist the manifest to JSON in build_dir."""
         path = os.path.join(build_dir, self.MANIFEST_FILENAME)
         with open(path, "w") as f:
             json.dump(
@@ -66,6 +71,7 @@ class BuildManifest:
 
     @classmethod
     def load(cls, build_dir: str) -> "BuildManifest":
+        """Load the manifest from build_dir, returning an empty manifest if missing or corrupt."""
         path = os.path.join(build_dir, cls.MANIFEST_FILENAME)
         if not os.path.exists(path):
             return cls()
@@ -97,6 +103,12 @@ class IncrementalBuilder:
     """Determines which specs need rebuilding."""
 
     def __init__(self, manifest: BuildManifest, src_dir: str):
+        """Initialize the incremental builder.
+
+        Args:
+            manifest: The current build manifest recording previous compilation state.
+            src_dir: Path to the directory containing spec files.
+        """
         self.manifest = manifest
         self.src_dir = src_dir
 
@@ -104,6 +116,14 @@ class IncrementalBuilder:
         self, spec_name: str, current_hash: str,
         current_deps: List[str], rebuilt_specs: set
     ) -> bool:
+        """Return True if a spec needs to be recompiled.
+
+        Args:
+            spec_name: Name of the spec to check.
+            current_hash: SHA-256 hash of the current spec file content.
+            current_deps: Current list of dependency names from the spec.
+            rebuilt_specs: Set of spec names already rebuilt in this run.
+        """
         info = self.manifest.get_spec_info(spec_name)
         if info is None:
             return True
@@ -123,6 +143,13 @@ class IncrementalBuilder:
         spec_hashes: Dict[str, str],
         spec_deps: Dict[str, List[str]]
     ) -> List[str]:
+        """Return the ordered subset of specs that need rebuilding.
+
+        Args:
+            build_order: Full topological build order for all specs.
+            spec_hashes: Mapping of spec name to current content hash.
+            spec_deps: Mapping of spec name to current dependency list.
+        """
         rebuilt = set()
         plan = []
         for name in build_order:

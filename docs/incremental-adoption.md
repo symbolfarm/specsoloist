@@ -167,7 +167,7 @@ A reference spec documents only the subset of the library your project actually 
 spec that depends on it lists it in `dependencies:`. The conductor injects the reference spec
 into each soloist's context.
 
-See [task 04 notes](../tasks/HISTORY.md) for the full reference spec pattern, and
+See the [database patterns guide](database-patterns.md) for the full reference spec pattern, and
 `examples/fasthtml_app/specs/fasthtml_interface.spec.md` for a concrete example.
 
 ---

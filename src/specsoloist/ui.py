@@ -1,6 +1,4 @@
-"""
-UI module for SpecSoloist CLI using Rich.
-"""
+"""UI module for SpecSoloist CLI using Rich."""
 
 import os
 from typing import List, Optional
@@ -29,8 +27,7 @@ _json_mode: bool = False
 
 
 def configure(quiet: bool = False, json_mode: bool = False) -> None:
-    """
-    Configure the UI output mode.
+    """Configure the UI output mode.
 
     Call this once at startup (e.g. after parsing --quiet / --json flags).
 

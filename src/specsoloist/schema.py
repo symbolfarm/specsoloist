@@ -1,5 +1,4 @@
-"""
-Schema definitions for spec interfaces.
+"""Schema definitions for spec interfaces.
 
 Supports the language-agnostic spec format with:
 - Function/type interface schemas
@@ -137,8 +136,8 @@ class ArrangementEnvVar(BaseModel):
 
 
 class Arrangement(BaseModel):
-    """
-    An Arrangement file bridges a Score (spec) to a specific Build Environment.
+    """An Arrangement file bridges a Score (spec) to a specific Build Environment.
+
     It defines how and where the code should be generated and verified.
     """
     target_language: str
@@ -159,8 +158,7 @@ class Arrangement(BaseModel):
 
 
 class InterfaceSchema(BaseModel):
-    """
-    Represents the interface schema for a spec.
+    """Represents the interface schema for a spec.
 
     Used for:
     - Function specs: inputs/outputs

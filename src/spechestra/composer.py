@@ -1,5 +1,4 @@
-"""
-SpecComposer - Drafts architecture and specs from natural language.
+"""SpecComposer - Drafts architecture and specs from natural language.
 
 This is the "vibe-coding" entry point: users describe what they want,
 and SpecComposer figures out the architecture and generates specs.
@@ -77,8 +76,7 @@ class CompositionResult:
 
 
 class SpecComposer:
-    """
-    Drafts architecture and specs from natural language requests.
+    """Drafts architecture and specs from natural language requests.
 
     Usage:
         composer = SpecComposer("/path/to/project")
@@ -92,8 +90,7 @@ class SpecComposer:
         config: Optional[SpecSoloistConfig] = None,
         provider: Optional[LLMProvider] = None
     ):
-        """
-        Initialize the composer.
+        """Initialize the composer.
 
         Args:
             project_dir: Path to project root.
@@ -121,8 +118,7 @@ class SpecComposer:
         request: str,
         context: Optional[Dict[str, Any]] = None
     ) -> Architecture:
-        """
-        Draft an architecture plan from a natural language request.
+        """Draft an architecture plan from a natural language request.
 
         Args:
             request: Natural language description of desired software.
@@ -227,8 +223,7 @@ Only output the YAML block, no other text.
         )
 
     def generate_specs(self, architecture: Architecture) -> List[str]:
-        """
-        Generate spec files for each component in the architecture.
+        """Generate spec files for each component in the architecture.
 
         Args:
             architecture: The architecture to generate specs for.
@@ -339,8 +334,7 @@ Output ONLY the markdown content, starting with ---.
         auto_accept: bool = False,
         context: Optional[Dict[str, Any]] = None
     ) -> CompositionResult:
-        """
-        Full composition workflow: draft architecture and generate specs.
+        """Full composition workflow: draft architecture and generate specs.
 
         Args:
             request: Natural language description of desired software.
