@@ -42,6 +42,8 @@ jobs:
         with:
           attestations: false
           password: ${{ secrets.PYPI_API_TOKEN }}
+          packages-dir: dist/
+          skip-existing: true
 
       - name: Extract release notes from CHANGELOG
         id: changelog
