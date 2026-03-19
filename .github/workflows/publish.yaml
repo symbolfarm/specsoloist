@@ -39,6 +39,8 @@ jobs:
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          attestations: false
 
       - name: Extract release notes from CHANGELOG
         id: changelog
