@@ -40,10 +40,7 @@ sp conduct score/ --model haiku --auto-accept   # quine attempt
 
 ### 🔲 Housekeeping
 
-| # | Task | Effort | Summary |
-|---|------|--------|---------|
-| **HK-12** | Fix pytest TestResult/TestRunner warnings | Tiny | Add constraint to `runner.spec.md` so quine tests don't trigger collection warnings |
-| **HK-13** | Remove non-code overview specs from score/ | Tiny | Delete `arrangement.spec.md`, `specsoloist.spec.md`, `spechestra.spec.md` from score/ |
+_No open housekeeping tasks._
 
 ### 🔲 User Actions
 
@@ -53,9 +50,7 @@ sp conduct score/ --model haiku --auto-accept   # quine attempt
 
 ### 🔲 To Do — in priority order
 
-| # | Task | Effort | Depends on | Summary |
-|---|------|--------|------------|---------|
-| **22** | Add spec_diff to score | Small | — | Respec `spec_diff.py` into `score/spec_diff.spec.md`; plug the last quine hole |
+_No open tasks._
 
 ---
 

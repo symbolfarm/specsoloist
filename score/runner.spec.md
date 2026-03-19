@@ -61,3 +61,7 @@ When running tests:
 5. Execute the command and capture output
 6. Return TestResult with success based on exit code 0
 7. Handle execution errors (missing command, other exceptions) by returning failure TestResult
+
+# Constraints
+
+- Test files must not import `TestResult` or `TestRunner` at module scope in a way that pytest can collect them. Import inside test functions, or alias on import (e.g. `from runner import TestRunner as Runner`).

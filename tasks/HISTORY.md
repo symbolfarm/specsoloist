@@ -29,6 +29,7 @@ Append-only log of completed tasks and roadmap phases, in order of completion.
 | 19 | `sp vibe` | 2026-03-15 | Single-command compose→conduct pipeline; reads .md brief or plain string; --pause-for-review; --resume for addendum mode; README updated; 11 new tests |
 | 20 | Pydantic AI provider | 2026-03-15 | PydanticAIProvider added alongside existing gemini/anthropic providers; supports openai/openrouter/ollama via pydantic-ai-slim; sp doctor updated; backward compat preserved; 27 new tests |
 | 21 | Quine refresh | 2026-03-19 | Updated 10 score specs to cover ~20 Phase 8/9 features; deleted stale `quine_diff.spec.md`; added `build_diff.spec.md` as code-gen spec; marked 3 overview specs as `type: specification`; 320 quine tests pass (was 563 but structure changed) |
+| 22 | Add spec_diff to score | 2026-03-19 | `score/spec_diff.spec.md` written from source; documents all public types and functions; 18 test scenarios; passes `sp validate` |
 
 ## Housekeeping Tasks
 
@@ -45,6 +46,8 @@ Append-only log of completed tasks and roadmap phases, in order of completion.
 | HK-07 | Fix quine naming mismatch | 2026-03-18 | Score specs already used `composer`/`conductor` names correctly; stale `test_examples_build.py` (referenced deleted examples + old `sp build` API) deleted |
 | HK-09 | Ban hardcoded paths in tests | 2026-03-18 | Working Principles note added to tasks/README.md; `test_examples_build.py` deleted (contained the violations); quine.yaml `--all-extras` flag removed |
 | HK-11 | Spec type examples in docs | 2026-03-18 | New `docs/reference/spec-types.md` (replaces `template.md`) with one real embedded example per type using MkDocs snippets; `reference` type conventions documented; example docs rewritten for fasthtml_app + nextjs_ai_chat + math; stale examples removed (demo.py, user_project/, ml_demo/, ts_demo/) |
+| HK-12 | Fix pytest TestResult/TestRunner warnings | 2026-03-19 | Added `# Constraints` to `score/runner.spec.md` — test files must not import TestResult/TestRunner at module scope |
+| HK-13 | Remove non-code overview specs from score/ | 2026-03-19 | Deleted `arrangement.spec.md`, `specsoloist.spec.md`, `spechestra.spec.md`; score/ now has 15 specs (14 code-gen + spec_format) |
 
 ## Completed Roadmap Phases
 
