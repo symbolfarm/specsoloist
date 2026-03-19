@@ -40,13 +40,16 @@ sp conduct score/ --model haiku --auto-accept   # quine attempt
 
 ### 🔲 Housekeeping
 
-_No open housekeeping tasks._
+| # | Task | Effort | Summary |
+|---|------|--------|---------|
+| **HK-14** | Revert publish workflow to trusted publishing | Tiny | Remove `password: ${{ secrets.PYPI_API_TOKEN }}` and `attestations: false` from publish.yaml; delete `PYPI_API_TOKEN` from GitHub environment secrets. Root cause of v0.5.0 failures was duplicate ZIP entries (force-include bug), not auth — trusted publishing was correctly configured all along. |
 
 ### 🔲 User Actions
 
 | # | Action | Summary |
 |---|--------|---------|
 | **UA-01** | Add `ANTHROPIC_API_KEY` to GitHub repo secrets | Required for quine CI (`.github/workflows/quine.yaml`) to run. Settings → Secrets → Actions → New secret. |
+| **UA-02** | Delete `PYPI_API_TOKEN` from GitHub release environment secrets | No longer needed once HK-14 restores trusted publishing. |
 
 ### 🔲 To Do — in priority order
 
