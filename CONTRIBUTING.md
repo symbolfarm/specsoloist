@@ -109,6 +109,8 @@ After respeccing, verify the spec is sufficient by regenerating the code and run
 - [ ] `CHANGELOG.md` — `[Unreleased]` section renamed to `[X.Y.Z] - YYYY-MM-DD`
 - [ ] `pyproject.toml` — `version` bumped to match
 - [ ] No unintended uncommitted changes: `git status`
+- [ ] `rm -rf dist/ && uv build` — no `UserWarning: Duplicate name` in output
+- [ ] `source .env.pypi && uv run twine upload --verbose dist/*` — upload succeeds locally before tagging
 
 ### Version scheme
 
