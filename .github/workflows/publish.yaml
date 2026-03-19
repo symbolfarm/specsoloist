@@ -41,6 +41,7 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           attestations: false
+          password: ${{ secrets.PYPI_API_TOKEN }}
 
       - name: Extract release notes from CHANGELOG
         id: changelog
