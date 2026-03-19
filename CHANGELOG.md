@@ -2,6 +2,33 @@
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-03-19
+
+### Added
+- `sp vibe` — single-command compose→conduct pipeline; reads a `.md` brief or plain string; `--pause-for-review` to inspect specs before building; `--resume` for addendum mode (task 19)
+- `sp diff <name>` — spec-vs-code drift detection; compares spec-declared symbols against compiled Python using AST; reports MISSING/UNDOCUMENTED/TEST_GAP issues; `--json` flag (task 15)
+- `sp init --template` — arrangement templates for `python-fasthtml`, `nextjs-vitest`, `nextjs-playwright`; `sp init --list-templates` to list all (task 08)
+- `sp conduct --resume` / `--force` — incremental rebuilds; skips specs whose output already exists unless forced (task 10)
+- `--quiet` global flag — silences Rich output; `--json` per-subcommand flag on `status`/`compile`/`validate` emits structured JSON (task 16)
+- `env_vars` field in Arrangement — compiler injects "Environment Variables" section into prompts; `sp doctor --arrangement` warns on unset required vars (task 11)
+- `model` field in Arrangement — optional model pinning with CLI > arrangement > env precedence (task 17)
+- Pydantic AI provider — supports OpenAI, OpenRouter, and Ollama backends via `pydantic-ai-slim` (task 20)
+- Nested session detection — warns when `sp conduct` is run inside an active Claude Code or Gemini CLI session (task 12)
+- Weekly quine CI (`.github/workflows/quine.yaml`) — scheduled + `workflow_dispatch`; build artifact retained 30 days (task 18)
+- Google-style docstrings across all modules; mkdocstrings API reference live at the docs site (HK-10)
+- `docs/incremental-adoption.md` — 6-step guide for adding SpecSoloist to an existing project (task 13)
+- `docs/database-patterns.md` — persistence patterns for FastHTML (fastlite) and Next.js (Prisma) (task 14)
+- `docs/e2e-testing.md` — E2E testing guide with Playwright; `data-testid` spec contract (task 09)
+- `score/spec_diff.spec.md` — spec for the drift-detection module; closes last quine hole (task 22)
+
+### Changed
+- Quine refreshed — `sp conduct score/` now generates 320 tests; score specs updated to cover all Phase 8/9 features (task 21)
+- `score/` cleaned up — removed `arrangement.spec.md`, `specsoloist.spec.md`, `spechestra.spec.md` (non-code-generating overview specs) (HK-13)
+
+### Fixed
+- Hardcoded repo paths in tests replaced with `Path(__file__).parent.parent` — tests now pass when run from any directory (HK-09)
+- `score/runner.spec.md` — added constraint preventing pytest `TestResult`/`TestRunner` collection warnings in quine output (HK-12)
+
 ## [0.4.1] - 2026-03-13
 
 ### Fixed

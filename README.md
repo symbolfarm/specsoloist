@@ -1,8 +1,6 @@
 # SpecSoloist
 
-**SpecSoloist** is a "Spec-as-Source" AI coding framework. It treats specifications as the source of truth and uses AI agents to compile them into executable code.
-
-Now with **Spechestra** features: compose systems from natural language, conduct parallel builds, and orchestrate multi-step workflows.
+**SpecSoloist** is a "Spec-as-Source" AI coding framework. It treats specifications as the source of truth and uses AI agents to compile them into executable code. Compose systems from natural language, conduct parallel builds, and detect spec-vs-code drift.
 
 ## Why SpecSoloist?
 
@@ -63,7 +61,7 @@ sp test calculator
 sp fix calculator  # if tests fail
 ```
 
-## Orchestration (Spechestra)
+## Orchestration
 
 SpecSoloist allows you to chain multiple specs into a workflow.
 
@@ -124,8 +122,19 @@ Commands that use agents (`vibe`, `compose`, `conduct`, `respec`, `fix`) default
 You can configure SpecSoloist via environment variables or a `.env` file:
 
 ```bash
-export SPECSOLOIST_LLM_PROVIDER="gemini"  # or "anthropic"
+# Gemini
+export SPECSOLOIST_LLM_PROVIDER="gemini"
+export GEMINI_API_KEY="your_key_here"
 export SPECSOLOIST_LLM_MODEL="gemini-2.0-flash"  # optional
+
+# Anthropic
+export SPECSOLOIST_LLM_PROVIDER="anthropic"
+export ANTHROPIC_API_KEY="your_key_here"
+export SPECSOLOIST_LLM_MODEL="claude-sonnet-4-20250514"  # optional
+
+# Pydantic AI (OpenAI, OpenRouter, Ollama, and more)
+export SPECSOLOIST_LLM_PROVIDER="pydantic-ai"
+export SPECSOLOIST_LLM_MODEL="openai:gpt-4o"  # or openrouter:..., ollama:...
 ```
 
 ## Arrangement Files
@@ -248,14 +257,6 @@ For safety, SpecSoloist can run generated code and tests inside an isolated Dock
 
 3.  **Run tests**:
     `sp test my_module` will now wrap execution in `docker run`.
-
-For Anthropic:
-
-```bash
-export SPECSOLOIST_LLM_PROVIDER="anthropic"
-export ANTHROPIC_API_KEY="your_key_here"
-export SPECSOLOIST_LLM_MODEL="claude-sonnet-4-20250514"  # optional
-```
 
 ## Native Subagents (Claude & Gemini)
 
