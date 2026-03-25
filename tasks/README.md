@@ -22,10 +22,11 @@ and Next.js web applications.**
 |-------|--------|
 | Core framework | Stable — parser, compiler, runner, resolver, manifest |
 | Agent-first CLI | Done — `sp conduct`, `sp compose`, `sp respec`, `sp fix`, `sp vibe`, `sp diff` |
-| Quine (self-hosting) | Validated — `sp conduct score/` regenerates `src/` with 320 tests passing (2026-03-19); weekly CI in `.github/workflows/quine.yaml` |
+| Quine (self-hosting) | Validated — `sp conduct score/` regenerates `src/` with 355 tests passing (2026-03-19); weekly CI in `.github/workflows/quine.yaml` |
 | FastHTML example | Validated — 23 tests passing (`examples/fasthtml_app/`) |
 | Next.js example | Validated — 22 tests passing (`examples/nextjs_ai_chat/`) |
 | Documentation | Solid — mkdocstrings + Google docstrings live; spec-types.md + example docs complete (HK-11 done) |
+| Real-world integration | In progress — definitree (FastHTML/PostgreSQL) found two blocking issues (HK-15, HK-16) and surfaced a discoverability gap (tasks 22–24) |
 
 Key commands:
 ```bash
@@ -43,6 +44,10 @@ sp conduct score/ --model haiku --auto-accept   # quine attempt
 | # | Task | Effort | Summary |
 |---|------|--------|---------|
 | **HK-14** | Revert publish workflow to trusted publishing | Tiny | Remove `password: ${{ secrets.PYPI_API_TOKEN }}` and `attestations: false` from publish.yaml; delete `PYPI_API_TOKEN` from GitHub environment secrets. Root cause of v0.5.0 failures was duplicate ZIP entries (force-include bug), not auth — trusted publishing was correctly configured all along. |
+| **HK-15** | `specs_path` arrangement field + discovery commands | Small | Add `specs_path` to `Arrangement` schema; `sp list/status/graph` auto-load arrangement and use `specs_path`; add `--arrangement` flag to each. Fixes projects whose specs aren't in `src/`. |
+| **HK-16** | Verify and test `output_paths.overrides` | Small | Schema code exists but has no targeted tests. Write unit tests, YAML round-trip test, update `score/arrangement.spec.md` with nested override syntax. |
+| **HK-17** | `yaml:test_scenarios` validator fix + `--version` flag | Tiny | Recognise `` ```yaml:test_scenarios `` blocks in `_check_spec_quality`; improve warning with inline example. Add `--version`/`-V` to argparse. |
+| **HK-18** | Release v0.6.0 | Small | Preflight, CHANGELOG, version bump, tag, push, GitHub release. Runs after all other tasks complete. |
 
 ### 🔲 User Actions
 
@@ -53,7 +58,11 @@ sp conduct score/ --model haiku --auto-accept   # quine attempt
 
 ### 🔲 To Do — in priority order
 
-_No open tasks._
+| # | Task | Effort | Summary |
+|---|------|--------|---------|
+| **22** | `sp schema [topic]` | Medium | New command: annotated arrangement schema derived from Pydantic models. `sp schema output_paths` zooms into one section; `--json` emits JSON Schema. No project context needed. |
+| **23** | `sp help <topic>` | Medium | Topic-based help with bundled spec content. Key specs (`arrangement`, `spec-format`, `conduct`, `overrides`, `specs-path`) shipped inside the package via `importlib.resources`; works from any PyPI install. |
+| **24** | Init templates + skill updates + staleness detection | Medium | Annotate init templates with all optional fields. Add "Key Arrangement Fields" to skill/agent files. Embed version marker in installed skills; `sp doctor` warns on stale installs. |
 
 ---
 
