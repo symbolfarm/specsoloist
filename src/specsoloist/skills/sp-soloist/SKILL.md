@@ -45,6 +45,10 @@ Also read any dependency modules referenced in the spec so you understand the in
 
 **Write to the exact paths specified.** If no paths are given, use defaults: `src/specsoloist/<name>.py` and `tests/test_<name>.py`.
 
+**Key arrangement fields to check** when the conductor passes arrangement context:
+- `output_paths.overrides`: per-spec path overrides — if your spec name has an override, use that path, not the template.
+- `specs_path`: where specs live (default `src/`); relevant if you need to read sibling specs.
+
 ### Step 2: Write the Implementation
 
 **Report**: "Writing implementation to `<path>`"

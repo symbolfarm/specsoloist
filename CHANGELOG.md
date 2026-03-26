@@ -2,6 +2,35 @@
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-03-27
+
+### Added
+- `specs_path` field in `arrangement.yaml` — configures spec discovery directory
+  (default: `src/`); `sp list`, `sp status`, `sp graph` now load the arrangement
+  and use this field (HK-15)
+- `--arrangement` flag on `sp list`, `sp status`, `sp graph` — explicit arrangement
+  override for discovery commands (HK-15)
+- `sp schema [topic]` — prints annotated JSON/text schema for `arrangement.yaml`;
+  topic filter (e.g. `sp schema output_paths`) returns just that section (task 22)
+- `sp help <topic>` — topic-based help with bundled spec content; `sp help arrangement`,
+  `sp help spec-format`, `sp help conduct`, `sp help overrides`, `sp help specs-path`
+  work from any PyPI install (task 23)
+- `sp install-skills` now embeds a `<!-- sp-version: X.Y.Z -->` marker; `sp doctor`
+  warns when installed skills are from an older package version (task 24)
+- `--version` / `-V` flag — prints `specsoloist X.Y.Z` and exits 0 (HK-17)
+
+### Changed
+- `sp init` templates now include commented examples for `specs_path`, `output_paths.overrides`,
+  `model`, and `env_vars` — all optional fields visible on first init (task 24)
+- Skill and agent files updated with "Key Arrangement Fields" section covering
+  `specs_path` and `output_paths.overrides` (task 24)
+
+### Fixed
+- `sp validate` no longer warns "No test scenarios found" for specs that use
+  `yaml:test_scenarios` blocks; warning message now includes an inline example (HK-17)
+- `output_paths.overrides` unit tests added; YAML round-trip confirmed (HK-16)
+- Publish workflow reverted to trusted publishing — `PYPI_API_TOKEN` no longer required (HK-14)
+
 ## [0.5.0] - 2026-03-19
 
 ### Added

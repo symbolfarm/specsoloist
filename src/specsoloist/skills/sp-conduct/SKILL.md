@@ -28,6 +28,24 @@ Check if the prompt specifies an **Arrangement** file. If provided, read it. The
 - `output_paths`: Use these templates (e.g. `src/{name}.py`) to calculate the exact paths for soloists.
 - `build_commands`: Use `test` for the final verification step.
 
+#### Key Arrangement Fields
+
+Two fields agents commonly miss:
+
+**`specs_path`** (default: `"src/"`) — directory where `.spec.md` files live.
+Set this if specs are in `specs/` or another directory; affects spec discovery.
+
+**`output_paths.overrides`** — per-spec path overrides for modules in subdirectories.
+Use when a spec's output must go to an exact path that doesn't match the template:
+```yaml
+output_paths:
+  implementation: "myapp/{name}.py"
+  overrides:
+    data:
+      implementation: myapp/data/postgres/data.py
+```
+Run `sp schema` to see all arrangement fields. Run `sp help arrangement` for a full reference.
+
 If no arrangement is specified, use defaults:
 - Implementation: `src/specsoloist/` or `src/spechestra/`
 - Tests: `tests/`

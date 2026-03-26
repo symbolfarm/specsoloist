@@ -320,3 +320,183 @@ do_thing:
         self._make_project_with_spec(tmp_cwd, self._VALID_BUNDLE_NO_SCENARIOS)
         result = run_sp("validate", "myspec", env={"ANTHROPIC_API_KEY": "test-key"}, cwd=str(tmp_cwd))
         assert result.returncode == 0
+
+
+# ---------------------------------------------------------------------------
+# _check_spec_quality: yaml:test_scenarios support (HK-17)
+# ---------------------------------------------------------------------------
+
+class TestYamlTestScenariosBlock:
+    _SPEC_WITH_YAML_BLOCK = """\
+---
+name: mymodule
+version: 1.0
+description: A well-described module
+type: bundle
+status: draft
+dependencies: []
+---
+
+## Overview
+Does something.
+
+```yaml:test_scenarios
+- description: "basic case"
+  inputs: {param: "value"}
+  expected_output: "result"
+```
+
+```yaml:schema
+input: str
+output: str
+```
+"""
+
+    _SPEC_WITH_TABLE = """\
+---
+name: mymodule
+version: 1.0
+description: A well-described module
+type: bundle
+status: draft
+dependencies: []
+---
+
+## Overview
+Does something.
+
+## Test Scenarios
+
+| Input | Output |
+|-------|--------|
+| 1 | 2 |
+| 3 | 4 |
+
+```yaml:schema
+input: int
+output: int
+```
+"""
+
+    _SPEC_WITH_NEITHER = """\
+---
+name: mymodule
+version: 1.0
+description: A well-described module
+type: bundle
+status: draft
+dependencies: []
+---
+
+## Overview
+Does something.
+
+```yaml:schema
+input: int
+output: int
+```
+"""
+
+    def test_yaml_block_no_warning(self):
+        """Spec with yaml:test_scenarios block does not warn about missing scenarios."""
+        warnings = _check_spec_quality(self._SPEC_WITH_YAML_BLOCK, "bundle")
+        assert not any("test scenarios" in w.lower() for w in warnings)
+
+    def test_table_no_warning(self):
+        """Spec with ## Test Scenarios table does not warn (existing behaviour preserved)."""
+        warnings = _check_spec_quality(self._SPEC_WITH_TABLE, "bundle")
+        assert not any("test scenarios" in w.lower() for w in warnings)
+
+    def test_neither_warns_with_example_snippet(self):
+        """Spec with neither table nor YAML block warns and includes the example snippet."""
+        warnings = _check_spec_quality(self._SPEC_WITH_NEITHER, "bundle")
+        assert any("test scenarios" in w.lower() for w in warnings)
+        # Warning should include the yaml:test_scenarios example
+        combined = "\n".join(warnings)
+        assert "yaml:test_scenarios" in combined
+
+
+# ---------------------------------------------------------------------------
+# sp --version flag (HK-17)
+# ---------------------------------------------------------------------------
+
+class TestVersionFlag:
+    def test_version_flag_exits_0(self, tmp_cwd):
+        result = run_sp("--version")
+        assert result.returncode == 0
+
+    def test_short_version_flag_exits_0(self, tmp_cwd):
+        result = run_sp("-V")
+        assert result.returncode == 0
+
+    def test_version_output_contains_specsoloist(self, tmp_cwd):
+        result = run_sp("--version")
+        combined = result.stdout + result.stderr
+        assert "specsoloist" in combined
+
+
+# ---------------------------------------------------------------------------
+# sp install-skills: version marker (task 24)
+# ---------------------------------------------------------------------------
+
+class TestInstallSkillsVersionMarker:
+    def test_installed_skill_starts_with_version_marker(self, tmp_cwd):
+        """Installed SKILL.md files start with <!-- sp-version: X.Y.Z -->."""
+        target = tmp_cwd / "skills_out"
+        result = run_sp("install-skills", "--target", str(target))
+        assert result.returncode == 0
+        # Find any installed SKILL.md
+        skill_files = list(target.rglob("SKILL.md"))
+        assert skill_files, "No SKILL.md files installed"
+        for skill_file in skill_files:
+            first_line = skill_file.read_text().split("\n")[0]
+            assert first_line.startswith("<!-- sp-version:"), (
+                f"{skill_file.name} first line does not start with version marker: {first_line!r}"
+            )
+
+    def test_installed_skill_version_marker_contains_version(self, tmp_cwd):
+        """Installed SKILL.md version marker contains a non-empty version string."""
+        import importlib.metadata
+        pkg_version = importlib.metadata.version("specsoloist")
+        target = tmp_cwd / "skills_out"
+        run_sp("install-skills", "--target", str(target))
+        skill_files = list(target.rglob("SKILL.md"))
+        assert skill_files
+        first_line = skill_files[0].read_text().split("\n")[0]
+        assert pkg_version in first_line
+
+
+# ---------------------------------------------------------------------------
+# sp doctor: skill staleness detection (task 24)
+# ---------------------------------------------------------------------------
+
+class TestDoctorSkillStaleness:
+    def test_stale_skill_triggers_warning(self, tmp_cwd):
+        """doctor warns when an installed skill has an older version marker."""
+        skills_dir = tmp_cwd / ".claude" / "skills" / "sp-conduct"
+        skills_dir.mkdir(parents=True)
+        (skills_dir / "SKILL.md").write_text("<!-- sp-version: 0.0.1 -->\n# old skill\n")
+        result = run_sp("doctor", env={"ANTHROPIC_API_KEY": "test-key"}, cwd=str(tmp_cwd))
+        combined = result.stdout + result.stderr
+        assert "install-skills" in combined or "stale" in combined.lower() or "0.0.1" in combined
+
+    def test_current_skill_no_staleness_warning(self, tmp_cwd):
+        """doctor does not warn when installed skill version matches current package."""
+        import importlib.metadata
+        pkg_version = importlib.metadata.version("specsoloist")
+        skills_dir = tmp_cwd / ".claude" / "skills" / "sp-conduct"
+        skills_dir.mkdir(parents=True)
+        (skills_dir / "SKILL.md").write_text(f"<!-- sp-version: {pkg_version} -->\n# current skill\n")
+        result = run_sp("doctor", env={"ANTHROPIC_API_KEY": "test-key"}, cwd=str(tmp_cwd))
+        combined = result.stdout + result.stderr
+        # Should not complain about staleness for a matching version
+        assert "0.0.1" not in combined
+
+    def test_skill_without_marker_no_staleness_warning(self, tmp_cwd):
+        """doctor silently ignores skill files that have no version marker."""
+        skills_dir = tmp_cwd / ".claude" / "skills" / "sp-conduct"
+        skills_dir.mkdir(parents=True)
+        (skills_dir / "SKILL.md").write_text("# skill without marker\n")
+        result = run_sp("doctor", env={"ANTHROPIC_API_KEY": "test-key"}, cwd=str(tmp_cwd))
+        # Should not error out
+        assert result.returncode == 0

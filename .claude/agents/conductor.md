@@ -43,7 +43,10 @@ Check if the prompt specifies an **Arrangement** file. If provided, use the `Rea
       use_chat_messages:
         implementation: src/hooks/useChatMessages.ts
   ```
+- `specs_path`: Directory where `.spec.md` files live (default: `"src/"`). Use this for spec discovery when no explicit spec directory is given in the prompt.
 - `build_commands`: Use `test` for the final verification step.
+
+Run `sp schema` to see all arrangement fields. Run `sp help arrangement` for a full reference.
 
 If no arrangement is specified, use default paths:
 - Implementation: `src/specsoloist/` or `src/spechestra/`

@@ -84,15 +84,31 @@ class BundleType(BaseModel):
 
 class ArrangementOutputPathOverride(BaseModel):
     """Per-spec output path overrides (either field may be omitted to fall back to the default)."""
-    implementation: Optional[str] = None
-    tests: Optional[str] = None
+    implementation: Optional[str] = Field(
+        default=None,
+        description="Override implementation path for this spec. Omit to use the default template."
+    )
+    tests: Optional[str] = Field(
+        default=None,
+        description="Override test path for this spec. Omit to use the default template."
+    )
 
 
 class ArrangementOutputPaths(BaseModel):
     """Output paths for implementation and tests, with optional per-spec overrides."""
-    implementation: str
-    tests: str
-    overrides: Dict[str, ArrangementOutputPathOverride] = Field(default_factory=dict)
+    implementation: str = Field(
+        description="Path template for implementation files. Use {name} as the spec name placeholder. "
+                    "e.g. 'src/{name}.py' or 'src/app/api/{name}/route.ts'."
+    )
+    tests: str = Field(
+        description="Path template for test files. Use {name} as the spec name placeholder. "
+                    "e.g. 'tests/test_{name}.py' or 'tests/{name}.test.ts'."
+    )
+    overrides: Dict[str, ArrangementOutputPathOverride] = Field(
+        default_factory=dict,
+        description="Per-spec path overrides. Key is spec name (without .spec.md). "
+                    "Overrides the default template for that spec only."
+    )
 
     def resolve_implementation(self, name: str) -> str:
         """Return the implementation path for a spec, checking per-spec overrides first."""
@@ -111,9 +127,18 @@ class ArrangementOutputPaths(BaseModel):
 
 class ArrangementEnvironment(BaseModel):
     """Environment settings for the build."""
-    tools: List[str] = Field(default_factory=list)
-    setup_commands: List[str] = Field(default_factory=list)
-    config_files: Dict[str, str] = Field(default_factory=dict)
+    tools: List[str] = Field(
+        default_factory=list,
+        description="CLI tools that must be available (e.g. 'uv', 'node'). Listed in sp doctor output."
+    )
+    setup_commands: List[str] = Field(
+        default_factory=list,
+        description="Shell commands to run before compilation (e.g. 'uv sync', 'npm install')."
+    )
+    config_files: Dict[str, str] = Field(
+        default_factory=dict,
+        description="Files to write verbatim before compilation. Key is relative path, value is file content."
+    )
     dependencies: Dict[str, str] = Field(
         default_factory=dict,
         description="Package name to version specifier (e.g. 'python-fasthtml': '>=0.12,<0.13'). "
@@ -123,9 +148,20 @@ class ArrangementEnvironment(BaseModel):
 
 class ArrangementBuildCommands(BaseModel):
     """Build, lint, and test commands."""
-    compile: Optional[str] = None
-    lint: Optional[str] = None
-    test: str
+    compile: Optional[str] = Field(
+        default=None,
+        description="Optional compile/build step (e.g. 'npx tsc --noEmit' for TypeScript). "
+                    "Run after code generation to catch type errors."
+    )
+    lint: Optional[str] = Field(
+        default=None,
+        description="Optional lint command (e.g. 'uv run ruff check src/'). "
+                    "Run after compilation to enforce code style."
+    )
+    test: str = Field(
+        description="Command to run the test suite (required). "
+                    "e.g. 'uv run pytest tests/' or 'npx vitest run'."
+    )
 
 
 class ArrangementEnvVar(BaseModel):
@@ -140,11 +176,30 @@ class Arrangement(BaseModel):
 
     It defines how and where the code should be generated and verified.
     """
-    target_language: str
-    output_paths: ArrangementOutputPaths
-    environment: ArrangementEnvironment = Field(default_factory=ArrangementEnvironment)
-    build_commands: ArrangementBuildCommands
-    constraints: List[str] = Field(default_factory=list)
+    target_language: str = Field(
+        description="Language for generated code. e.g. 'python', 'typescript'. "
+                    "Injected into every soloist prompt."
+    )
+    specs_path: str = Field(
+        default="src/",
+        description="Directory where spec files (.spec.md) are stored. "
+                    "Used by sp list, sp status, sp graph, and sp conduct."
+    )
+    output_paths: ArrangementOutputPaths = Field(
+        description="Where to write generated implementation and test files."
+    )
+    environment: ArrangementEnvironment = Field(
+        default_factory=ArrangementEnvironment,
+        description="Build environment: tools, setup commands, config files, and dependency versions."
+    )
+    build_commands: ArrangementBuildCommands = Field(
+        description="Shell commands for testing, linting, and compiling the generated code."
+    )
+    constraints: List[str] = Field(
+        default_factory=list,
+        description="Free-text constraints injected into every soloist prompt. "
+                    "e.g. 'Use type hints throughout', 'Follow PEP 8'."
+    )
     env_vars: Dict[str, ArrangementEnvVar] = Field(
         default_factory=dict,
         description="Declared environment variable names with descriptions and requirements. "
