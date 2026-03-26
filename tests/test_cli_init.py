@@ -71,3 +71,27 @@ class TestSpInit:
     def test_invalid_arrangement_rejected(self, tmp_cwd):
         result = run_init("bad", "--arrangement", "ruby")
         assert result.returncode != 0
+
+    def test_arrangement_contains_specs_path_comment(self, tmp_cwd):
+        """Generated arrangement.yaml includes a commented specs_path example (task 24)."""
+        run_init("myproject")
+        content = (tmp_cwd / "myproject" / "arrangement.yaml").read_text()
+        assert "specs_path" in content
+
+    def test_arrangement_contains_overrides_comment(self, tmp_cwd):
+        """Generated arrangement.yaml includes a commented overrides example (task 24)."""
+        run_init("myproject")
+        content = (tmp_cwd / "myproject" / "arrangement.yaml").read_text()
+        assert "overrides" in content
+
+    def test_fasthtml_template_contains_specs_path_comment(self, tmp_cwd):
+        result = run_init("myproject", "--template", "python-fasthtml")
+        assert result.returncode == 0
+        content = (tmp_cwd / "myproject" / "arrangement.yaml").read_text()
+        assert "specs_path" in content
+
+    def test_nextjs_template_contains_specs_path_comment(self, tmp_cwd):
+        result = run_init("myproject", "--template", "nextjs-vitest")
+        assert result.returncode == 0
+        content = (tmp_cwd / "myproject" / "arrangement.yaml").read_text()
+        assert "specs_path" in content

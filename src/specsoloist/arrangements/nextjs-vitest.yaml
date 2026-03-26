@@ -2,12 +2,18 @@
 # Usage: sp init --template nextjs-vitest
 #
 # Requires: Node.js 18+, npm
+# Run `sp schema` or `sp help arrangement` to see all available fields.
 
 target_language: typescript
+
+# specs_path: specs/    # default is src/
 
 output_paths:
   implementation: src/{name}.ts
   tests: tests/{name}.test.ts
+  # overrides:
+  #   chat_route:
+  #     implementation: src/app/api/chat/route.ts
 
 environment:
   tools:

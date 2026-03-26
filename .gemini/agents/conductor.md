@@ -41,10 +41,13 @@ Compile all specs in a project directory into working code, respecting dependenc
       chat_route:
         implementation: src/app/api/chat/route.ts
   ```
+- `specs_path`: Directory where `.spec.md` files live (default: `"src/"`). Use for spec discovery when no explicit spec directory is given.
 - `build_commands`: Commands for linting and testing
 - `constraints`: Specific rules the soloist must follow
 - `environment.config_files`: Config files to write before compilation (e.g., package.json, tsconfig.json)
 - `environment.setup_commands`: Shell commands to run once before compilation (e.g., `npm install`)
+
+Run `sp schema` to see all arrangement fields. Run `sp help arrangement` for a full reference.
 
 If no arrangement is found, use default paths:
 - Implementation: `src/specsoloist/` or `src/spechestra/`

@@ -2,12 +2,18 @@
 # Usage: sp init --template nextjs-playwright
 #
 # Requires: Node.js 18+, npm, Playwright browsers
+# Run `sp schema` or `sp help arrangement` to see all available fields.
 
 target_language: typescript
+
+# specs_path: specs/    # default is src/
 
 output_paths:
   implementation: src/{name}.ts
   tests: e2e/{name}.spec.ts
+  # overrides:
+  #   auth_route:
+  #     implementation: src/app/api/auth/[...nextauth]/route.ts
 
 environment:
   tools:

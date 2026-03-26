@@ -450,3 +450,99 @@ def test_compiler_context_includes_overrides():
 
     assert "chat_route" in context
     assert "src/app/api/chat/route.ts" in context
+
+
+# ---------------------------------------------------------------------------
+# specs_path field (HK-15)
+# ---------------------------------------------------------------------------
+
+def test_specs_path_defaults_to_src():
+    """Arrangement.specs_path defaults to 'src/' when not provided."""
+    arr = Arrangement(
+        target_language="python",
+        output_paths=ArrangementOutputPaths(
+            implementation="src/{name}.py",
+            tests="tests/test_{name}.py",
+        ),
+        build_commands=ArrangementBuildCommands(test="pytest"),
+    )
+    assert arr.specs_path == "src/"
+
+
+def test_specs_path_explicit_value():
+    """Arrangement.specs_path accepts an explicit value."""
+    arr = Arrangement(
+        target_language="python",
+        specs_path="specs/",
+        output_paths=ArrangementOutputPaths(
+            implementation="src/{name}.py",
+            tests="tests/test_{name}.py",
+        ),
+        build_commands=ArrangementBuildCommands(test="pytest"),
+    )
+    assert arr.specs_path == "specs/"
+
+
+def test_specs_path_round_trips_through_yaml():
+    """specs_path survives a round-trip through YAML parsing."""
+    yaml_content = """\
+target_language: python
+specs_path: specs/
+output_paths:
+  implementation: src/{name}.py
+  tests: tests/test_{name}.py
+build_commands:
+  test: pytest
+"""
+    parser = SpecParser(".")
+    arrangement = parser.parse_arrangement(yaml_content)
+    assert arrangement.specs_path == "specs/"
+
+
+def test_specs_path_not_required_in_yaml():
+    """Arrangement YAML without specs_path still parses and defaults to 'src/'."""
+    yaml_content = """\
+target_language: python
+output_paths:
+  implementation: src/{name}.py
+  tests: tests/test_{name}.py
+build_commands:
+  test: pytest
+"""
+    parser = SpecParser(".")
+    arrangement = parser.parse_arrangement(yaml_content)
+    assert arrangement.specs_path == "src/"
+
+
+def test_cmd_list_applies_specs_path_from_arrangement(tmp_path, monkeypatch):
+    """cmd_list updates core.parser.src_dir to arrangement.specs_path before listing."""
+    import tempfile
+    from unittest.mock import patch, MagicMock
+    from specsoloist.cli import cmd_list
+    from specsoloist.core import SpecSoloistCore
+
+    monkeypatch.chdir(tmp_path)
+    specs_dir = tmp_path / "specs"
+    specs_dir.mkdir()
+
+    # Write a minimal arrangement.yaml
+    arr_yaml = tmp_path / "arrangement.yaml"
+    arr_yaml.write_text(
+        "target_language: python\n"
+        "specs_path: specs/\n"
+        "output_paths:\n"
+        "  implementation: src/{name}.py\n"
+        "  tests: tests/test_{name}.py\n"
+        "build_commands:\n"
+        "  test: pytest\n"
+    )
+
+    core = SpecSoloistCore(str(tmp_path))
+    original_src_dir = core.parser.src_dir
+
+    # Patch ui helpers to suppress output
+    with patch("specsoloist.cli.ui"):
+        cmd_list(core, arrangement_arg=str(arr_yaml))
+
+    import os
+    assert core.parser.src_dir == os.path.abspath(str(specs_dir))

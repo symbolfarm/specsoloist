@@ -48,6 +48,8 @@ Also read any dependency modules referenced by the spec so you understand the in
 - Tests: `<test_dir>/test_<name>.py`
 - Test command: `PYTHONPATH=... uv run python -m pytest <test_path> -v`
 
+**Check `output_paths.overrides`**: If the conductor passes arrangement context, check whether your spec name has an override before using the default template path.
+
 **You MUST write to the exact paths specified.** If the prompt says `build/quine/src/...`, write there — not to `src/`. Only if NO paths are specified at all, use defaults: `src/specsoloist/<name>.py` and `tests/test_<name>.py`.
 
 ### Step 2: Write the Implementation

@@ -14,6 +14,7 @@ Usage:
 """
 
 import argparse
+import importlib.metadata
 import sys
 import os
 
@@ -32,6 +33,12 @@ def main():
         description="Spec-as-Source AI coding framework"
     )
 
+    parser.add_argument(
+        "--version", "-V",
+        action="version",
+        version=f"specsoloist {importlib.metadata.version('specsoloist')}"
+    )
+
     # Global output-control flags (work on any command)
     parser.add_argument(
         "--quiet", action="store_true",
@@ -45,7 +52,9 @@ def main():
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
     # list
-    subparsers.add_parser("list", help="List all specification files")
+    list_parser = subparsers.add_parser("list", help="List all specification files")
+    list_parser.add_argument("--arrangement", metavar="FILE",
+                             help="Path to arrangement YAML (auto-discovers arrangement.yaml)")
 
     # create
     create_parser = subparsers.add_parser("create", help="Create a new spec from template")
@@ -64,7 +73,9 @@ def main():
     subparsers.add_parser("verify", help="Verify all specs for orchestration readiness")
 
     # graph
-    subparsers.add_parser("graph", help="Export dependency graph as Mermaid")
+    graph_parser = subparsers.add_parser("graph", help="Export dependency graph as Mermaid")
+    graph_parser.add_argument("--arrangement", metavar="FILE",
+                              help="Path to arrangement YAML (auto-discovers arrangement.yaml)")
 
     # compile
     compile_parser = subparsers.add_parser("compile", help="Compile a spec to code")
@@ -228,6 +239,30 @@ def main():
         help="Target directory for skills (default: .claude/skills)"
     )
 
+    # help
+    help_parser = subparsers.add_parser(
+        "help",
+        help="Get help on a specific topic (arrangement, spec-format, conduct, ...)"
+    )
+    help_parser.add_argument(
+        "topic", nargs="?", default=None,
+        help="Topic to look up (arrangement, spec-format, conduct, overrides, specs-path)"
+    )
+
+    # schema
+    schema_parser = subparsers.add_parser(
+        "schema",
+        help="Show annotated schema for arrangement.yaml"
+    )
+    schema_parser.add_argument(
+        "topic", nargs="?", default=None,
+        help="Field to zoom into (e.g. output_paths, environment)"
+    )
+    schema_parser.add_argument(
+        "--json", dest="json_output", action="store_true",
+        help="Emit JSON Schema instead of annotated text"
+    )
+
     # doctor
     doctor_parser = subparsers.add_parser("doctor", help="Check environment health (API keys, CLIs, tools)")
     doctor_parser.add_argument("--arrangement", metavar="FILE", help="Path to arrangement YAML; checks declared env_vars")
@@ -236,6 +271,8 @@ def main():
     status_parser = subparsers.add_parser("status", help="Show compilation state of each spec")
     status_parser.add_argument("--json", dest="json_output", action="store_true",
                                help="Emit machine-readable JSON output")
+    status_parser.add_argument("--arrangement", metavar="FILE",
+                               help="Path to arrangement YAML (auto-discovers arrangement.yaml)")
 
     args = parser.parse_args()
 
@@ -262,6 +299,12 @@ def main():
     if args.command == "install-skills":
         cmd_install_skills(args.target)
         return
+    if args.command == "help":
+        cmd_help(getattr(args, "topic", None))
+        return
+    if args.command == "schema":
+        cmd_schema(getattr(args, "topic", None), json_output=getattr(args, "json_output", False))
+        return
     if args.command == "doctor":
         cmd_doctor(arrangement_arg=getattr(args, "arrangement", None))
         return
@@ -275,7 +318,7 @@ def main():
 
     try:
         if args.command == "list":
-            cmd_list(core)
+            cmd_list(core, getattr(args, "arrangement", None))
         elif args.command == "create":
             cmd_create(core, args.name, args.description, args.type)
         elif args.command == "validate":
@@ -284,7 +327,7 @@ def main():
         elif args.command == "verify":
             cmd_verify(core)
         elif args.command == "graph":
-            cmd_graph(core)
+            cmd_graph(core, getattr(args, "arrangement", None))
         elif args.command == "compile":
             cmd_compile(core, args.name, args.model, not args.no_tests, args.arrangement,
                         json_output=getattr(args, "json_output", False))
@@ -319,7 +362,8 @@ def main():
         elif args.command == "respec":
             cmd_respec(core, args.file, args.test, args.out, args.no_agent, args.model, args.auto_accept)
         elif args.command == "status":
-            cmd_status(core, json_output=getattr(args, "json_output", False))
+            cmd_status(core, getattr(args, "arrangement", None),
+                       json_output=getattr(args, "json_output", False))
     except KeyboardInterrupt:
         ui.print_warning("\nOperation cancelled by user.")
         sys.exit(130)
@@ -335,11 +379,15 @@ def main():
         sys.exit(1)
 
 
-def cmd_list(core: SpecSoloistCore):
+def cmd_list(core: SpecSoloistCore, arrangement_arg: str | None = None):
     """List all spec files found in the src directory."""
+    arrangement = _resolve_arrangement(core, arrangement_arg)
+    if arrangement:
+        core.parser.src_dir = os.path.abspath(arrangement.specs_path)
     specs = core.list_specs()
     if not specs:
-        ui.print_warning("No specs found in src/")
+        path = arrangement.specs_path if arrangement else "src/"
+        ui.print_warning(f"No specs found in {path}")
         ui.print_info("Create one with: sp create <name> '<description>'")
         return
 
@@ -402,8 +450,20 @@ def _check_spec_quality(spec_content: str, spec_type: str) -> list[str]:
     warnings = []
 
     # No test scenarios section
-    if "## Test Scenarios" not in spec_content:
-        warnings.append("No test scenarios found — soloists compile better with concrete examples")
+    has_scenarios = (
+        "## Test Scenarios" in spec_content
+        or "```yaml:test_scenarios" in spec_content
+    )
+    if not has_scenarios:
+        warnings.append(
+            "No test scenarios found — soloists compile better with concrete examples.\n"
+            "  Add a yaml:test_scenarios block, e.g.:\n"
+            "  ```yaml:test_scenarios\n"
+            "  - description: \"basic case\"\n"
+            "    inputs: {param: \"value\"}\n"
+            "    expected_output: \"result\"\n"
+            "  ```"
+        )
 
     # No schema block (only for bundle and function types)
     if spec_type in ("bundle", "function"):
@@ -569,10 +629,13 @@ def cmd_verify(core: SpecSoloistCore):
         # unless strict mode is enabled (future feature).
 
 
-def cmd_graph(core: SpecSoloistCore):
+def cmd_graph(core: SpecSoloistCore, arrangement_arg: str | None = None):
     """Print the spec dependency graph in Mermaid format."""
+    arrangement = _resolve_arrangement(core, arrangement_arg)
+    if arrangement:
+        core.parser.src_dir = os.path.abspath(arrangement.specs_path)
     ui.print_header("Dependency Graph", "Mermaid format")
-    
+
     graph = core.get_dependency_graph()
     
     lines = ["graph TD"]
@@ -1529,6 +1592,41 @@ def cmd_doctor(arrangement_arg: str | None = None):
         except Exception as e:
             ui.console.print(f"[warning]~[/] Could not parse arrangement env_vars: {e}")
 
+    # Installed skill staleness check
+    _current_version = importlib.metadata.version("specsoloist")
+    _skill_dirs_to_check = [".claude/agents", ".claude/skills"]
+    _stale_version: str | None = None
+    for _skill_dir in _skill_dirs_to_check:
+        _abs_skill_dir = os.path.join(os.getcwd(), _skill_dir)
+        if not os.path.isdir(_abs_skill_dir):
+            continue
+        for _root, _dirs, _files in os.walk(_abs_skill_dir):
+            for _fname in _files:
+                if not _fname.endswith(".md"):
+                    continue
+                _fpath = os.path.join(_root, _fname)
+                try:
+                    with open(_fpath) as _f:
+                        _first_line = _f.readline()
+                    if _first_line.startswith("<!-- sp-version:"):
+                        _installed_ver = _first_line.strip().removeprefix("<!-- sp-version:").removesuffix("-->").strip()
+                        if _installed_ver != _current_version:
+                            _stale_version = _installed_ver
+                            break
+                except Exception:
+                    pass
+            if _stale_version:
+                break
+        if _stale_version:
+            break
+
+    if _stale_version:
+        ui.console.print(
+            f"[warning]⚠[/] Installed skills are from specsoloist {_stale_version} "
+            f"— current version is {_current_version}.\n"
+            "  Run: [bold]sp install-skills[/]"
+        )
+
     ui.console.print()
     if critical_failure:
         ui.print_error("One or more critical checks failed.")
@@ -1537,19 +1635,24 @@ def cmd_doctor(arrangement_arg: str | None = None):
         ui.print_success("All critical checks passed.")
 
 
-def cmd_status(core: SpecSoloistCore, json_output: bool = False):
+def cmd_status(core: SpecSoloistCore, arrangement_arg: str | None = None, json_output: bool = False):
     """Show compilation state of each spec from the build manifest."""
     import json as _json
     from datetime import datetime, timezone
+
+    arrangement = _resolve_arrangement(core, arrangement_arg)
+    if arrangement:
+        core.parser.src_dir = os.path.abspath(arrangement.specs_path)
 
     manifest = core._get_manifest()
     specs = core.list_specs()
 
     if not specs:
+        path = arrangement.specs_path if arrangement else "src/"
         if json_output:
             print(_json.dumps({"specs": []}))
         else:
-            ui.print_warning("No specs found.")
+            ui.print_warning(f"No specs found in {path}.")
             ui.print_info("Create one with: sp create <name> '<description>'")
         return
 
@@ -1655,13 +1758,24 @@ _INIT_ARRANGEMENT = """\
 # Bridges your specs to a concrete build environment.
 # Run: sp conduct specs/ --arrangement arrangement.yaml
 #
-# See: https://github.com/symbolfarm/specsoloist
+# Run `sp schema` to see all available fields.
+# Run `sp help arrangement` for a full narrative reference.
 
 target_language: python
+
+# Directory where your .spec.md files live (default: src/).
+# Change this if your specs are in a different location, e.g. specs/
+# specs_path: specs/
 
 output_paths:
   implementation: src/{name}.py
   tests: tests/test_{name}.py
+  # Per-spec overrides for modules in subdirectories:
+  # overrides:
+  #   data:
+  #     implementation: myapp/data/postgres/data.py
+  #   components:
+  #     implementation: myapp/html/components.py
 
 environment:
   tools:
@@ -1670,6 +1784,8 @@ environment:
     - pytest
   setup_commands:
     - uv sync
+  # dependencies:
+  #   some-package: ">=1.0,<2.0"
 
 build_commands:
   compile: ""               # Leave empty for interpreted languages
@@ -1679,6 +1795,17 @@ build_commands:
 constraints:
   - Must pass ruff with 0 errors
   - Must use type hints for all public function signatures
+
+# Pin the LLM model for this project (optional).
+# Overridden by --model flag. Falls back to SPECSOLOIST_LLM_MODEL env var.
+# model: claude-sonnet-4-6
+
+# Declare environment variables your project needs (sp doctor will warn if unset):
+# env_vars:
+#   DATABASE_URL:
+#     description: "PostgreSQL connection string"
+#     required: true
+#     example: "postgresql://user:pass@localhost/mydb"
 """
 
 _INIT_ARRANGEMENT_TYPESCRIPT = """\
@@ -1687,13 +1814,19 @@ _INIT_ARRANGEMENT_TYPESCRIPT = """\
 # Bridges your specs to a TypeScript/Node.js build environment.
 # Run: sp conduct specs/ --arrangement arrangement.yaml
 #
-# See: https://github.com/symbolfarm/specsoloist
+# Run `sp schema` to see all available fields.
+# Run `sp help arrangement` for a full narrative reference.
 
 target_language: typescript
+
+# specs_path: specs/    # default is src/
 
 output_paths:
   implementation: src/{name}.ts
   tests: tests/{name}.test.ts
+  # overrides:
+  #   chat_route:
+  #     implementation: src/app/api/chat/route.ts
 
 environment:
   tools:
@@ -1905,6 +2038,9 @@ def cmd_install_skills(target: str):
     target_abs = os.path.abspath(target)
     os.makedirs(target_abs, exist_ok=True)
 
+    _pkg_version = importlib.metadata.version("specsoloist")
+    version_marker = f"<!-- sp-version: {_pkg_version} -->\n"
+
     installed = []
     for entry in os.listdir(skills_src):
         src = os.path.join(skills_src, entry)
@@ -1913,6 +2049,12 @@ def cmd_install_skills(target: str):
             if os.path.exists(dst):
                 shutil.rmtree(dst)
             shutil.copytree(src, dst)
+            # Prepend version marker to installed SKILL.md
+            skill_dst = os.path.join(dst, "SKILL.md")
+            with open(skill_dst) as f:
+                original = f.read()
+            with open(skill_dst, "w") as f:
+                f.write(version_marker + original)
             installed.append(entry)
             ui.print_success(f"Installed: [bold]{entry}[/]")
 
@@ -2142,6 +2284,197 @@ def _check_api_key():
             ui.print_error(f"{key_name} not set")
             ui.print_info(f"Run: {hint}")
             sys.exit(1)
+
+
+# ---------------------------------------------------------------------------
+# sp help helpers
+# ---------------------------------------------------------------------------
+
+_HELP_TOPICS = {
+    "arrangement": "Full arrangement.yaml reference (all fields, examples)",
+    "spec-format": "Spec file format (.spec.md structure, types, blocks)",
+    "conduct": "Running sp conduct: arguments, arrangement, agent mode",
+    "overrides": "Per-spec output path overrides (output_paths.overrides)",
+    "specs-path": "Configuring the spec discovery directory (specs_path)",
+}
+
+
+def _read_help_file(topic: str) -> str | None:
+    """Return the content of a bundled help file, or None if not found."""
+    import importlib.resources as pkg_resources
+    try:
+        ref = pkg_resources.files("specsoloist.help").joinpath(f"{topic}.md")
+        return ref.read_text(encoding="utf-8")
+    except (FileNotFoundError, TypeError, ModuleNotFoundError):
+        return None
+
+
+def cmd_help(topic: str | None = None) -> None:
+    """Print a reference guide for a specific topic."""
+    if topic is None:
+        ui.console.print("\n[bold]Available help topics:[/]\n")
+        for name, desc in _HELP_TOPICS.items():
+            ui.console.print(f"  [bold]{name:<14}[/]  {desc}")
+        ui.console.print("\nRun: [bold]sp help <topic>[/]\n")
+        return
+
+    content = _read_help_file(topic)
+    if content is None:
+        valid = ", ".join(_HELP_TOPICS.keys())
+        ui.print_error(f"Unknown topic '{topic}'. Available topics: {valid}")
+        sys.exit(1)
+
+    print(content)
+
+
+# ---------------------------------------------------------------------------
+# sp schema helpers
+# ---------------------------------------------------------------------------
+
+def _classify_annotation(annotation) -> tuple[str, type | None, bool]:
+    """Return (type_str, sub_model_class_or_None, is_dict_of_model).
+
+    Handles Optional[X], List[X], Dict[K, V], BaseModel subclasses, and primitives.
+    """
+    import typing
+    from pydantic import BaseModel as _BaseModel
+
+    origin = typing.get_origin(annotation)
+    args = typing.get_args(annotation)
+
+    # Optional[X] == Union[X, None]
+    if origin is typing.Union:
+        non_none = [a for a in args if a is not type(None)]
+        if len(non_none) == 1:
+            return _classify_annotation(non_none[0])
+        return str(annotation), None, False
+
+    # List[X]
+    if origin is list:
+        inner = args[0].__name__ if args and hasattr(args[0], "__name__") else "Any"
+        return f"list[{inner}]", None, False
+
+    # Dict[K, V]
+    if origin is dict:
+        v = args[1] if len(args) > 1 else None
+        if v and isinstance(v, type) and issubclass(v, _BaseModel):
+            return f"dict[str, {v.__name__}]", v, True
+        k_name = args[0].__name__ if args and hasattr(args[0], "__name__") else "str"
+        v_name = args[1].__name__ if len(args) > 1 and hasattr(args[1], "__name__") else "Any"
+        return f"dict[{k_name}, {v_name}]", None, False
+
+    # BaseModel subclass
+    if isinstance(annotation, type):
+        from pydantic import BaseModel as _BM
+        if issubclass(annotation, _BM):
+            return annotation.__name__, annotation, False
+
+    # Primitive
+    if hasattr(annotation, "__name__"):
+        return annotation.__name__, None, False
+
+    return str(annotation), None, False
+
+
+def _repr_default(val) -> str:
+    """Return a compact string for a field default value."""
+    if isinstance(val, str):
+        return f'"{val}"'
+    if val in ({}, []):
+        return repr(val)
+    return repr(val)
+
+
+def _format_schema_text(model: type, indent: int = 0) -> str:
+    """Render a Pydantic model as an annotated text schema (recursive)."""
+    lines = []
+    pad = "  " * indent
+
+    for name, field_info in model.model_fields.items():
+        type_str, sub_model, is_dict_of_model = _classify_annotation(field_info.annotation)
+
+        # Qualifier: required / optional / default value
+        if field_info.is_required():
+            qualifier = "(required)"
+        elif field_info.default is None:
+            qualifier = "(optional)"
+        elif field_info.default_factory is not None:
+            try:
+                qualifier = f"[default: {_repr_default(field_info.default_factory())}]"
+            except Exception:
+                qualifier = ""
+        else:
+            qualifier = f"[default: {_repr_default(field_info.default)}]"
+
+        desc = field_info.description or ""
+
+        if sub_model and not is_dict_of_model:
+            # Nested model — recurse; suppress verbose default repr (fields show their own defaults)
+            nested_qualifier = "(required)" if field_info.is_required() else "(optional)"
+            qualifier = nested_qualifier
+            lines.append(f"{pad}{name}:  {qualifier}")
+            if desc:
+                lines.append(f"{pad}  {desc}")
+            lines.append(_format_schema_text(sub_model, indent + 1))
+        elif sub_model and is_dict_of_model:
+            # Dict[str, SomeModel] — show with <key>: placeholder
+            lines.append(f"{pad}{name}:  {qualifier}")
+            if desc:
+                lines.append(f"{pad}  {desc}")
+            lines.append(f"{pad}  <key>:")
+            lines.append(_format_schema_text(sub_model, indent + 2))
+        else:
+            lines.append(f"{pad}{name}: {type_str}  {qualifier}")
+            if desc:
+                lines.append(f"{pad}  {desc}")
+        lines.append("")
+
+    return "\n".join(lines)
+
+
+def cmd_schema(topic: str | None = None, json_output: bool = False) -> None:
+    """Print the annotated arrangement.yaml schema, optionally filtered to a topic."""
+    import json as _json
+    from specsoloist.schema import Arrangement
+
+    if json_output:
+        if topic:
+            # Zoom into a sub-model's JSON schema
+            field = Arrangement.model_fields.get(topic)
+            if field is None:
+                valid = ", ".join(Arrangement.model_fields.keys())
+                ui.print_error(f"Unknown topic '{topic}'. Valid topics: {valid}")
+                sys.exit(1)
+            _, sub_model, _ = _classify_annotation(field.annotation)
+            schema = sub_model.model_json_schema() if sub_model else {}
+        else:
+            schema = Arrangement.model_json_schema()
+        print(_json.dumps(schema, indent=2))
+        return
+
+    # Annotated text format
+    version = importlib.metadata.version("specsoloist")
+    if topic:
+        field = Arrangement.model_fields.get(topic)
+        if field is None:
+            valid = ", ".join(Arrangement.model_fields.keys())
+            ui.print_error(f"Unknown topic '{topic}'. Valid topics: {valid}")
+            sys.exit(1)
+        _, sub_model, is_dict = _classify_annotation(field.annotation)
+        header = f"arrangement.yaml → {topic}  (specsoloist {version})"
+        ui.console.print(f"\n[bold]{header}[/]\n")
+        if sub_model:
+            print(_format_schema_text(sub_model))
+        else:
+            type_str, _, _ = _classify_annotation(field.annotation)
+            desc = field.description or ""
+            print(f"{topic}: {type_str}")
+            if desc:
+                print(f"  {desc}")
+    else:
+        header = f"arrangement.yaml schema  (specsoloist {version})"
+        ui.console.print(f"\n[bold]{header}[/]\n")
+        print(_format_schema_text(Arrangement))
 
 
 if __name__ == "__main__":

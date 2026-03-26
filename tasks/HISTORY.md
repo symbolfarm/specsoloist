@@ -4,6 +4,13 @@ Append-only log of completed tasks and roadmap phases, in order of completion.
 
 ---
 
+## Feature Tasks (v0.6.0 additions)
+
+| # | Task | Completed | Notes |
+|---|------|-----------|-------|
+| 22 | `sp schema [topic]` | 2026-03-27 | Field descriptions added to all Arrangement sub-models; `_format_schema_text` walks Pydantic v2 model_fields recursively; `sp schema`, `sp schema <topic>`, `sp schema --json` all work; 10 new tests; `score/cli.spec.md` updated |
+| 23 | `sp help <topic>` | 2026-03-27 | `src/specsoloist/help/` package with 5 hand-written Markdown guides (arrangement, spec-format, conduct, overrides, specs-path); `_read_help_file` via `importlib.resources`; `sp help` lists topics; `sp help <topic>` prints guide; 17 new tests; `score/cli.spec.md` updated |
+
 ## Feature Tasks
 
 | # | Task | Completed | Notes |
@@ -48,6 +55,11 @@ Append-only log of completed tasks and roadmap phases, in order of completion.
 | HK-11 | Spec type examples in docs | 2026-03-18 | New `docs/reference/spec-types.md` (replaces `template.md`) with one real embedded example per type using MkDocs snippets; `reference` type conventions documented; example docs rewritten for fasthtml_app + nextjs_ai_chat + math; stale examples removed (demo.py, user_project/, ml_demo/, ts_demo/) |
 | HK-12 | Fix pytest TestResult/TestRunner warnings | 2026-03-19 | Added `# Constraints` to `score/runner.spec.md` — test files must not import TestResult/TestRunner at module scope |
 | HK-13 | Remove non-code overview specs from score/ | 2026-03-19 | Deleted `arrangement.spec.md`, `specsoloist.spec.md`, `spechestra.spec.md`; score/ now has 15 specs (14 code-gen + spec_format) |
+| HK-14 | Revert publish workflow to trusted publishing | 2026-03-26 | Removed `password: ${{ secrets.PYPI_API_TOKEN }}` and `attestations: false` from publish.yaml; root cause of v0.5.0 failures was duplicate ZIP entries, not auth |
+| HK-15 | `specs_path` arrangement field + discovery commands | 2026-03-26 | Added `specs_path: str = "src/"` to `Arrangement`; `--arrangement` flag on `sp list/status/graph`; all three commands apply `specs_path` from arrangement before listing; 6 new tests |
+| HK-16 | Verify and test `output_paths.overrides` | 2026-03-26 | Confirmed `resolve_implementation/tests` uses `.format(name=name)`; all override scenarios already covered in `test_arrangement.py` (impl-only, tests-only, both, no-override, YAML round-trip, compile integration); `score/arrangement.spec.md` n/a (deleted in HK-13) |
+| HK-17 | `yaml:test_scenarios` validator fix + `--version` flag | 2026-03-26 | `_check_spec_quality` now recognises `` ```yaml:test_scenarios `` blocks; warning for missing scenarios includes example snippet; `--version`/`-V` added to argparse using `importlib.metadata`; 6 new tests |
+| 24 | Init templates + skill updates + staleness detection | 2026-03-27 | Annotated init templates (python, typescript, fasthtml, nextjs) with commented `specs_path`, `overrides`, `dependencies`, `model`, `env_vars` examples; added "Key Arrangement Fields" section to `sp-conduct/SKILL.md` and `sp-soloist/SKILL.md` and native conductor/soloist agent files; `cmd_install_skills` prepends `<!-- sp-version: X.Y.Z -->` marker to each installed SKILL.md; `sp doctor` warns when installed skills have a different version; `sp schema` and `sp help` commands implemented; `score/cli.spec.md` updated; 4 new init tests, 5 new doctor/install-skills tests |
 
 ## Completed Roadmap Phases
 

@@ -2,12 +2,18 @@
 # Usage: sp init --template python-fasthtml
 #
 # Requires: uv sync (installs python-fasthtml, pytest, httpx)
+# Run `sp schema` or `sp help arrangement` to see all available fields.
 
 target_language: python
+
+# specs_path: specs/    # default is src/
 
 output_paths:
   implementation: src/{name}.py
   tests: tests/test_{name}.py
+  # overrides:
+  #   routes:
+  #     implementation: src/myapp/routes.py
 
 environment:
   tools:
