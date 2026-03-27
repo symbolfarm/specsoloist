@@ -68,6 +68,7 @@ Append-only log of completed tasks and roadmap phases, in order of completion.
 | HK-23 | `sp doctor` static path base dir | 2026-03-27 | Fixed: static source paths now resolve relative to the arrangement file's directory (`arr_base = os.path.dirname(os.path.abspath(arr_path))`), not `os.getcwd()` |
 | UA-01 | Add `ANTHROPIC_API_KEY` to GitHub repo secrets | 2026-03-27 | Done by Toby |
 | UA-02 | Delete `PYPI_API_TOKEN` from GitHub release environment secrets | 2026-03-27 | Done by Toby |
+| 26 | Run quine with `score/arrangement.yaml` | 2026-03-27 | 584/584 tests pass; conductor/composer in `build/quine/src/spechestra/` ✓; help/ and skills/ static artifacts copied ✓; quine generated 584 tests vs 411 in original suite (specs prompt more thorough generation) |
 | HK-25 | Integrate `score/arrangement.yaml` with quine mode | 2026-03-27 | Quine agent prompt now injects per-spec output overrides (prefixed with `build/quine/`) and static artifact copy instructions from the arrangement; also reverted HK-23's arrangement-file-dir change back to `os.getcwd()` (consistent with conductor's `project_dir` approach; arrangement-file-dir was wrong for `score/arrangement.yaml` which lives in a subdirectory with repo-root-relative paths) |
 
 ## Completed Roadmap Phases

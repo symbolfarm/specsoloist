@@ -22,7 +22,7 @@ and Next.js web applications.**
 |-------|--------|
 | Core framework | Stable — parser, compiler, runner, resolver, manifest |
 | Agent-first CLI | Done — `sp conduct`, `sp compose`, `sp respec`, `sp fix`, `sp vibe`, `sp diff` |
-| Quine (self-hosting) | `score/arrangement.yaml` created (task 25); quine re-run pending (task 26); weekly CI in `.github/workflows/quine.yaml` |
+| Quine (self-hosting) | Validated — 584/584 tests pass (2026-03-27); static artifacts + spechestra overrides confirmed; weekly CI in `.github/workflows/quine.yaml` |
 | FastHTML example | Validated — 23 tests passing (`examples/fasthtml_app/`) |
 | Next.js example | Validated — 22 tests passing (`examples/nextjs_ai_chat/`) |
 | Documentation | Solid — mkdocstrings + Google docstrings live; spec-types.md + example docs complete (HK-11 done) |
@@ -43,11 +43,6 @@ sp conduct score/ --model haiku --auto-accept   # quine attempt (see task 26)
 
 _(none)_
 
-### 🔲 To Do — in priority order
-
-| # | Task | Effort | Summary |
-|---|------|--------|---------|
-| **26** | Run the quine with `score/arrangement.yaml` | Small | First quine run since task 25. Use `sp conduct score/ --arrangement score/arrangement.yaml --model haiku --auto-accept`. Verify: (1) static artifacts (`help/`, `skills/`) appear in `build/quine/src/specsoloist/`; (2) conductor/composer land in `build/quine/src/spechestra/`; (3) test suite passes against quine output. Note any failures or spec gaps. |
 
 ---
 
