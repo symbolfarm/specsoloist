@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-## [0.6.0] - 2026-03-27
+## [0.7.0] - 2026-xx-xx
 
 ### Added
 - `specs_path` field in `arrangement.yaml` — configures spec discovery directory
