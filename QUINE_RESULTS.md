@@ -120,4 +120,80 @@ Score specs updated to reflect ~20 features shipped in Phase 8 and Phase 9:
 **Generated**: 2026-03-19
 **Model**: claude-haiku-4-5-20251001
 **Total Tests**: 320
+
+---
+
+## 2026-03-27 — v0.7.0 ✅
+
+**Command:**
+```bash
+sp conduct score/ --arrangement score/arrangement.yaml --model haiku --auto-accept
+```
+
+**Status:** ✅ SUCCESS — 584/584 tests passing (100%)
+**Build time:** ~600 seconds (parallel compilation, 5 phases)
+**Generated:** ~14,700 lines of code across 16 modules + 16 test files
+
+### Compilation phases
+
+| Phase | Specs | Tests |
+|-------|-------|-------|
+| 1 — Base | config, manifest, ui, schema | 173 |
+| 2 — Parsing & execution | respec, runner, parser, resolver | 135 |
+| 3 — Analysis | build_diff, compiler, spec_diff | 125 |
+| 4 — Orchestration | core, composer | 59 |
+| 5 — CLI & conductor | conductor, cli | 92 |
+| **Total** | **14 specs** | **584** |
+
+### What changed since last run (2026-03-19)
+
+| Change | Details |
+|--------|---------|
+| First run using `score/arrangement.yaml` | `specs_path`, `output_paths.overrides`, `static` all exercised |
+| `output_paths.overrides` validated | conductor/composer correctly landed in `build/quine/src/spechestra/` |
+| Static artifacts validated | `help/` and `skills/` copied verbatim to `build/quine/src/specsoloist/` |
+| New specs in score | `spec_diff.spec.md` (task 22); `schema.spec.md` + `conductor.spec.md` updated for `ArrangementStatic` |
+| Providers in output | All 5 provider modules present (`anthropic`, `gemini`, `base`, `pydantic_ai_provider`, `__init__`) |
+
+### Output structure
+
+```
+build/quine/
+├── src/
+│   ├── specsoloist/          # 12 modules + providers/
+│   │   ├── build_diff.py
+│   │   ├── cli.py
+│   │   ├── compiler.py
+│   │   ├── config.py
+│   │   ├── core.py
+│   │   ├── manifest.py
+│   │   ├── parser.py
+│   │   ├── resolver.py
+│   │   ├── respec.py
+│   │   ├── runner.py
+│   │   ├── schema.py
+│   │   ├── spec_diff.py
+│   │   ├── ui.py
+│   │   ├── help/             # ← static artifact
+│   │   ├── skills/           # ← static artifact
+│   │   └── providers/        # 5 provider modules
+│   └── spechestra/           # ← output_paths.overrides
+│       ├── composer.py
+│       └── conductor.py
+└── tests/
+    └── test_*.py             # 14 test files (584 tests total)
+```
+
+### Notes
+
+- Quine generated 584 tests vs 411 in the canonical test suite — the Score prompts
+  more thorough test generation than the hand-written suite in some modules.
+- Agent self-corrected `create_provider()` in `config.py` during compilation
+  (provider instantiation logic for AnthropicProvider, GeminiProvider, PydanticAIProvider).
+
+---
+
+**Generated**: 2026-03-27
+**Model**: claude-haiku-4-5-20251001
+**Total Tests**: 584
 **Pass Rate**: 100%
