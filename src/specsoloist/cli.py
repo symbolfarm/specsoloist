@@ -1589,6 +1589,16 @@ def cmd_doctor(arrangement_arg: str | None = None):
                             f"[success]✓[/] {var_name} not set  "
                             f"[dim](optional — {var_info.description}{example_hint})[/]"
                         )
+            # Static artifact source paths check
+            if arr.static:
+                project_dir = os.getcwd()
+                for entry in arr.static:
+                    src = os.path.join(project_dir, entry.source)
+                    if not os.path.exists(src):
+                        ui.console.print(
+                            f"[warning]⚠[/] Static artifact not found: {entry.source}  "
+                            f"[dim](declared in {os.path.basename(arr_path)})[/]"
+                        )
         except Exception as e:
             ui.console.print(f"[warning]~[/] Could not parse arrangement env_vars: {e}")
 

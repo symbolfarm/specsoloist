@@ -171,6 +171,18 @@ class ArrangementEnvVar(BaseModel):
     example: str = ""
 
 
+class ArrangementStatic(BaseModel):
+    """A verbatim file or directory to copy during sp conduct."""
+
+    source: str = Field(description="Source path relative to the arrangement file.")
+    dest: str = Field(description="Destination path relative to the arrangement file.")
+    description: str = Field(default="", description="Human-readable note for agents.")
+    overwrite: bool = Field(
+        default=True,
+        description="If False, skip copying when the destination already exists.",
+    )
+
+
 class Arrangement(BaseModel):
     """An Arrangement file bridges a Score (spec) to a specific Build Environment.
 
@@ -204,6 +216,14 @@ class Arrangement(BaseModel):
         default_factory=dict,
         description="Declared environment variable names with descriptions and requirements. "
                     "Values are never stored — only names, descriptions, and whether required."
+    )
+    static: list[ArrangementStatic] = Field(
+        default_factory=list,
+        description=(
+            "Verbatim files or directories to copy into the output during sp conduct. "
+            "Use for docs, templates, scripts, and other hand-crafted assets that are "
+            "part of the project but not generated from specs."
+        ),
     )
     model: Optional[str] = Field(
         default=None,
