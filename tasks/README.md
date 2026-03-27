@@ -41,15 +41,13 @@ sp conduct score/ --model haiku --auto-accept   # quine attempt (see task 26)
 
 ### 🔲 Housekeeping
 
-| # | Task | Effort | Summary |
-|---|------|--------|---------|
-| **HK-25** | Integrate `score/arrangement.yaml` with quine mode | Small | `sp conduct score/` hardcodes `build/quine/` output paths in the agent prompt. Using `--arrangement score/arrangement.yaml` would write to live `src/` instead. Needs a design decision: adjust the quine agent prompt to honour arrangement paths but redirect to `build/quine/`, or provide a separate `score/arrangement.ci.yaml` with `build/quine/` prefixed paths. |
+_(none)_
 
 ### 🔲 To Do — in priority order
 
 | # | Task | Effort | Summary |
 |---|------|--------|---------|
-| **26** | Run the quine with `score/arrangement.yaml` | Small | First quine run since task 25. Use `sp conduct score/ --model haiku --auto-accept`. Verify: (1) static artifacts (`help/`, `skills/`) appear in `build/quine/src/specsoloist/`; (2) conductor/composer land in `build/quine/src/spechestra/` (requires HK-25 first, or manually verify); (3) all 411 tests pass against the quine output. Note any failures or spec gaps. |
+| **26** | Run the quine with `score/arrangement.yaml` | Small | First quine run since task 25. Use `sp conduct score/ --arrangement score/arrangement.yaml --model haiku --auto-accept`. Verify: (1) static artifacts (`help/`, `skills/`) appear in `build/quine/src/specsoloist/`; (2) conductor/composer land in `build/quine/src/spechestra/`; (3) test suite passes against quine output. Note any failures or spec gaps. |
 
 ---
 
