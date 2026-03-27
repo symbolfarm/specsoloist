@@ -1148,6 +1148,34 @@ def _conduct_with_agent(src_dir: str | None, auto_accept: bool, model: str | Non
             f"Do NOT skip compilation because code already exists elsewhere. "
             f"Run the full test suite from {quine_dir}/tests/ when done."
         )
+
+        # If an arrangement is provided, inject per-spec overrides and static artifacts
+        # into the quine prompt, with all dest paths redirected to build/quine/.
+        if arrangement_arg and os.path.exists(arrangement_arg):
+            try:
+                import yaml as _yaml
+                from .schema import Arrangement as _Arrangement
+                with open(arrangement_arg) as _f:
+                    _arr = _Arrangement(**_yaml.safe_load(_f))
+                _project_root = os.getcwd()
+
+                if _arr.output_paths.overrides:
+                    prompt += "\n\n**Per-spec output path overrides** (use these exact paths):\n"
+                    for _spec_name, _ov in _arr.output_paths.overrides.items():
+                        if _ov.implementation:
+                            prompt += f"- {_spec_name} implementation: {quine_dir}/{_ov.implementation}\n"
+                        if _ov.tests:
+                            prompt += f"- {_spec_name} tests: {quine_dir}/{_ov.tests}\n"
+
+                if _arr.static:
+                    prompt += "\n\n**After compilation, copy these static artifacts verbatim:**\n"
+                    for _entry in _arr.static:
+                        _src = os.path.join(_project_root, _entry.source)
+                        _dst = os.path.join(quine_dir, _entry.dest)
+                        prompt += f"- Copy {_src} → {_dst}\n"
+            except Exception:
+                pass  # arrangement loading is best-effort; quine still works without it
+
     else:
         prompt = (
             f"conduct: Read all *.spec.md files in {spec_dir}, resolve their dependency order, "
@@ -1591,9 +1619,8 @@ def cmd_doctor(arrangement_arg: str | None = None):
                         )
             # Static artifact source paths check
             if arr.static:
-                arr_base = os.path.dirname(os.path.abspath(arr_path))
                 for entry in arr.static:
-                    src = os.path.join(arr_base, entry.source)
+                    src = os.path.join(os.getcwd(), entry.source)
                     if not os.path.exists(src):
                         ui.console.print(
                             f"[warning]⚠[/] Static artifact not found: {entry.source}  "
