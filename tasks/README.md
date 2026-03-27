@@ -43,8 +43,6 @@ sp conduct score/ --model haiku --auto-accept   # quine attempt
 
 | # | Task | Effort | Summary |
 |---|------|--------|---------|
-| **HK-20** | Update docs for v0.6.0 | Small–Medium | Add `sp schema`, `sp help`, `--version`, `--arrangement` to cli.md; add `specs_path` and `output_paths.overrides` to arrangement.md; update README. |
-| **HK-21** | Trim orientation files | Small | Remove stale test counts and current-state details from AGENTS.md and ROADMAP.md; replace with pointers to `tasks/README.md`. |
 | **HK-22** | Release v0.7.0 | Small | Preflight, CHANGELOG, version bump, tag, push, GitHub release. Runs after HK-19–21 and task 25. |
 
 ### 🔲 User Actions

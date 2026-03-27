@@ -71,7 +71,7 @@ Specs are language-agnostic Markdown files. The `type` field determines structur
 ### Key Commands
 
 ```bash
-uv run python -m pytest tests/   # Run tests (270 tests)
+uv run python -m pytest tests/   # Run all tests
 uv run ruff check src/           # Lint (must pass with 0 errors)
 ```
 
@@ -99,7 +99,7 @@ docker/                # Dockerfiles for framework and sandboxed execution
   specsoloist.Dockerfile
   sandbox.Dockerfile
 
-tests/                 # pytest tests (270 tests)
+tests/                 # pytest tests
 
 score/                 # The Score - SpecSoloist's own specs (The Quine)
   spec_format.spec.md  # The spec format itself
@@ -116,7 +116,7 @@ score/                 # The Score - SpecSoloist's own specs (The Quine)
   respec.spec.md       # Reverse engineering
   composer.spec.md     # Architecture drafting
   conductor.spec.md    # Build orchestration
-  arrangement.spec.md  # Build configuration schema
+  spec_diff.spec.md    # Spec-vs-code drift detection
 
 src/specsoloist/skills/  # Cross-platform skill definitions (agentskills format)
   sp-compose/SKILL.md    # Same five agents, platform-neutral
@@ -144,22 +144,9 @@ src/specsoloist/skills/  # Cross-platform skill definitions (agentskills format)
 
 `score/` contains SpecSoloist's own specifications - it describes itself. The goal is for `sp conduct score/` to regenerate the entire `src/` directory with passing tests.
 
-### Current State (Phase 9: Distribution & DX)
+### Current State
 
-**Phases 1–8 Completed.** See `tasks/HISTORY.md` for full history.
-
-**Phase 8 highlights:**
-- ✅ `type: reference` spec type for third-party API documentation
-- ✅ Arrangement templates (`sp init --template python-fasthtml/nextjs-vitest/nextjs-playwright`)
-- ✅ FastHTML + Next.js examples validated end-to-end
-- ✅ `sp conduct --resume` / `--force` for incremental builds
-- ✅ `env_vars` in arrangements; `sp doctor --arrangement` warns on unset required vars
-- ✅ Nested session detection with friendly warning
-- ✅ Incremental adoption guide + database persistence patterns
-- ✅ 270 tests passing
-
-**Current Goal:**
-- Phase 9: Distribution & DX — `sp diff`, `sp vibe`, Pydantic AI providers, quine CI
+See `tasks/README.md` for active tasks, current phase, and recent completions.
 
 ### Native Subagent Architecture
 
