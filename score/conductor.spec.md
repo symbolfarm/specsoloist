@@ -51,6 +51,7 @@ Build specs in dependency order.
 **Behavior:**
 - If an arrangement is provided, provisions the build environment (writes config files, runs setup commands) before delegating to SpecSoloistCore.
 - Delegates actual compilation to SpecSoloistCore's `compile_project`, including test generation.
+- After compilation, if the arrangement declares any `static` entries, copies them with `_copy_static_artifacts`.
 - Returns a BuildResult (from specsoloist.core) with compiled, skipped, and failed spec lists.
 
 ### get_build_order(specs=None) -> list of strings
@@ -76,6 +77,10 @@ Return the dependency graph for the given specs (or all specs).
 ## Environment provisioning
 
 When an arrangement is provided to `build()`, the conductor writes any declared `config_files` to the build directory and runs `setup_commands` before compilation begins. This ensures the build environment is ready (e.g., package.json exists before npm install runs).
+
+## Static artifact copying
+
+After compilation, the conductor copies each entry in `arrangement.static` verbatim from `source` to `dest`. Both paths resolve relative to the conductor's `project_dir`. Directories are copied with `dirs_exist_ok=True`; files create parent directories as needed. If the source does not exist, a warning is printed and the entry is skipped. If `overwrite=False` and the destination already exists, the copy is skipped silently.
 
 ## Separation of concerns
 

@@ -5,7 +5,9 @@ compilation.
 """
 
 import os
+import shutil
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Dict, List, Optional
 
 from specsoloist.config import SpecSoloistConfig
@@ -91,7 +93,7 @@ class SpecConductor:
         if arrangement:
             self._provision_environment(arrangement)
 
-        return self._core.compile_project(
+        result = self._core.compile_project(
             specs=specs,
             model=model,
             generate_tests=True,
@@ -100,6 +102,11 @@ class SpecConductor:
             max_workers=max_workers,
             arrangement=arrangement
         )
+
+        if arrangement and arrangement.static:
+            self._copy_static_artifacts(arrangement)
+
+        return result
 
     def _provision_environment(self, arrangement: Arrangement):
         """Create config files and run setup commands."""
@@ -130,6 +137,31 @@ class SpecConductor:
                 result = self._core.runner.run_custom_test(f"cd {self._core.runner.build_dir} && {cmd}")
                 if not result.success:
                     ui.print_warning(f"Setup command failed: {cmd}\n{result.output}")
+
+    def _copy_static_artifacts(self, arrangement: "Arrangement"):
+        """Copy verbatim static artifacts declared in the arrangement."""
+        from specsoloist import ui
+
+        base = Path(self.project_dir)
+        for entry in arrangement.static:
+            src = base / entry.source
+            dst = base / entry.dest
+
+            if not src.exists():
+                ui.print_warning(f"Static artifact not found: {entry.source}")
+                continue
+
+            if dst.exists() and not entry.overwrite:
+                ui.print_info(f"Skipping static (overwrite=false): {entry.source}")
+                continue
+
+            if src.is_dir():
+                shutil.copytree(src, dst, dirs_exist_ok=True)
+            else:
+                dst.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(src, dst)
+
+            ui.print_info(f"Copied static: {entry.source} → {entry.dest}")
 
     def get_build_order(self, specs: Optional[List[str]] = None) -> List[str]:
         """Get the build order without actually building.

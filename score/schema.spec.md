@@ -131,17 +131,23 @@ Output paths for implementation and tests, with optional per-spec overrides.
 
 Declaration of a single environment variable. **Fields:** `description` (string), `required` (bool, default true), `example` (string, default `""`).
 
+## ArrangementStatic
+
+A verbatim file or directory to copy during `sp conduct`. **Fields:** `source` (string — source path relative to project root), `dest` (string — destination path relative to project root), `description` (string, default `""`), `overwrite` (bool, default `true` — if `false`, skip copying when destination already exists).
+
 ## Arrangement
 
 Top-level build arrangement model.
 
 **Fields:**
 - `target_language` (string): e.g., `"python"` or `"typescript"`
+- `specs_path` (string, default `"src/"`)
 - `output_paths` (ArrangementOutputPaths)
 - `environment` (ArrangementEnvironment, default empty)
 - `build_commands` (ArrangementBuildCommands)
 - `constraints` (list of strings, default empty)
 - `env_vars` (dict of var name to ArrangementEnvVar, default empty)
+- `static` (list of ArrangementStatic, default empty): verbatim files/dirs to copy during `sp conduct`
 - `model` (optional string): LLM model override for this arrangement. Precedence: `--model` CLI flag > `model` field > `SPECSOLOIST_LLM_MODEL` env var > provider default.
 
 # Constraints

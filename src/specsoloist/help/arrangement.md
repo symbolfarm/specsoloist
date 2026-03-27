@@ -135,6 +135,33 @@ env_vars:
     example: sk-...
 ```
 
+### `static` (default: `[]`)
+
+Verbatim files or directories to copy into the output during `sp conduct`. Use for
+docs, templates, scripts, and other hand-crafted assets that are part of the project
+but not generated from specs.
+
+```yaml
+static:
+  - source: help/
+    dest: src/myapp/help/
+    description: "Bundled help files copied verbatim into the package"
+  - source: templates/
+    dest: src/myapp/templates/
+  - source: scripts/seed.py
+    dest: scripts/seed.py
+  - source: ARRANGEMENT.md
+    dest: ARRANGEMENT.md
+    overwrite: false   # don't clobber user edits
+```
+
+- **`source`**: Source path relative to the project root (directory containing `arrangement.yaml`).
+- **`dest`**: Destination path, also relative to the project root.
+- **`description`**: Optional human-readable note (for agents and documentation).
+- **`overwrite`**: If `false`, skip copying when the destination already exists. Default: `true`.
+
+Missing source paths produce a warning from `sp doctor` but do not fail the build.
+
 ### `model` (optional)
 
 LLM model override for this project. Precedence: `--model` CLI flag > this field >

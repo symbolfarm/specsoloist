@@ -18,6 +18,7 @@ from specsoloist.schema import (
     ArrangementEnvironment,
     ArrangementOutputPathOverride,
     ArrangementOutputPaths,
+    ArrangementStatic,
 )
 
 
@@ -546,3 +547,73 @@ def test_cmd_list_applies_specs_path_from_arrangement(tmp_path, monkeypatch):
 
     import os
     assert core.parser.src_dir == os.path.abspath(str(specs_dir))
+
+
+# ---------------------------------------------------------------------------
+# ArrangementStatic (task 25)
+# ---------------------------------------------------------------------------
+
+def test_arrangement_static_defaults():
+    """ArrangementStatic defaults: overwrite=True, description=''."""
+    s = ArrangementStatic(source="help/", dest="src/myapp/help/")
+    assert s.source == "help/"
+    assert s.dest == "src/myapp/help/"
+    assert s.description == ""
+    assert s.overwrite is True
+
+
+def test_arrangement_static_explicit_fields():
+    """ArrangementStatic accepts explicit source, dest, description, and overwrite."""
+    s = ArrangementStatic(
+        source="templates/",
+        dest="src/myapp/templates/",
+        description="Template files",
+        overwrite=False,
+    )
+    assert s.source == "templates/"
+    assert s.dest == "src/myapp/templates/"
+    assert s.description == "Template files"
+    assert s.overwrite is False
+
+
+def test_arrangement_static_field_defaults_to_empty_list():
+    """Arrangement.static defaults to an empty list when not provided."""
+    arr = Arrangement(
+        target_language="python",
+        output_paths=ArrangementOutputPaths(
+            implementation="src/{name}.py",
+            tests="tests/test_{name}.py",
+        ),
+        build_commands=ArrangementBuildCommands(test="pytest"),
+    )
+    assert arr.static == []
+
+
+def test_arrangement_static_round_trips_through_yaml():
+    """static entries survive a round-trip through YAML parsing."""
+    yaml_content = """\
+target_language: python
+output_paths:
+  implementation: src/{name}.py
+  tests: tests/test_{name}.py
+build_commands:
+  test: pytest
+static:
+  - source: help/
+    dest: src/myapp/help/
+    description: "Help files"
+  - source: scripts/seed.py
+    dest: scripts/seed.py
+    overwrite: false
+"""
+    parser = SpecParser(".")
+    arrangement = parser.parse_arrangement(yaml_content)
+
+    assert len(arrangement.static) == 2
+    assert arrangement.static[0].source == "help/"
+    assert arrangement.static[0].dest == "src/myapp/help/"
+    assert arrangement.static[0].description == "Help files"
+    assert arrangement.static[0].overwrite is True
+    assert arrangement.static[1].source == "scripts/seed.py"
+    assert arrangement.static[1].dest == "scripts/seed.py"
+    assert arrangement.static[1].overwrite is False

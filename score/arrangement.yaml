@@ -1,0 +1,32 @@
+target_language: python
+
+specs_path: score/
+
+output_paths:
+  implementation: src/specsoloist/{name}.py
+  tests: tests/test_{name}.py
+  overrides:
+    conductor:
+      implementation: src/spechestra/conductor.py
+      tests: tests/test_conductor.py
+    composer:
+      implementation: src/spechestra/composer.py
+      tests: tests/test_composer.py
+
+static:
+  - source: src/specsoloist/help/
+    dest: src/specsoloist/help/
+    description: "Bundled help guides — hand-written, not generated from specs"
+  - source: src/specsoloist/skills/
+    dest: src/specsoloist/skills/
+    description: "Agent skill definitions — hand-written, not generated from specs"
+
+environment:
+  tools:
+    - uv
+    - pytest
+  setup_commands:
+    - uv sync
+
+build_commands:
+  test: uv run python -m pytest {file} -v

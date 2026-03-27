@@ -44,6 +44,7 @@ sp conduct score/ --model haiku --auto-accept   # quine attempt
 | # | Task | Effort | Summary |
 |---|------|--------|---------|
 | **HK-22** | Release v0.7.0 | Small | Preflight, CHANGELOG, version bump, tag, push, GitHub release. Runs after HK-19–21 and task 25. |
+| **HK-23** | `sp doctor` static path base dir | Tiny | When `--arrangement` is given, resolve static `source` paths relative to the arrangement file's directory (matching the declared spec). Currently uses `os.getcwd()`. |
 
 ### 🔲 User Actions
 
@@ -52,11 +53,6 @@ sp conduct score/ --model haiku --auto-accept   # quine attempt
 | **UA-01** | Add `ANTHROPIC_API_KEY` to GitHub repo secrets | Required for quine CI (`.github/workflows/quine.yaml`) to run. Settings → Secrets → Actions → New secret. |
 | **UA-02** | Delete `PYPI_API_TOKEN` from GitHub release environment secrets | No longer needed once HK-14 restores trusted publishing. |
 
-### 🔲 To Do — in priority order
-
-| # | Task | Effort | Summary |
-|---|------|--------|---------|
-| **25** | `static` artifacts in arrangements | Medium | New `static:` field in arrangement.yaml; conductor copies declared paths verbatim after compilation; `sp doctor` warns on missing paths; closes the "full project reproducibility" gap. |
 ---
 
 ## How to Pick Up a Task
