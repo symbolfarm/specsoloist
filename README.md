@@ -103,7 +103,10 @@ sp conduct specs/mymodule.spec.md --arrangement arrangement.yaml
 | `sp fix` | **Auto-fix failing tests (Agent-first)** |
 | `sp validate` | Check spec structure |
 | `sp status` | Show compilation state of each spec |
+| `sp schema [topic]` | Show annotated schema for `arrangement.yaml` (`--json` for JSON Schema) |
+| `sp help [topic]` | Show bundled reference guides (`arrangement`, `spec-format`, `conduct`, `overrides`, `specs-path`) |
 | `sp doctor` | Check environment health (API keys, CLIs, tools, env vars) |
+| `sp --version` | Print version and exit |
 | `sp compile` | Compile single spec to code + tests |
 | `sp test [--all]` | Run tests for a spec (or all compiled specs) |
 | `sp diff` | Compare spec against compiled implementation (drift detection) |

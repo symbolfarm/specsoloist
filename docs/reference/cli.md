@@ -10,6 +10,7 @@ These flags apply to all commands:
 | --- | --- |
 | `--quiet` | Suppress all non-error output (useful for CI and scripting) |
 | `--json` | Emit machine-readable JSON instead of Rich terminal output (where supported) |
+| `--version` / `-V` | Print `specsoloist X.Y.Z` and exit 0 |
 
 ## Commands
 
@@ -17,11 +18,11 @@ These flags apply to all commands:
 
 | Command | Description |
 | --- | --- |
-| `sp list` | List all specification files in `src/` |
+| `sp list [--arrangement FILE]` | List all specification files; `--arrangement` applies `specs_path` from the arrangement |
 | `sp create <name> <desc>` | Create a new spec from template (`--type`: function, class, module, typedef) |
 | `sp validate <name>` | Validate a spec's structure and frontmatter |
 | `sp verify` | Verify all specs for orchestration readiness (dependencies, types) |
-| `sp graph` | Export the dependency graph as Mermaid markup |
+| `sp graph [--arrangement FILE]` | Export the dependency graph as Mermaid markup |
 | `sp diff <name>` | Detect drift between a spec and its compiled code |
 
 ### Building
@@ -57,7 +58,9 @@ These flags apply to all commands:
 
 | Command | Description |
 | --- | --- |
-| `sp status` | Show the compilation state of each spec |
+| `sp status [--arrangement FILE]` | Show the compilation state of each spec |
+| `sp schema [topic]` | Show annotated schema for `arrangement.yaml` (`--json` for JSON Schema; topic to zoom in) |
+| `sp help [topic]` | Show a bundled reference guide (`arrangement`, `spec-format`, `conduct`, `overrides`, `specs-path`) |
 | `sp doctor` | Check environment health (API keys, CLIs, tools) |
 
 ---
@@ -166,6 +169,49 @@ sp compile <name> [options]
 | `--model MODEL` | Override LLM model |
 | `--no-tests` | Skip test generation |
 | `--json` | Emit machine-readable JSON output |
+
+### `sp schema`
+
+```
+sp schema [topic] [--json]
+```
+
+Prints the annotated schema for `arrangement.yaml`, derived from the Pydantic models. No project context required — works anywhere.
+
+| Option | Description |
+| --- | --- |
+| `topic` | Zoom into a specific top-level field (e.g. `output_paths`, `environment`, `static`) |
+| `--json` | Emit JSON Schema instead of human-readable text |
+
+```bash
+sp schema                    # full schema with descriptions
+sp schema output_paths       # just the output_paths section
+sp schema environment --json # JSON Schema for the environment field
+```
+
+### `sp help`
+
+```
+sp help [topic]
+```
+
+Displays a bundled reference guide. No project context required — guides are included with the package.
+
+Available topics:
+
+| Topic | Contents |
+| --- | --- |
+| `arrangement` | Full `arrangement.yaml` field reference with examples |
+| `spec-format` | Spec frontmatter, types, and `yaml:test_scenarios` syntax |
+| `conduct` | `sp conduct` flags, incremental builds, arrangement integration |
+| `overrides` | `output_paths.overrides` syntax and examples |
+| `specs-path` | `specs_path` field usage and patterns |
+
+```bash
+sp help                  # list all topics
+sp help arrangement      # show the arrangement guide
+sp help spec-format      # show the spec format reference
+```
 
 ---
 

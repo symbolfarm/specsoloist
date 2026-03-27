@@ -77,8 +77,10 @@ model: claude-haiku-4-5-20251001   # optional: pin LLM model for this project
 | Field | Description |
 | --- | --- |
 | `target_language` | Target language (e.g. `python`, `typescript`) |
+| `specs_path` | Directory where spec files are discovered (default: `src/`); used by `sp list`, `sp status`, `sp graph`, and `sp conduct` |
 | `output_paths.implementation` | Path template for generated implementation files (`{name}` = spec name) |
 | `output_paths.tests` | Path template for generated test files |
+| `output_paths.overrides` | Per-spec path overrides (see below) |
 | `environment.tools` | Tools the agent should use (informational, injected into prompts) |
 | `environment.setup_commands` | Shell commands run before each test invocation |
 | `environment.dependencies` | Package versions to pin (name → specifier); injected as a "Dependency Versions" table in prompts |
@@ -86,6 +88,42 @@ model: claude-haiku-4-5-20251001   # optional: pin LLM model for this project
 | `build_commands.test` | Command template to run tests (`{file}` is the test path) |
 | `env_vars` | Declared environment variable names — values never stored (see below) |
 | `model` | LLM model to use; overridden by `--model` CLI flag or `SPECSOLOIST_LLM_MODEL` env var |
+
+## `specs_path`
+
+Override where SpecSoloist looks for spec files (default: `src/`):
+
+```yaml
+specs_path: specs/
+```
+
+This affects `sp list`, `sp status`, `sp graph`, and `sp conduct`. Useful when your spec files live outside `src/` — for example in a dedicated `specs/` directory or at the project root.
+
+You can also override per-command with `--arrangement`:
+
+```bash
+sp list --arrangement arrangement.yaml
+sp conduct --arrangement arrangement.yaml
+```
+
+## `output_paths.overrides`
+
+Override the default output paths for specific specs. The default `implementation` and `tests` templates apply to all specs; `overrides` lets you set different paths for individual ones:
+
+```yaml
+output_paths:
+  implementation: src/{name}.py
+  tests: tests/test_{name}.py
+  overrides:
+    auth:
+      implementation: src/myapp/auth.py
+      tests: tests/myapp/test_auth.py
+    db:
+      implementation: src/myapp/db.py
+      # tests path falls back to the default template
+```
+
+Each key under `overrides` is the spec name (without `.spec.md`). You can override `implementation`, `tests`, or both — omitting one falls back to the default template.
 
 ## `setup_commands`
 
