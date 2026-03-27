@@ -2,9 +2,15 @@
 
 ## [Unreleased]
 
-## [0.7.0] - 2026-xx-xx
+## [0.7.0] - 2026-03-27
 
 ### Added
+- `static:` field in `arrangement.yaml` — declares verbatim files/directories to copy
+  after compilation; `source`/`dest` paths relative to project root; `overwrite` flag
+  (default `true`); `sp doctor` warns on missing source paths (task 25)
+- `score/arrangement.yaml` — quine gets its own arrangement file; declares `help/` and
+  `skills/` as static artifacts and sets `output_paths.overrides` for spechestra modules
+  (task 25)
 - `specs_path` field in `arrangement.yaml` — configures spec discovery directory
   (default: `src/`); `sp list`, `sp status`, `sp graph` now load the arrangement
   and use this field (HK-15)
