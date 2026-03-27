@@ -64,7 +64,7 @@ After parsing args, `ui.configure(quiet=..., json_mode=...)` is called immediate
 - `sp diff <left> [right] [--json] [--label-left LABEL] [--label-right LABEL] [--report PATH] [--runs N]` — Detect spec vs code drift (spec-drift mode: `left` is a spec name) or compare two build directories (build-diff mode: both `left` and `right` are directory paths). `--runs N` compares the last N recorded build runs.
 - `sp schema [topic] [--json]` — Show annotated schema for `arrangement.yaml`, derived from Pydantic models. No project context required. `topic` zooms into a top-level field (e.g. `output_paths`, `environment`); if omitted, shows the full schema. `--json` emits JSON Schema. Invalid topics print an error listing valid ones and exit 1.
 - `sp help [topic]` — Show a reference guide for a specific topic. No project context required. If `topic` is omitted, lists available topics. If `topic` is unknown, prints an error and exits 1. Built-in topics: `arrangement`, `spec-format`, `conduct`, `overrides`, `specs-path`.
-- `sp doctor [--arrangement FILE]` — Check environment health: API keys, agent CLIs, tool availability. With `--arrangement`, also warns about unset required env vars declared in the arrangement.
+- `sp doctor [--arrangement FILE]` — Check environment health: API keys, agent CLIs, tool availability. With `--arrangement`, also warns about unset required env vars and any `static` source paths that do not exist on disk.
 - `sp install-skills [--target DIR]` — Install SpecSoloist agent skill definitions to the target directory (default `.claude/skills`)
 
 # Behavior

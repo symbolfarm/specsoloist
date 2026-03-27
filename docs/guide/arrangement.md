@@ -87,6 +87,7 @@ model: claude-haiku-4-5-20251001   # optional: pin LLM model for this project
 | `build_commands.lint` | Command to lint the generated code (optional) |
 | `build_commands.test` | Command template to run tests (`{file}` is the test path) |
 | `env_vars` | Declared environment variable names — values never stored (see below) |
+| `static` | Verbatim files/directories to copy after compilation (see below) |
 | `model` | LLM model to use; overridden by `--model` CLI flag or `SPECSOLOIST_LLM_MODEL` env var |
 
 ## `specs_path`
@@ -169,6 +170,30 @@ env_vars:
 `sp doctor --arrangement arrangement.yaml` checks that all `required: true` variables are set in your environment and warns about any that are missing.
 
 Soloist agents are also informed of these variables (names and descriptions only) so generated code can reference them correctly.
+
+## `static`
+
+Declare verbatim files or directories to copy into the output after `sp conduct` finishes compiling specs. Use this for hand-crafted assets — docs, templates, scripts, help files — that are part of the project but not generated from specs:
+
+```yaml
+static:
+  - source: help/
+    dest: src/myapp/help/
+    description: "Bundled help guides — hand-written"
+  - source: templates/
+    dest: src/myapp/templates/
+  - source: scripts/seed.py
+    dest: scripts/seed.py
+  - source: ARRANGEMENT.md
+    dest: ARRANGEMENT.md
+    overwrite: false   # don't clobber user edits
+```
+
+- **`source`** / **`dest`**: paths relative to the directory containing `arrangement.yaml`.
+- **`overwrite`**: if `false`, skips copying when the destination already exists. Default: `true`.
+- **`description`**: optional human-readable note (visible to agents and in `sp schema`).
+
+`sp doctor` warns when a `source` path does not exist on disk. Missing sources do not fail the build.
 
 ## `model`
 

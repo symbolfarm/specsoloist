@@ -1591,9 +1591,9 @@ def cmd_doctor(arrangement_arg: str | None = None):
                         )
             # Static artifact source paths check
             if arr.static:
-                project_dir = os.getcwd()
+                arr_base = os.path.dirname(os.path.abspath(arr_path))
                 for entry in arr.static:
-                    src = os.path.join(project_dir, entry.source)
+                    src = os.path.join(arr_base, entry.source)
                     if not os.path.exists(src):
                         ui.console.print(
                             f"[warning]⚠[/] Static artifact not found: {entry.source}  "

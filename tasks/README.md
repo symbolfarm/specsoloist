@@ -22,17 +22,17 @@ and Next.js web applications.**
 |-------|--------|
 | Core framework | Stable — parser, compiler, runner, resolver, manifest |
 | Agent-first CLI | Done — `sp conduct`, `sp compose`, `sp respec`, `sp fix`, `sp vibe`, `sp diff` |
-| Quine (self-hosting) | Validated — `sp conduct score/` regenerates `src/` with 355 tests passing (2026-03-19); weekly CI in `.github/workflows/quine.yaml` |
+| Quine (self-hosting) | `score/arrangement.yaml` created (task 25); quine re-run pending (task 26); weekly CI in `.github/workflows/quine.yaml` |
 | FastHTML example | Validated — 23 tests passing (`examples/fasthtml_app/`) |
 | Next.js example | Validated — 22 tests passing (`examples/nextjs_ai_chat/`) |
 | Documentation | Solid — mkdocstrings + Google docstrings live; spec-types.md + example docs complete (HK-11 done) |
-| Real-world integration | In progress — definitree (FastHTML/PostgreSQL) found two blocking issues (HK-15, HK-16) and surfaced a discoverability gap (tasks 22–24) |
+| Real-world integration | In progress — definitree (FastHTML/PostgreSQL) uses specsoloist as PyPI dev dependency |
 
 Key commands:
 ```bash
-uv run python -m pytest tests/   # 402 tests — must stay green
+uv run python -m pytest tests/   # 411 tests — must stay green
 uv run ruff check src/           # must pass with 0 errors
-sp conduct score/ --model haiku --auto-accept   # quine attempt
+sp conduct score/ --model haiku --auto-accept   # quine attempt (see task 26)
 ```
 
 ---
@@ -43,15 +43,13 @@ sp conduct score/ --model haiku --auto-accept   # quine attempt
 
 | # | Task | Effort | Summary |
 |---|------|--------|---------|
-| **HK-22** | Release v0.7.0 | Small | Preflight, CHANGELOG, version bump, tag, push, GitHub release. Runs after HK-19–21 and task 25. |
-| **HK-23** | `sp doctor` static path base dir | Tiny | When `--arrangement` is given, resolve static `source` paths relative to the arrangement file's directory (matching the declared spec). Currently uses `os.getcwd()`. |
+| **HK-25** | Integrate `score/arrangement.yaml` with quine mode | Small | `sp conduct score/` hardcodes `build/quine/` output paths in the agent prompt. Using `--arrangement score/arrangement.yaml` would write to live `src/` instead. Needs a design decision: adjust the quine agent prompt to honour arrangement paths but redirect to `build/quine/`, or provide a separate `score/arrangement.ci.yaml` with `build/quine/` prefixed paths. |
 
-### 🔲 User Actions
+### 🔲 To Do — in priority order
 
-| # | Action | Summary |
-|---|--------|---------|
-| **UA-01** | Add `ANTHROPIC_API_KEY` to GitHub repo secrets | Required for quine CI (`.github/workflows/quine.yaml`) to run. Settings → Secrets → Actions → New secret. |
-| **UA-02** | Delete `PYPI_API_TOKEN` from GitHub release environment secrets | No longer needed once HK-14 restores trusted publishing. |
+| # | Task | Effort | Summary |
+|---|------|--------|---------|
+| **26** | Run the quine with `score/arrangement.yaml` | Small | First quine run since task 25. Use `sp conduct score/ --model haiku --auto-accept`. Verify: (1) static artifacts (`help/`, `skills/`) appear in `build/quine/src/specsoloist/`; (2) conductor/composer land in `build/quine/src/spechestra/` (requires HK-25 first, or manually verify); (3) all 411 tests pass against the quine output. Note any failures or spec gaps. |
 
 ---
 
