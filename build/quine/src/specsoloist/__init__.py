@@ -1,0 +1,1 @@
+"""SpecSoloist - Compile one spec."""
