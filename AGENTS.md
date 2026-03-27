@@ -203,6 +203,19 @@ subagents via the `Agent` tool — exactly what `sp conduct` does from a termina
 Fallback: `sp conduct --no-agent` uses direct LLM API calls with no subprocess, and
 works from within a Claude Code session (requires `ANTHROPIC_API_KEY` or `GEMINI_API_KEY`).
 
+### Before Starting a Medium+ Task
+
+Before writing any code for a medium or large task, **pause and surface design questions
+to the user**. Don't wait to be asked. Specifically:
+
+- Ambiguous naming decisions (field names, command names, flag names)
+- Semantic edge cases that have more than one reasonable answer (e.g. "what happens when X is missing?")
+- Architectural choices where the task file left something open
+- Anything that, if decided wrong, would require significant rework
+
+One focused design conversation up front is worth far more than discovering a mismatch
+after implementation. The user is happy to be asked; the cost of interrupting is low.
+
 ### Before Committing
 
 See `CONTRIBUTING.md` for required checks and conventions.
