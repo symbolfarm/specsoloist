@@ -22,6 +22,7 @@ These flags apply to every subcommand and must be specified before the subcomman
 
 - `--quiet` — Suppress all non-error output (useful for CI/scripting)
 - `--json` — Emit machine-readable JSON instead of Rich terminal output
+- `--version` / `-V` — Print `specsoloist X.Y.Z` and exit 0
 
 After parsing args, `ui.configure(quiet=..., json_mode=...)` is called immediately so all subsequent output respects the flags.
 
@@ -31,12 +32,12 @@ After parsing args, `ui.configure(quiet=..., json_mode=...)` is called immediate
 
 ## Spec Management
 
-- `sp list` — List all specs in the project with name, type, status, and description
+- `sp list [--arrangement FILE]` — List all specs in the project with name, type, status, and description. `--arrangement` loads the file to apply `specs_path` for spec discovery.
 - `sp create <name> <description> [--type TYPE]` — Create a new spec from template
 - `sp validate <name> [--arrangement FILE] [--json]` — Validate a spec's structure; exit 1 if invalid
 - `sp verify` — Verify all specs for orchestration readiness (schemas, dependencies, data flow)
-- `sp graph` — Export dependency graph as Mermaid diagram
-- `sp status [--json]` — Show compilation state of each spec (whether implementation and test files exist in build/)
+- `sp graph [--arrangement FILE]` — Export dependency graph as Mermaid diagram. `--arrangement` loads the file to apply `specs_path` for spec discovery.
+- `sp status [--arrangement FILE] [--json]` — Show compilation state of each spec (whether implementation and test files exist in build/). `--arrangement` loads the file to apply `specs_path` for spec discovery.
 
 ## Compilation
 
@@ -53,7 +54,6 @@ After parsing args, `ui.configure(quiet=..., json_mode=...)` is called immediate
 - `sp vibe [brief] [--template NAME] [--pause-for-review] [--resume] [--no-agent] [--auto-accept] [--model MODEL]` — Single-command pipeline: compose specs from a brief, then conduct a build. `brief` may be a `.md` file path or a plain string. `--pause-for-review` pauses after composing so specs can be edited before building. `--resume` treats the brief as an addendum and skips already-compiled specs.
 - `sp compose <request> [--no-agent] [--auto-accept] [--model MODEL]` — Draft architecture and specs from natural language description
 - `sp conduct [src_dir] [--no-agent] [--auto-accept] [--incremental] [--parallel] [--workers N] [--model MODEL] [--arrangement FILE] [--resume | --force]` — Orchestrate project build using agent or direct LLM. `src_dir` defaults to `src/`. `--resume` skips specs whose hash and output files match the manifest. `--force` recompiles all specs regardless of manifest.
-- `sp perform <workflow> <inputs-json>` — Execute a compiled workflow spec with JSON inputs
 
 ## Reverse Engineering
 
