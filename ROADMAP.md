@@ -14,25 +14,21 @@ native subagents, the Quine, arrangement system. See `tasks/HISTORY.md` for deta
 `type: reference` spec type, arrangement templates (`sp init --template`), FastHTML + Next.js
 examples validated end-to-end, E2E testing pattern, `sp conduct --resume`/`--force`,
 `env_vars` in arrangements, nested session detection, incremental adoption guide, database
-persistence patterns. 270 tests passing.
+persistence patterns.
 
-## Phase 9: Distribution & Developer Experience (Planned)
+## Phase 9: Distribution & Developer Experience (Completed 2026-03-27)
 
-Goal: make SpecSoloist production-grade for real commercial web applications.
+`sp diff`, `sp vibe`, `sp schema`, `sp help`, Pydantic AI provider, model pinning,
+`--quiet`/`--json` flags, quine CI, `specs_path` and `output_paths.overrides` in arrangements,
+richer `sp init` templates, skill version staleness detection.
 
-- [ ] **Fix quine naming mismatch** — score specs use `composer.py`/`conductor.py` consistently
-- [ ] **`sp vibe`** — single-command pipeline: compose → pause-for-review → conduct → test
-- [ ] **`sp diff`** — generalised spec vs code drift detection; run-over-run regression
-- [ ] **Auth patterns** — session auth (FastHTML) + JWT (Next.js) reference specs
-- [ ] **Pydantic AI provider** — replace hand-rolled `LLMProvider`; get most providers free; path to CLI independence
-- [ ] **`--quiet` / `--json` output flags** — scripting and CI-friendly output
-- [ ] **Model pinning in arrangements** — `model:` field; cost/quality control per-spec
-- [ ] **Structured build events** — JSON event log; foundation for dashboard and CI integration
-- [ ] **Quine CI** — scheduled GitHub Actions workflow; score freshness check
-- [ ] **Watch mode `sp watch`** — recompile on spec file change
-- [ ] **`.specsoloist/` directory** — consolidate manifest, build artifacts, traces
+## Phase 10: Full Project Reproducibility (Current)
 
-## Phase 10: Ecosystem (Future)
+Goal: a `sp conduct` run can reproduce *all* project artifacts, not just compiled code.
+
+- [ ] **`static` artifacts** — declare files/directories to copy verbatim into the output; closes the reproducibility gap for docs, templates, scripts, and help files
+
+## Phase 11: Ecosystem (Future)
 
 - [ ] **Live dashboard** — localhost SSE/WebSocket; browser UI for `sp vibe` review flow
 - [ ] **VS Code extension** — syntax highlighting, inline validation, compile action
@@ -42,7 +38,7 @@ Goal: make SpecSoloist production-grade for real commercial web applications.
 
 ## Maintenance
 
-- Keep `uv run python -m pytest tests/` green (270 tests)
+- Keep `uv run python -m pytest tests/` green
 - Keep `uv run ruff check src/` clean
 - Keep score specs in sync with implementation (`sp respec` on changed modules)
 - Release checklist in `CONTRIBUTING.md`
