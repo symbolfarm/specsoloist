@@ -48,7 +48,7 @@ sp conduct score/ --model haiku --auto-accept   # quine attempt (see task 26)
 | 29 | [Provider token tracking](29-provider-token-tracking.md) | Small–Med | 27 | ✅ |
 | 30 | [NDJSON subscriber + `--log-file`](30-ndjson-subscriber.md) | Small | 28 | ✅ |
 | 31a | [BuildState model + TuiSubscriber](31-tui-dashboard.md) | Small | 28 | ✅ |
-| 31b | [Textual app skeleton + spec list](31-tui-dashboard.md) | Medium | 31a | 🔲 |
+| 31b | [Textual app skeleton + spec list](31-tui-dashboard.md) | Medium | 31a | ✅ |
 | 31c | [Spec detail panel](31-tui-dashboard.md) | Small–Med | 31b | 🔲 |
 | 31d | [CLI integration (`--tui`, `sp dashboard`)](31-tui-dashboard.md) | Small | 31b | 🔲 |
 | 32 | [SSE server (`sp conduct --serve`)](32-sse-server.md) | Medium | 31a | 🔲 |
