@@ -62,6 +62,7 @@ Tasks 27–30 and 31a are done. Next: 31b–d and 32 can proceed in parallel.
 | 33 | [Formalize task tracking as agent skill](33-task-format-skill.md) | Medium | — | 🔲 |
 | 34 | [`sp dashboard --replay`](34-ndjson-replay.md) | Small | 31b | 🔲 |
 | 35 | [Directory-based spec discovery (`{path}` pattern)](35-directory-based-spec-discovery.md) | Medium | — | 🔲 |
+| 36 | [External dependency declaration (`requires:` in frontmatter)](36-external-dependency-declaration.md) | Medium | — | 🔲 |
 
 ### 🔲 Housekeeping
 

@@ -536,6 +536,33 @@ reference the spec. Auto-generated API docs always in sync because they come fro
 the spec, not the code. Long-term vision for what "specs as source of truth" means
 at runtime.
 
+### 10d. Spec specificity tiers
+
+Specs sit on a continuum of language/framework specificity. Recognizing the tiers
+helps spec authors make deliberate choices about what's agnostic and what isn't:
+
+**Tier 1 — Fully agnostic.** Describes behavior independent of language or framework.
+"When a `build.started` event arrives, status becomes `building`." Implementable in
+any language. This is the ideal for `# Overview`, `# Behavior`, and `# Examples`.
+
+**Tier 2 — Framework-coupled, language-agnostic.** Tied to a specific framework but
+not to language syntax. "The app must work in headless mode for CI testing" — this
+presumes Textual's architecture but could be stated in any language. Common for UI
+specs, web framework specs, and anything with external dependencies. Acceptable and
+often unavoidable in `# Constraints` and `# Overview`.
+
+**Tier 3 — Implementation-leaking.** Specific API calls, import paths, test assertions.
+`app.query_one("StatusBar").renderable_text` is Python-Textual test code, not a
+requirement. This belongs only in `# Verification` (which is explicitly language-specific)
+and should be avoided in `# Examples`.
+
+**Guidance for spec authors:**
+- `# Overview`, `# Behavior`, `# Examples` → aim for tier 1, accept tier 2 when necessary
+- `# Constraints` → tier 2 is fine (framework requirements are real constraints)
+- `# Verification` → tier 3 is expected (it compiles to a real test file)
+- If you find tier 3 creeping into `# Examples`, rewrite as prose: "the list displays
+  both spec names in dependency order" rather than `assert spec_list.spec_names == [...]`
+
 ---
 
 ## 11. Adjacent Tooling & Ecosystem Ideas

@@ -45,6 +45,40 @@ for determinism. Raises CircularDependencyError if a cycle exists.
 
 The first dictates implementation. The second defines behavior — the agent picks the algorithm.
 
+### Examples vs. Verification: Different Levels of Specificity
+
+Specs contain two sections that might look similar but serve different purposes:
+
+- **`# Examples`** describes behavior — what happens given certain inputs. Aim for
+  language-agnostic prose or tables. "Given a build with specs [config, parser], the
+  list displays both names in dependency order." Avoid language-specific test code here.
+
+- **`# Verification`** is a language-specific smoke test compiled to a real test file.
+  Import statements, assertions, and framework API calls belong here. This section
+  is expected to be tied to the target language.
+
+The distinction matters because `# Examples` communicates requirements to humans and
+soloists, while `# Verification` produces executable validation. When example code
+starts referencing specific API methods (`app.query_one("Widget").render()`), it has
+crossed from requirement into implementation — move it to `# Verification` or rewrite
+it as prose.
+
+### Testability as a Constraint
+
+When a module must be testable in specific ways (headless mode, no network access,
+no multi-threaded setup required), state this in `# Constraints`. Testability
+requirements are real non-functional requirements that affect implementation choices:
+
+```markdown
+# Constraints
+- Must be testable without a running terminal (headless mode)
+- No external service dependencies in unit tests
+- State mutations must be observable without threading
+```
+
+These constraints prevent surprises where a correct implementation turns out to be
+untestable in CI.
+
 # 3. Spec Types
 
 | Type | Purpose | Granularity |
