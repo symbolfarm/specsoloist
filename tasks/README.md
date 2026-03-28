@@ -47,13 +47,13 @@ sp conduct score/ --model haiku --auto-accept   # quine attempt (see task 26)
 | 28 | [Wire event emission into core/runner/compiler](28-wire-event-emission.md) | Medium | 27 | ✅ |
 | 29 | [Provider token tracking](29-provider-token-tracking.md) | Small–Med | 27 | ✅ |
 | 30 | [NDJSON subscriber + `--log-file`](30-ndjson-subscriber.md) | Small | 28 | ✅ |
-| 31a | [BuildState model + TuiSubscriber](31-tui-dashboard.md) | Small | 28 | 🔲 |
+| 31a | [BuildState model + TuiSubscriber](31-tui-dashboard.md) | Small | 28 | ✅ |
 | 31b | [Textual app skeleton + spec list](31-tui-dashboard.md) | Medium | 31a | 🔲 |
 | 31c | [Spec detail panel](31-tui-dashboard.md) | Small–Med | 31b | 🔲 |
 | 31d | [CLI integration (`--tui`, `sp dashboard`)](31-tui-dashboard.md) | Small | 31b | 🔲 |
 | 32 | [SSE server (`sp conduct --serve`)](32-sse-server.md) | Medium | 31a | 🔲 |
 
-Tasks 27–30 are done. Next: 31a (shared data layer), then 31b–d and 32 in parallel.
+Tasks 27–30 and 31a are done. Next: 31b–d and 32 can proceed in parallel.
 
 ### Other Features
 
