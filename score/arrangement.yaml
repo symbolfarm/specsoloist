@@ -12,6 +12,12 @@ output_paths:
     composer:
       implementation: src/spechestra/composer.py
       tests: tests/test_composer.py
+    build_state:
+      implementation: src/specsoloist/subscribers/build_state.py
+      tests: tests/test_build_state.py
+    tui:
+      implementation: src/specsoloist/tui.py
+      tests: tests/test_tui.py
 
 static:
   - source: src/specsoloist/help/
