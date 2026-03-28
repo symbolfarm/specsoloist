@@ -1,25 +1,64 @@
 """Spec compilation: prompt construction and code generation."""
 
 import re
-from typing import Optional
+import time
+from typing import TYPE_CHECKING, Optional
 
 from .parser import ParsedSpec
 from .providers import LLMProvider
 from .schema import Arrangement
 
+if TYPE_CHECKING:
+    from .events import EventBus
+
 
 class SpecCompiler:
     """Compiles specs to code using an LLM provider."""
 
-    def __init__(self, provider: LLMProvider, global_context: str = ""):
+    def __init__(
+        self,
+        provider: LLMProvider,
+        global_context: str = "",
+        event_bus: Optional["EventBus"] = None,
+    ):
         """Initialize the compiler.
 
         Args:
             provider: LLM provider used for code generation.
             global_context: Optional project-level context injected into every prompt.
+            event_bus: Optional event bus for LLM call observability.
         """
         self.provider = provider
         self.global_context = global_context
+        self._event_bus = event_bus
+
+    def _generate(self, prompt: str, model: Optional[str] = None) -> str:
+        """Call the LLM provider, emitting events if a bus is attached."""
+        from .events import BuildEvent, EventType
+
+        if self._event_bus is not None:
+            self._event_bus.emit(BuildEvent(
+                event_type=EventType.LLM_REQUEST,
+                data={"model": model, "prompt_length": len(prompt)},
+            ))
+
+        t0 = time.monotonic()
+        response = self.provider.generate(prompt, model=model)
+        duration = time.monotonic() - t0
+
+        if self._event_bus is not None:
+            self._event_bus.emit(BuildEvent(
+                event_type=EventType.LLM_RESPONSE,
+                data={
+                    "model": getattr(response, 'model', model),
+                    "input_tokens": getattr(response, 'input_tokens', None),
+                    "output_tokens": getattr(response, 'output_tokens', None),
+                    "duration_seconds": duration,
+                },
+            ))
+
+        # LLMResponse.__str__() returns .text for backward compat
+        return str(response)
 
     def compile_code(
         self,
@@ -69,7 +108,7 @@ Your task is to implement the code described in the following specification.
 4. Import required types/functions from dependency modules as specified.
 5. Output ONLY the raw code for the implementation. Do not wrap in markdown code blocks.
 """
-        code = self.provider.generate(prompt, model=model)
+        code = self._generate(prompt, model=model)
         return self._strip_markdown_fences(code)
 
     def compile_typedef(
@@ -111,7 +150,7 @@ Your task is to define the data types described in the following specification.
 5. Output ONLY the raw code for the type definitions. Do not wrap in markdown code blocks.
 6. Include necessary imports (dataclasses, typing, etc.) at the top.
 """
-        code = self.provider.generate(prompt, model=model)
+        code = self._generate(prompt, model=model)
         return self._strip_markdown_fences(code)
 
     def compile_orchestrator(
@@ -166,7 +205,7 @@ Your task is to implement the workflow described in the following specification.
 6. Adhere to the 'Non-Functional Requirements'.
 7. Output ONLY the raw code. Do not wrap in markdown code blocks.
 """
-        code = self.provider.generate(prompt, model=model)
+        code = self._generate(prompt, model=model)
         return self._strip_markdown_fences(code)
 
     def _build_arrangement_context(self, arrangement: Optional[Arrangement]) -> str:
@@ -311,7 +350,7 @@ Your task is to write a comprehensive unit test suite for the component describe
 4. Implement additional edge cases based on the 'Design Contract' (Pre/Post-conditions).
 5. Output ONLY the raw code.
 """
-        code = self.provider.generate(prompt, model=model)
+        code = self._generate(prompt, model=model)
         return self._strip_markdown_fences(code)
 
     def generate_fix(
@@ -392,7 +431,7 @@ OR
 
 Only provide the file(s) that need to change.
 """
-        return self.provider.generate(prompt, model=model)
+        return self._generate(prompt, model=model)
 
     def parse_fix_response(self, response: str) -> dict[str, str]:
         """Parses the fix response to extract file contents.

@@ -9,6 +9,8 @@ Requires: pydantic-ai-slim[anthropic,google,openai] (or pydantic-ai)
 import os
 from typing import Optional
 
+from .base import LLMResponse
+
 
 def _get_model_string(provider: str, model_name: str) -> str:
     """Map SpecSoloist provider/model config to a Pydantic AI model string.
@@ -121,7 +123,7 @@ class PydanticAIProvider:
         prompt: str,
         temperature: float = 0.1,
         model: Optional[str] = None,
-    ) -> str:
+    ) -> LLMResponse:
         """Generate a response using pydantic-ai.
 
         Args:
@@ -130,7 +132,7 @@ class PydanticAIProvider:
             model: Optional model override.
 
         Returns:
-            The generated text response.
+            LLMResponse with generated text and token usage.
 
         Raises:
             RuntimeError: If the API call fails or pydantic-ai is not installed.
@@ -149,7 +151,22 @@ class PydanticAIProvider:
             self._inject_api_key_env()
             agent = Agent(model_obj)
             result = agent.run_sync(prompt)
-            return result.output
+
+            # Extract token usage from pydantic-ai result
+            input_tokens = None
+            output_tokens = None
+            usage = result.usage()
+            if usage:
+                input_tokens = getattr(usage, 'request_tokens', None)
+                output_tokens = getattr(usage, 'response_tokens', None)
+
+            effective_model = model or self.model
+            return LLMResponse(
+                text=result.output,
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+                model=effective_model,
+            )
         except Exception as e:
             raise RuntimeError(
                 f"Error calling {self.provider} via pydantic-ai: {e}"

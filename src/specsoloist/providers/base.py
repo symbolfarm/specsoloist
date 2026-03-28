@@ -1,6 +1,25 @@
-"""Base protocol for LLM providers."""
+"""Base protocol and types for LLM providers."""
 
+from dataclasses import dataclass
 from typing import Optional, Protocol
+
+
+@dataclass
+class LLMResponse:
+    """Response from an LLM provider, including token usage metadata.
+
+    Backward compatible: str() returns the text, so existing code
+    that treats the response as a string continues to work.
+    """
+
+    text: str
+    input_tokens: Optional[int] = None
+    output_tokens: Optional[int] = None
+    model: Optional[str] = None
+
+    def __str__(self) -> str:
+        """Return the generated text for backward compatibility."""
+        return self.text
 
 
 class LLMProvider(Protocol):
@@ -15,7 +34,7 @@ class LLMProvider(Protocol):
         prompt: str,
         temperature: float = 0.1,
         model: Optional[str] = None
-    ) -> str:
+    ) -> "LLMResponse":
         """Generate a response from the LLM.
 
         Args:
@@ -25,7 +44,7 @@ class LLMProvider(Protocol):
             model: Optional model override. If None, uses the provider's default model.
 
         Returns:
-            The generated text response.
+            LLMResponse with generated text and optional token usage metadata.
 
         Raises:
             RuntimeError: If the API call fails.

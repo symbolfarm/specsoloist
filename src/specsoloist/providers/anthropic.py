@@ -6,6 +6,8 @@ import urllib.request
 import urllib.error
 from typing import Optional
 
+from .base import LLMResponse
+
 
 class AnthropicProvider:
     """LLM provider for Anthropic Claude API.
@@ -46,7 +48,7 @@ class AnthropicProvider:
         prompt: str,
         temperature: float = 0.1,
         model: Optional[str] = None
-    ) -> str:
+    ) -> LLMResponse:
         """Generate a response from Claude.
 
         Args:
@@ -55,7 +57,7 @@ class AnthropicProvider:
             model: Optional model override. If None, uses the default model.
 
         Returns:
-            The generated text.
+            LLMResponse with generated text and token usage.
 
         Raises:
             RuntimeError: If the API call fails.
@@ -93,7 +95,16 @@ class AnthropicProvider:
                         for block in content_blocks
                         if block['type'] == 'text'
                     ]
-                    return '\n'.join(text_parts)
+                    text = '\n'.join(text_parts)
+
+                    # Extract token usage
+                    usage = result.get('usage', {})
+                    return LLMResponse(
+                        text=text,
+                        input_tokens=usage.get('input_tokens'),
+                        output_tokens=usage.get('output_tokens'),
+                        model=effective_model,
+                    )
                 except (KeyError, IndexError) as e:
                     raise RuntimeError(
                         f"Unexpected Anthropic API response format: {result}"

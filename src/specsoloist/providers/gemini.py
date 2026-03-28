@@ -6,6 +6,8 @@ import urllib.request
 import urllib.error
 from typing import Optional
 
+from .base import LLMResponse
+
 
 class GeminiProvider:
     """LLM provider for Google Gemini API.
@@ -41,7 +43,7 @@ class GeminiProvider:
         prompt: str,
         temperature: float = 0.1,
         model: Optional[str] = None
-    ) -> str:
+    ) -> LLMResponse:
         """Generate a response from Gemini.
 
         Args:
@@ -50,7 +52,7 @@ class GeminiProvider:
             model: Optional model override. If None, uses the default model.
 
         Returns:
-            The generated text.
+            LLMResponse with generated text and token usage.
 
         Raises:
             RuntimeError: If the API call fails.
@@ -74,7 +76,15 @@ class GeminiProvider:
 
                 try:
                     content = result['candidates'][0]['content']['parts'][0]['text']
-                    return content
+
+                    # Extract token usage from usageMetadata
+                    usage = result.get('usageMetadata', {})
+                    return LLMResponse(
+                        text=content,
+                        input_tokens=usage.get('promptTokenCount'),
+                        output_tokens=usage.get('candidatesTokenCount'),
+                        model=effective_model,
+                    )
                 except (KeyError, IndexError) as e:
                     raise RuntimeError(
                         f"Unexpected Gemini API response format: {result}"

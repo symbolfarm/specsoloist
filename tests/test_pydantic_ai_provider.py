@@ -205,5 +205,6 @@ class TestPydanticAIProviderGenerate:
              patch("pydantic_ai.Agent", mock_agent_class):
             result = p.generate("Write some code")
 
-        assert result == "Generated code here"
+        assert str(result) == "Generated code here"
+        assert result.text == "Generated code here"
         mock_agent_instance.run_sync.assert_called_once_with("Write some code")

@@ -117,7 +117,8 @@ class SpecSoloistCore:
             global_context = self.parser.load_global_context()
             self._compiler = SpecCompiler(
                 provider=self._get_provider(),
-                global_context=global_context
+                global_context=global_context,
+                event_bus=self._event_bus,
             )
         return self._compiler
 
