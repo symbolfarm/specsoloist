@@ -5,12 +5,13 @@ It delegates to specialized modules for parsing, compilation, and testing.
 """
 
 import os
+import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
 from .config import SpecSoloistConfig
-from .events import BuildEvent, EventBus
+from .events import BuildEvent, EventBus, EventType
 from .parser import SpecParser
 from .compiler import SpecCompiler
 from .runner import TestRunner
@@ -479,14 +480,31 @@ class SpecSoloistCore:
         Returns:
             BuildResult with compilation status and details.
         """
+        t0 = time.monotonic()
+        build_order = self.resolver.resolve_build_order(specs)
+        self._emit(
+            EventType.BUILD_STARTED,
+            total_specs=len(build_order),
+            build_order=build_order,
+            parallel=parallel,
+        )
+
         if parallel:
-            return self._compile_project_parallel(
+            result = self._compile_project_parallel(
                 specs, model, generate_tests, incremental, max_workers, arrangement
             )
         else:
-            return self._compile_project_sequential(
+            result = self._compile_project_sequential(
                 specs, model, generate_tests, incremental, arrangement
             )
+
+        self._emit(
+            EventType.BUILD_COMPLETED,
+            specs_compiled=len(result.specs_compiled),
+            specs_failed=len(result.specs_failed),
+            duration_seconds=time.monotonic() - t0,
+        )
+        return result
 
     def _compile_project_sequential(
         self,
@@ -559,13 +577,19 @@ class SpecSoloistCore:
         errors = {}
 
         # Process each level - specs within a level can be compiled in parallel
-        for level in levels:
+        for level_idx, level in enumerate(levels):
             level_to_build = [s for s in level if s in specs_to_build]
             level_skipped = [s for s in level if s not in specs_to_build]
             skipped.extend(level_skipped)
 
             if not level_to_build:
                 continue
+
+            self._emit(
+                EventType.BUILD_LEVEL_STARTED,
+                level=level_idx,
+                spec_names=level_to_build,
+            )
 
             # Compile this level in parallel
             with ThreadPoolExecutor(max_workers=min(max_workers, len(level_to_build))) as executor:
@@ -606,6 +630,7 @@ class SpecSoloistCore:
 
         Returns dict with 'success' (bool) and 'error' (str if failed).
         """
+        t0 = time.monotonic()
         try:
             # Parse spec for metadata
             spec = self.parser.parse_spec(spec_name)
@@ -614,6 +639,12 @@ class SpecSoloistCore:
             deps = [d.get("from", "").replace(".spec.md", "")
                     for d in spec.metadata.dependencies
                     if isinstance(d, dict)]
+
+            self._emit(
+                EventType.SPEC_COMPILE_STARTED,
+                spec_name=spec_name,
+                dependencies=deps,
+            )
 
             # Compile the spec
             self.compile_spec(spec_name, model=model, arrangement=arrangement)
@@ -646,9 +677,20 @@ class SpecSoloistCore:
             manifest = self._get_manifest()
             manifest.update_spec(spec_name, spec_hash, deps, output_files)
 
+            self._emit(
+                EventType.SPEC_COMPILE_COMPLETED,
+                spec_name=spec_name,
+                duration_seconds=time.monotonic() - t0,
+            )
             return {"success": True, "error": ""}
 
         except Exception as e:
+            self._emit(
+                EventType.SPEC_COMPILE_FAILED,
+                spec_name=spec_name,
+                error=str(e),
+                error_type=type(e).__name__,
+            )
             return {"success": False, "error": str(e)}
 
     def _get_incremental_build_list(self, build_order: List[str]) -> List[str]:
@@ -714,8 +756,17 @@ class SpecSoloistCore:
                 return {"success": True, "output": "No verification — reference spec (pass)"}
 
         module_name = self.parser.get_module_name(name)
+        self._emit(EventType.SPEC_TESTS_STARTED, spec_name=name)
+        t0 = time.monotonic()
         result = self.runner.run_tests(
             module_name, language=spec.metadata.language_target
+        )
+        self._emit(
+            EventType.SPEC_TESTS_COMPLETED,
+            spec_name=name,
+            success=result.success,
+            duration_seconds=time.monotonic() - t0,
+            return_code=result.return_code,
         )
         return {
             "success": result.success,
@@ -779,6 +830,9 @@ class SpecSoloistCore:
         spec = self.parser.parse_spec(name)
         lang = arrangement.target_language if arrangement else spec.metadata.language_target
 
+        self._emit(EventType.SPEC_FIX_STARTED, spec_name=name)
+        t0 = time.monotonic()
+
         # 1. Run tests to get current error
         if arrangement:
             # If we have an arrangement, we use its test command
@@ -825,6 +879,12 @@ class SpecSoloistCore:
             path = self.runner.write_file(filename, content)
             changes_made.append(os.path.basename(path))
 
+        self._emit(
+            EventType.SPEC_FIX_COMPLETED,
+            spec_name=name,
+            success=True,
+            duration_seconds=time.monotonic() - t0,
+        )
         return f"Applied fixes to: {', '.join(changes_made)}. Run tests again to verify."
 
 
