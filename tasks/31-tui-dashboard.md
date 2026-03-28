@@ -1,8 +1,8 @@
 # Task 31: TUI dashboard (`sp dashboard`)
 
-**Effort**: Large
+**Effort**: Large — broken into subtasks 31a–31d below
 
-**Depends on**: Task 28 (event emission wired up)
+**Depends on**: Task 28 (event emission wired up) ✅
 
 ## Motivation
 
@@ -19,12 +19,11 @@ This is the open-source observability layer — no web server, no browser, just 
   layouts, and reactive updates.
 - **Read-only for v1**: The dashboard observes but does not control. No pause/cancel/reprioritize
   buttons yet. Those come in a future task once the command channel architecture is designed.
-- **Connection model**: `sp dashboard` connects to a running `sp conduct --serve` via SSE
-  (task 32). Alternatively, `sp conduct --tui` runs the build *inside* the TUI app directly
-  (event bus is in-process). Both modes use the same Textual app — the difference is where
-  events come from.
-- **Graceful degradation**: If no build is running, the dashboard shows the last known state
-  from the manifest/log file.
+- **Connection model**: `sp conduct --tui` runs the build *inside* the TUI app directly
+  (event bus is in-process). `sp dashboard` connects to a running `sp conduct --serve` via SSE
+  (task 32). Both modes use the same Textual app — the difference is where events come from.
+- **Graceful degradation**: If no build is running, the dashboard shows "waiting for build"
+  or replays the last NDJSON log file.
 
 ## UI Layout
 
@@ -51,57 +50,152 @@ This is the open-source observability layer — no web server, no browser, just 
 └─────────────────────────────────────────────────────────┘
 ```
 
-## Implementation
+---
 
-### New file: `src/specsoloist/tui.py`
+## Subtask 31a: BuildState model + TuiSubscriber
 
-Textual app with:
-- `DashboardApp(App)` — main application
-- `DependencyGraphWidget` — left panel, shows specs with status icons
-- `SpecDetailWidget` — right panel, shows selected spec's details and log
-- `StatusBar` — bottom bar with aggregate stats (tokens, cost, progress, elapsed)
-- Keyboard: `q` quit, `j/k` or arrow keys to navigate specs, `enter` to select
+**Effort**: Small
+
+The data layer that accumulates events into displayable state. No Textual dependency — pure
+Python, fully testable.
+
+### New file: `src/specsoloist/subscribers/build_state.py`
+
+`BuildState` — a mutable model that absorbs BuildEvents and maintains current state:
+
+```python
+@dataclass
+class SpecState:
+    name: str
+    status: str  # "queued" | "compiling" | "testing" | "passed" | "failed" | "fixing"
+    duration: float | None = None
+    input_tokens: int = 0
+    output_tokens: int = 0
+    error: str | None = None
+
+@dataclass
+class BuildState:
+    specs: dict[str, SpecState]   # name -> state
+    build_order: list[str]
+    total_specs: int = 0
+    specs_completed: int = 0
+    specs_failed: int = 0
+    total_input_tokens: int = 0
+    total_output_tokens: int = 0
+    start_time: float | None = None
+    elapsed: float = 0.0
+    status: str = "idle"  # "idle" | "building" | "completed" | "failed"
+
+    def apply(self, event: BuildEvent) -> None: ...
+```
+
+`BuildState.apply(event)` is a pure state machine — given any event, update the state.
+This is the single source of truth for all display layers (TUI, SSE /status, NDJSON replay).
 
 ### New file: `src/specsoloist/subscribers/tui.py`
 
-- `TuiSubscriber` — receives `BuildEvent`s and posts them to the Textual app's message queue
-  via `app.call_from_thread()` (Textual's thread-safe bridge)
+`TuiSubscriber` — thin bridge from EventBus to Textual:
+- Holds a `BuildState` and a reference to the Textual app
+- On each event: `self.state.apply(event)`, then `app.call_from_thread(app.refresh_state, self.state)`
+- `app.call_from_thread()` is Textual's thread-safe bridge to the UI thread
 
-### Modified: `src/specsoloist/cli.py`
+### Tests: `tests/test_build_state.py`
 
-- Add `sp dashboard` subcommand
-- `--tui` flag on `sp conduct` (runs build inside the TUI)
-- `sp dashboard` with no arguments connects to `--serve` endpoint (task 32 dependency — for
-  now, `--tui` mode is the primary path)
+- `BuildState.apply(BUILD_STARTED)` sets status to "building", records total_specs
+- `BuildState.apply(SPEC_COMPILE_STARTED)` sets spec status to "compiling"
+- `BuildState.apply(SPEC_COMPILE_COMPLETED)` sets spec to "passed", increments completed
+- `BuildState.apply(SPEC_COMPILE_FAILED)` sets spec to "failed", records error
+- `BuildState.apply(LLM_RESPONSE)` accumulates tokens
+- Full event sequence produces expected final state
+- `TuiSubscriber` calls `app.call_from_thread` (mock app)
 
-### Spec
+### Success Criteria
 
-Write `score/tui.spec.md` — the existing `score/ui.spec.md` covers the Rich console helpers;
-this is a separate concern (Textual app vs Rich utilities).
+- `tests/test_build_state.py` passes
+- No Textual import required — pure data layer
+- `BuildState` can be serialized to JSON (for /status endpoint in task 32)
+
+---
+
+## Subtask 31b: Textual app skeleton + spec list widget
+
+**Effort**: Medium
+
+The minimal Textual app that can display a list of specs with status indicators.
+
+### New dependency: `textual>=0.50` in `pyproject.toml`
+
+### New file: `src/specsoloist/tui.py`
+
+- `DashboardApp(App)` — main Textual application
+- `SpecListWidget(Widget)` — left panel, renders `BuildState.specs` as a selectable list
+  with status icons (○ done, ● in progress, ◌ queued, ✖ failed)
+- `StatusBar(Static)` — bottom bar with aggregate stats
+- Keyboard: `q` quit, arrow keys navigate spec list
+- `app.refresh_state(state: BuildState)` — called from `TuiSubscriber` to update display
+
+### Tests: `tests/test_tui.py`
+
+- Use Textual's `app.run_test()` for headless testing
+- App launches and shows "waiting for build" initially
+- After feeding a BUILD_STARTED event, spec list populates
+- Status icons update correctly on state changes
+
+### Success Criteria
+
+- `sp conduct score/ --tui` launches the TUI (build runs, specs appear with status updates)
+- App exits cleanly when build completes or user presses `q`
+
+---
+
+## Subtask 31c: Spec detail panel
+
+**Effort**: Small–Medium
+
+The right panel that shows details for the selected spec.
+
+### In `src/specsoloist/tui.py`
+
+- `SpecDetailWidget(Widget)` — shows name, status, duration, token counts, error message
+- `LogPanel(Widget)` — scrollable log of events for the selected spec
+  (accumulated from events where `spec_name` matches)
+- Wire selection: clicking/navigating to a spec in the list updates the detail panel
 
 ### Tests
 
-- `tests/test_tui.py`
-- `TuiSubscriber` correctly translates BuildEvents into Textual messages
-- `DashboardApp` can be instantiated (Textual has `app.run_test()` for headless testing)
-- Status transitions: queued → compiling → testing → passed/failed update correctly
-- Token accumulation in status bar
+- Selecting a spec updates the detail panel content
+- Log panel scrolls and accumulates events
 
-### Dependencies
+---
 
-- Add `textual>=0.50` to `pyproject.toml` (it already depends on `rich`)
+## Subtask 31d: CLI integration + `sp dashboard` command
+
+**Effort**: Small
+
+### Modified: `src/specsoloist/cli.py`
+
+- Add `--tui` flag to `sp conduct` and `sp build`
+- When `--tui`: create EventBus, subscribe TuiSubscriber, run build in background thread
+  while Textual app runs in foreground
+- Add `sp dashboard` subcommand (connects to SSE endpoint — deferred until task 32 is done;
+  for now, `--tui` is the primary path)
+
+### Tests
+
+- `sp conduct --tui` flag is parsed correctly
+- `sp dashboard` prints helpful message when no server is running
+
+---
+
+## Spec
+
+Write `score/tui.spec.md` covering BuildState + the Textual app. The existing
+`score/ui.spec.md` covers Rich console helpers — this is a separate concern.
 
 ## Files to Read Before Starting
 
-- `src/specsoloist/ui.py` — existing Rich UI (separate concern but informs style)
-- `src/specsoloist/events.py` — BuildEvent, EventBus
-- `src/specsoloist/resolver.py` — DependencyGraph (for rendering the graph widget)
+- `src/specsoloist/events.py` — BuildEvent, EventBus, EventType
+- `src/specsoloist/subscribers/ndjson.py` — subscriber pattern to follow
+- `src/specsoloist/ui.py` — existing Rich UI (style reference)
+- `src/specsoloist/resolver.py` — DependencyGraph (for rendering order)
 - Textual docs: https://textual.textualize.io/
-
-## Success Criteria
-
-- `uv run python -m pytest tests/test_tui.py` passes
-- `uv run python -m pytest tests/` — all tests pass
-- `uv run ruff check src/` — clean
-- `sp conduct score/ --tui` shows a live-updating terminal dashboard
-- `score/tui.spec.md` passes `sp validate`
