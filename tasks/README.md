@@ -47,17 +47,29 @@ sp conduct score/ --model haiku --auto-accept   # quine attempt (see task 26)
 | 28 | [Wire event emission into core/runner/compiler](28-wire-event-emission.md) | Medium | 27 | ✅ |
 | 29 | [Provider token tracking](29-provider-token-tracking.md) | Small–Med | 27 | ✅ |
 | 30 | [NDJSON subscriber + `--log-file`](30-ndjson-subscriber.md) | Small | 28 | ✅ |
-| 31 | [TUI dashboard (`sp dashboard`)](31-tui-dashboard.md) | Large | 28 | 🔲 |
-| 32 | [SSE server (`sp conduct --serve`)](32-sse-server.md) | Medium | 28 | 🔲 |
+| 31a | [BuildState model + TuiSubscriber](31-tui-dashboard.md) | Small | 28 | 🔲 |
+| 31b | [Textual app skeleton + spec list](31-tui-dashboard.md) | Medium | 31a | 🔲 |
+| 31c | [Spec detail panel](31-tui-dashboard.md) | Small–Med | 31b | 🔲 |
+| 31d | [CLI integration (`--tui`, `sp dashboard`)](31-tui-dashboard.md) | Small | 31b | 🔲 |
+| 32 | [SSE server (`sp conduct --serve`)](32-sse-server.md) | Medium | 31a | 🔲 |
 
-Tasks 27–28 are the foundation; 29–32 can proceed in parallel once those land.
+Tasks 27–30 are done. Next: 31a (shared data layer), then 31b–d and 32 in parallel.
 
-See also: [spechestra-tasks.md](spechestra-tasks.md) for the Spechestra (web dashboard) backlog.
+### Other Features
+
+| # | Task | Effort | Depends | Status |
+|---|------|--------|---------|--------|
+| 33 | [Formalize task tracking as agent skill](33-task-format-skill.md) | Medium | — | 🔲 |
+| 34 | [`sp dashboard --replay`](34-ndjson-replay.md) | Small | 31b | 🔲 |
 
 ### 🔲 Housekeeping
 
-_(none)_
+| # | Task | Status |
+|---|------|--------|
+| HK-26 | [Update score specs for event bus integration](HK-26-update-score-for-events.md) | 🔲 |
+| HK-27 | [README refresh — badges, logo, demo GIF, fix PyPI links](HK-27-readme-refresh.md) | 🔲 |
 
+See also: [spechestra-tasks.md](spechestra-tasks.md) for the Spechestra (web dashboard) backlog.
 
 ---
 

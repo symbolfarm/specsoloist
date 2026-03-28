@@ -92,6 +92,21 @@ class BuildState:
 `BuildState.apply(event)` is a pure state machine — given any event, update the state.
 This is the single source of truth for all display layers (TUI, SSE /status, NDJSON replay).
 
+**State machine edge cases to handle:**
+- **Fix retry loop**: `spec.fix.started` → `spec.fix.completed` can happen multiple times
+  per spec. The status should cycle: `failed → fixing → testing → (passed | failed → fixing...)`.
+  Track retry count per spec.
+- **Parallel builds**: Multiple specs can be `compiling` simultaneously. `specs_completed`
+  should only increment on `spec.compile.completed`, not `spec.tests.completed`.
+- **LLM tokens**: `llm.response` events don't carry `spec_name` (they fire from the compiler,
+  which doesn't know the spec context). Token attribution to specs requires correlating by
+  timing — or accept that token totals are build-level only for v1.
+- **Late joiners**: A client connecting mid-build needs the full current state, not just
+  future events. `BuildState` must be fully reconstructable from its fields (no event history
+  required). This is what the SSE `/status` endpoint serves.
+- **Unknown events**: `apply()` should silently ignore event types it doesn't recognize,
+  for forward compatibility.
+
 ### New file: `src/specsoloist/subscribers/tui.py`
 
 `TuiSubscriber` — thin bridge from EventBus to Textual:
