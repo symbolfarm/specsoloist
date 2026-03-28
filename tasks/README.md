@@ -39,6 +39,21 @@ sp conduct score/ --model haiku --auto-accept   # quine attempt (see task 26)
 
 ## Task Status
 
+### Observability & Dashboard (Phase 11)
+
+| # | Task | Effort | Depends | Status |
+|---|------|--------|---------|--------|
+| 27 | [Event bus and BuildEvent model](27-event-bus.md) | Medium | — | 🔲 |
+| 28 | [Wire event emission into core/runner/compiler](28-wire-event-emission.md) | Medium | 27 | 🔲 |
+| 29 | [Provider token tracking](29-provider-token-tracking.md) | Small–Med | 27 | 🔲 |
+| 30 | [NDJSON subscriber + `--log-file`](30-ndjson-subscriber.md) | Small | 28 | 🔲 |
+| 31 | [TUI dashboard (`sp dashboard`)](31-tui-dashboard.md) | Large | 28 | 🔲 |
+| 32 | [SSE server (`sp conduct --serve`)](32-sse-server.md) | Medium | 28 | 🔲 |
+
+Tasks 27–28 are the foundation; 29–32 can proceed in parallel once those land.
+
+See also: [spechestra-tasks.md](spechestra-tasks.md) for the Spechestra (web dashboard) backlog.
+
 ### 🔲 Housekeeping
 
 _(none)_
