@@ -399,6 +399,46 @@ deletions. Could surface as `sp validate --check-refs` or a flag on `sp diff`.
 - Could the `# Verification` snippets provide ground truth — if an import in a
   verification block fails, that's a definitive broken reference.
 
+### 7i. Environment readiness for external dependencies
+
+Specs can depend on external packages (e.g., `textual`, `fasthtml`). Currently there's
+no structured way to declare this — constraints mention it in prose, but nothing machine-
+readable tells `sp doctor` or `sp conduct` that a package needs to be installed.
+
+**Relationship to reference specs:** Reference specs already document external APIs for
+soloist accuracy. They could grow a `package:` frontmatter field that serves double duty:
+
+```yaml
+---
+name: textual_interface
+type: reference
+package: textual>=1.0
+---
+```
+
+This enables:
+1. `sp doctor` checks the package is installed (and version satisfies the constraint)
+2. `sp conduct` could auto-install missing packages (or warn before proceeding)
+3. The reference spec body still provides API docs to soloists — same as today
+
+**Alternative: arrangement-level declaration.** Instead of (or in addition to) the
+reference spec field, arrangements could list required packages:
+
+```yaml
+dependencies:
+  - textual>=1.0
+  - python-fasthtml>=0.12
+```
+
+This is simpler but decoupled from the spec that actually needs the package. The
+reference spec approach keeps the "why this package" and "what version" together.
+
+**Open questions:**
+- Should `sp conduct` auto-install, or just fail fast with a clear message?
+- How does this interact with arrangement `environment.tools` (which is for CLIs, not packages)?
+- For the quine, external deps are already in `pyproject.toml` — is this only useful for
+  fresh project bootstrapping?
+
 ---
 
 ## 8. Auth & Production Patterns
