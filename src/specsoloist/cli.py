@@ -108,6 +108,7 @@ def main():
     build_parser.add_argument("--model", help="Override LLM model")
     build_parser.add_argument("--no-tests", action="store_true", help="Skip test generation")
     build_parser.add_argument("--arrangement", metavar="FILE", help="Path to arrangement YAML file")
+    build_parser.add_argument("--log-file", metavar="PATH", help="Write NDJSON build events to file (use - for stdout)")
 
     # compose
     compose_parser = subparsers.add_parser("compose", help="Draft architecture and specs from natural language")
@@ -128,6 +129,7 @@ def main():
     conduct_parser.add_argument("--workers", type=int, default=4, help="Max parallel workers (default: 4)")
     conduct_parser.add_argument("--model", help="Override LLM model")
     conduct_parser.add_argument("--arrangement", metavar="FILE", help="Path to arrangement YAML file")
+    conduct_parser.add_argument("--log-file", metavar="PATH", help="Write NDJSON build events to file (use - for stdout)")
     resume_group = conduct_parser.add_mutually_exclusive_group()
     resume_group.add_argument(
         "--resume", action="store_true",
@@ -309,9 +311,31 @@ def main():
         cmd_doctor(arrangement_arg=getattr(args, "arrangement", None))
         return
 
+    # Set up event bus + NDJSON subscriber if --log-file is specified
+    event_bus = None
+    log_file_handle = None
+    log_file_arg = getattr(args, "log_file", None)
+    if log_file_arg:
+        from .events import EventBus
+        from .subscribers.ndjson import NdjsonSubscriber
+        event_bus = EventBus()
+        if log_file_arg == "-":
+            log_file_handle = sys.stdout
+        else:
+            log_file_handle = open(log_file_arg, "w")  # noqa: SIM115
+        event_bus.subscribe(NdjsonSubscriber(log_file_handle))
+
+    # Also emit NDJSON to stdout when --json is used with conduct/build
+    if getattr(args, "json_output", False) and args.command in ("conduct", "build"):
+        from .events import EventBus
+        from .subscribers.ndjson import NdjsonSubscriber
+        if event_bus is None:
+            event_bus = EventBus()
+        event_bus.subscribe(NdjsonSubscriber(sys.stdout))
+
     # Initialize core
     try:
-        core = SpecSoloistCore(os.getcwd())
+        core = SpecSoloistCore(os.getcwd(), event_bus=event_bus)
     except Exception as e:
         ui.print_error(f"Failed to initialize SpecSoloist: {e}")
         sys.exit(1)
@@ -377,6 +401,11 @@ def main():
         ui.print_error(f"Unexpected error: {e}")
         # In verbose mode, we might want to print the stack trace
         sys.exit(1)
+    finally:
+        if event_bus is not None:
+            event_bus.close()
+        if log_file_handle is not None and log_file_handle is not sys.stdout:
+            log_file_handle.close()
 
 
 def cmd_list(core: SpecSoloistCore, arrangement_arg: str | None = None):
