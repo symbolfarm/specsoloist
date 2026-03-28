@@ -118,7 +118,7 @@ assert callable(getattr(DashboardApp, "refresh_state", None))
 
 # Constraints
 
-- Requires `textual>=0.50` as a runtime dependency
+- Requires `textual>=1.0` as a runtime dependency
 - The `tui` module is the only module that imports Textual — all other modules (build_state, tui subscriber) remain Textual-free
 - Must work in headless mode via `app.run_test()` for CI (no terminal required)
 - Selection state (which spec is highlighted) must survive `refresh_state()` calls — the list should not jump back to the top on every update

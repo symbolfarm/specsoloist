@@ -351,6 +351,54 @@ error, enabling `sp fix` to pick up where they left off.
 Configurable per-soloist timeout (default: 5 minutes) that marks the spec as failed
 and continues the build rather than blocking indefinitely.
 
+### 7g. `sp draft` — low-commitment spec-to-code preview
+
+```bash
+sp draft score/tui.spec.md             # generate code to stdout, don't write to output path
+sp draft score/tui.spec.md -o /tmp     # write to temp directory for review
+sp draft score/tui.spec.md --model haiku  # use a cheap model for fast iteration
+```
+
+The spec-first workflow has a gap: after writing a spec, the only way to see what a
+soloist produces is `sp compile`, which writes to the real output path. `sp draft`
+would generate code without side effects — letting you iterate on the spec before
+committing to the output.
+
+**Model considerations:** drafting benefits from a lightweight/fast model since you're
+iterating, not producing final output. Pydantic AI's provider abstraction supports
+OpenRouter and others, so cheap models (Haiku, local Ollama) could be used for drafting
+while expensive models handle final compilation. Need to verify that provider selection
+is fine-grained enough to support this (per-command model override vs arrangement-level).
+
+**Inside Claude Code:** this is especially valuable when you can't shell out to
+`sp compile` (subprocess restriction). An `sp draft --dry-run` that just emits the
+prompt would let the agent itself do the generation step.
+
+### 7h. Cross-spec type validation
+
+Specs declare dependencies and reference types/functions from other specs. Currently
+`sp validate` checks structure but not cross-references — if `tui.spec.md` references
+`BuildState` from `build_state.spec.md`, nothing verifies that `BuildState` actually
+exists in the dependency.
+
+**Implementation sketch:**
+
+1. During validation, extract "defined symbols" from each spec — class names from
+   `## TypeName` headings, function names from `## func_name()` headings
+2. Extract "referenced symbols" by scanning prose for names that match defined symbols
+   in declared dependencies
+3. Report unresolved references (symbol used but not found in any dependency)
+
+The `yaml:schema` blocks would make this more reliable (structured type definitions),
+but even heuristic extraction from Markdown headings would catch most renames and
+deletions. Could surface as `sp validate --check-refs` or a flag on `sp diff`.
+
+**Open questions:**
+- How to distinguish a prose mention of a type from an actual code dependency?
+- Should this be a warning (likely references) or an error (definite references)?
+- Could the `# Verification` snippets provide ground truth — if an import in a
+  verification block fails, that's a definitive broken reference.
+
 ---
 
 ## 8. Auth & Production Patterns
