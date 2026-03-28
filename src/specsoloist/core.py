@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
 from .config import SpecSoloistConfig
+from .events import BuildEvent, EventBus
 from .parser import SpecParser
 from .compiler import SpecCompiler
 from .runner import TestRunner
@@ -42,7 +43,8 @@ class SpecSoloistCore:
         self,
         root_dir: str = ".",
         api_key: Optional[str] = None,
-        config: Optional[SpecSoloistConfig] = None
+        config: Optional[SpecSoloistConfig] = None,
+        event_bus: Optional[EventBus] = None
     ):
         """Initialize SpecSoloistCore.
 
@@ -51,6 +53,7 @@ class SpecSoloistCore:
             api_key: LLM API key (deprecated, use config instead).
             config: Full configuration object. If not provided,
                    loads from environment variables.
+            event_bus: Optional event bus for build observability.
         """
         # Build configuration
         if config:
@@ -76,6 +79,19 @@ class SpecSoloistCore:
         self._compiler: Optional[SpecCompiler] = None
         self._provider: Optional[LLMProvider] = None
         self._manifest: Optional[BuildManifest] = None
+        self._event_bus = event_bus
+
+    def _emit(
+        self,
+        event_type: str,
+        spec_name: Optional[str] = None,
+        **data: Any,
+    ) -> None:
+        """Emit a build event if an event bus is attached."""
+        if self._event_bus is not None:
+            self._event_bus.emit(
+                BuildEvent(event_type=event_type, spec_name=spec_name, data=data)
+            )
 
     def _get_manifest(self) -> BuildManifest:
         """Lazily load the build manifest."""

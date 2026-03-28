@@ -12,6 +12,7 @@ from typing import Dict, List, Optional
 
 from specsoloist.config import SpecSoloistConfig
 from specsoloist.core import SpecSoloistCore, BuildResult
+from specsoloist.events import EventBus
 from specsoloist.resolver import DependencyGraph
 from specsoloist.schema import Arrangement
 
@@ -36,13 +37,15 @@ class SpecConductor:
     def __init__(
         self,
         project_dir: str,
-        config: Optional[SpecSoloistConfig] = None
+        config: Optional[SpecSoloistConfig] = None,
+        event_bus: Optional[EventBus] = None
     ):
         """Initialize the conductor.
 
         Args:
             project_dir: Path to project root.
             config: Optional configuration. Loads from env if not provided.
+            event_bus: Optional event bus for build observability.
         """
         self.project_dir = os.path.abspath(project_dir)
 
@@ -52,7 +55,7 @@ class SpecConductor:
             self.config = SpecSoloistConfig.from_env(project_dir)
 
         # Create internal SpecSoloistCore for compilation
-        self._core = SpecSoloistCore(project_dir, config=self.config)
+        self._core = SpecSoloistCore(project_dir, config=self.config, event_bus=event_bus)
         self.parser = self._core.parser
         self.resolver = self._core.resolver
 
