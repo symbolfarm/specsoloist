@@ -30,7 +30,7 @@ and Next.js web applications.**
 
 Key commands:
 ```bash
-uv run python -m pytest tests/   # 411 tests — must stay green
+uv run python -m pytest tests/   # 517 tests — must stay green
 uv run ruff check src/           # must pass with 0 errors
 sp conduct score/ --model haiku --auto-accept   # quine attempt (see task 26)
 ```
@@ -49,11 +49,11 @@ sp conduct score/ --model haiku --auto-accept   # quine attempt (see task 26)
 | 30 | [NDJSON subscriber + `--log-file`](30-ndjson-subscriber.md) | Small | 28 | ✅ |
 | 31a | [BuildState model + TuiSubscriber](31-tui-dashboard.md) | Small | 28 | ✅ |
 | 31b | [Textual app skeleton + spec list](31-tui-dashboard.md) | Medium | 31a | ✅ |
-| 31c | [Spec detail panel](31-tui-dashboard.md) | Small–Med | 31b | 🔲 |
-| 31d | [CLI integration (`--tui`, `sp dashboard`)](31-tui-dashboard.md) | Small | 31b | 🔲 |
+| 31c | [Spec detail panel](31-tui-dashboard.md) | Small–Med | 31b | ✅ |
+| 31d | [CLI integration (`--tui`, `sp dashboard`)](31-tui-dashboard.md) | Small | 31b | ✅ |
 | 32 | [SSE server (`sp conduct --serve`)](32-sse-server.md) | Medium | 31a | 🔲 |
 
-Tasks 27–30 and 31a are done. Next: 31b–d and 32 can proceed in parallel.
+Tasks 27–31d are done. Next: 32 (SSE server) and 35 (directory-based discovery).
 
 ### Other Features
 
