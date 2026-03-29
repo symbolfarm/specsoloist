@@ -64,6 +64,7 @@ Tasks 27–31d and 35 are done. Next: 32 (SSE server).
 | 35 | [Directory-based spec discovery (`{path}` pattern)](35-directory-based-spec-discovery.md) | Medium | — | ✅ |
 | 36 | [External dependency declaration (`requires:` in frontmatter)](36-external-dependency-declaration.md) | Medium | — | 🔲 |
 | 37 | [Make `sp diff --all` the default behavior](37-diff-all-default.md) | Small | — | 🔲 |
+| 38 | [TUI startup feedback](38-tui-startup-feedback.md) | Small | 31d | 🔲 |
 
 ### 🔲 Housekeeping
 
