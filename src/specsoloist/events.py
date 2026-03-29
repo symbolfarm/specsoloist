@@ -14,6 +14,9 @@ from typing import Any, Callable, Dict, Optional
 class EventType:
     """String constants for event types."""
 
+    BUILD_INIT = "build.init"
+    BUILD_SPECS_DISCOVERED = "build.specs.discovered"
+    BUILD_DEPS_RESOLVED = "build.deps.resolved"
     BUILD_STARTED = "build.started"
     BUILD_COMPLETED = "build.completed"
     BUILD_LEVEL_STARTED = "build.level.started"

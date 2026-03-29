@@ -183,6 +183,14 @@ class StatusBar(Static):
             self.update("No build in progress")
             return
 
+        if state.status == "initializing":
+            parts = []
+            if state.command:
+                parts.append(state.command)
+            parts.append(state.phase or "Initializing...")
+            self.update("  |  ".join(parts))
+            return
+
         parts = [
             f"Tokens: {state.total_input_tokens:,} in / {state.total_output_tokens:,} out",
             f"Progress: {state.specs_completed}/{state.total_specs} specs",

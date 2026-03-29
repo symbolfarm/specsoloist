@@ -45,7 +45,9 @@ class BuildState:
     total_output_tokens: int = 0
     start_time: float | None = None
     elapsed: float = 0.0
-    status: str = "idle"  # idle | building | completed | failed
+    status: str = "idle"  # idle | initializing | building | completed | failed
+    command: str = ""  # description of the command that launched the build
+    phase: str = ""  # current pre-build phase (e.g. "Discovering specs...")
 
     def apply(self, event: BuildEvent) -> None:
         """Apply a single event to update state. Ignores unknown event types."""
@@ -64,8 +66,23 @@ class BuildState:
 # Event handlers — one per event type
 # ---------------------------------------------------------------------------
 
+def _on_build_init(state: BuildState, event: BuildEvent) -> None:
+    state.status = "initializing"
+    state.command = event.data.get("command", "")
+    state.phase = "Initializing..."
+
+
+def _on_build_specs_discovered(state: BuildState, event: BuildEvent) -> None:
+    state.phase = f"Discovered {event.data.get('count', '?')} specs"
+
+
+def _on_build_deps_resolved(state: BuildState, event: BuildEvent) -> None:
+    state.phase = f"Dependencies resolved — {event.data.get('levels', '?')} levels"
+
+
 def _on_build_started(state: BuildState, event: BuildEvent) -> None:
     state.status = "building"
+    state.phase = ""
     state.start_time = time.monotonic()
     state.total_specs = event.data.get("total_specs", 0)
     build_order = event.data.get("build_order", [])
@@ -161,6 +178,9 @@ def _on_llm_request(state: BuildState, event: BuildEvent) -> None:
 # ---------------------------------------------------------------------------
 
 _EVENT_HANDLERS: dict[str, callable] = {
+    EventType.BUILD_INIT: _on_build_init,
+    EventType.BUILD_SPECS_DISCOVERED: _on_build_specs_discovered,
+    EventType.BUILD_DEPS_RESOLVED: _on_build_deps_resolved,
     EventType.BUILD_STARTED: _on_build_started,
     EventType.BUILD_COMPLETED: _on_build_completed,
     EventType.BUILD_LEVEL_STARTED: _on_build_level_started,

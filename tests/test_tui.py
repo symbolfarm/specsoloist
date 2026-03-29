@@ -252,6 +252,29 @@ class TestStatusBar:
             sb = pilot.app.query_one("#status-bar", StatusBar)
             assert "No build in progress" in str(sb.render())
 
+    @pytest.mark.asyncio
+    async def test_initializing_shows_command(self):
+        async with DashboardApp().run_test() as pilot:
+            state = BuildState(status="initializing", command="sp conduct --no-agent", phase="Initializing...")
+            pilot.app.refresh_state(state)
+            await pilot.pause()
+
+            sb = pilot.app.query_one("#status-bar", StatusBar)
+            rendered = str(sb.render())
+            assert "sp conduct --no-agent" in rendered
+            assert "Initializing" in rendered
+
+    @pytest.mark.asyncio
+    async def test_initializing_shows_phase_updates(self):
+        async with DashboardApp().run_test() as pilot:
+            state = BuildState(status="initializing", command="sp build", phase="Discovered 5 specs")
+            pilot.app.refresh_state(state)
+            await pilot.pause()
+
+            sb = pilot.app.query_one("#status-bar", StatusBar)
+            rendered = str(sb.render())
+            assert "Discovered 5 specs" in rendered
+
 
 # ---------------------------------------------------------------------------
 # Integration: TuiSubscriber + DashboardApp

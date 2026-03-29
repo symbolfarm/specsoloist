@@ -331,6 +331,53 @@ class TestSpecLog:
         assert len(state.specs["a"].log) == 4
 
 
+class TestPreBuildEvents:
+    """Tests for build.init, build.specs.discovered, and build.deps.resolved."""
+
+    def test_build_init_sets_initializing(self):
+        state = BuildState()
+        state.apply(_event(EventType.BUILD_INIT, command="sp conduct score/ --no-agent"))
+        assert state.status == "initializing"
+        assert state.command == "sp conduct score/ --no-agent"
+        assert state.phase == "Initializing..."
+
+    def test_specs_discovered_updates_phase(self):
+        state = BuildState()
+        state.apply(_event(EventType.BUILD_INIT, command="sp build"))
+        state.apply(_event(EventType.BUILD_SPECS_DISCOVERED, count=5, specs=["a", "b", "c", "d", "e"]))
+        assert state.status == "initializing"
+        assert state.phase == "Discovered 5 specs"
+
+    def test_deps_resolved_updates_phase(self):
+        state = BuildState()
+        state.apply(_event(EventType.BUILD_INIT, command="sp build"))
+        state.apply(_event(EventType.BUILD_SPECS_DISCOVERED, count=3))
+        state.apply(_event(EventType.BUILD_DEPS_RESOLVED, levels=2, build_order=["a", "b", "c"]))
+        assert state.phase == "Dependencies resolved — 2 levels"
+
+    def test_build_started_clears_phase(self):
+        state = BuildState()
+        state.apply(_event(EventType.BUILD_INIT, command="sp build"))
+        state.apply(_event(EventType.BUILD_SPECS_DISCOVERED, count=1))
+        state.apply(_event(EventType.BUILD_DEPS_RESOLVED, levels=1))
+        state.apply(_event(EventType.BUILD_STARTED, total_specs=1, build_order=["a"]))
+        assert state.status == "building"
+        assert state.phase == ""
+
+    def test_pre_build_events_without_init(self):
+        """Discovery events work even if build.init was not emitted (no TUI)."""
+        state = BuildState()
+        state.apply(_event(EventType.BUILD_SPECS_DISCOVERED, count=3))
+        assert state.phase == "Discovered 3 specs"
+
+    def test_command_and_phase_serialized(self):
+        state = BuildState()
+        state.apply(_event(EventType.BUILD_INIT, command="sp build --tui"))
+        d = state.to_dict()
+        assert d["command"] == "sp build --tui"
+        assert d["phase"] == "Initializing..."
+
+
 class TestFullSequence:
     def test_realistic_build_sequence(self):
         state = BuildState()

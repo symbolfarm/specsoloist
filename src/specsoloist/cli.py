@@ -391,7 +391,9 @@ def main():
             if use_tui:
                 _run_with_tui(tui_subscriber, lambda: cmd_build(
                     core, args.incremental, args.parallel, args.workers,
-                    args.model, not args.no_tests, args.arrangement))
+                    args.model, not args.no_tests, args.arrangement),
+                    event_bus=event_bus,
+                    command_description="sp build")
             else:
                 cmd_build(core, args.incremental, args.parallel, args.workers, args.model, not args.no_tests, args.arrangement)
         elif args.command == "compose":
@@ -401,10 +403,13 @@ def main():
                      args.resume, args.no_agent, args.auto_accept, args.model)
         elif args.command == "conduct":
             if use_tui and args.no_agent:
+                _cmd_desc = f"sp conduct {args.src_dir or ''} --no-agent".strip()
                 _run_with_tui(tui_subscriber, lambda: cmd_conduct(
                     core, args.src_dir, args.no_agent, args.auto_accept,
                     args.incremental, args.parallel, args.workers, args.model,
-                    args.arrangement, resume=args.resume, force=args.force))
+                    args.arrangement, resume=args.resume, force=args.force),
+                    event_bus=event_bus,
+                    command_description=_cmd_desc)
             elif use_tui:
                 ui.print_warning("--tui requires --no-agent for sp conduct (agent mode uses its own output)")
                 sys.exit(1)
@@ -918,10 +923,18 @@ def _fix_with_llm(core: SpecSoloistCore, name: str, model: str | None = None):
             sys.exit(1)
 
 
-def _run_with_tui(tui_subscriber, build_fn):
+def _run_with_tui(tui_subscriber, build_fn, event_bus=None, command_description: str = ""):
     """Run a build function in a background thread with the Textual TUI in the foreground."""
     import threading
+    from .events import BuildEvent, EventType
     from .tui import DashboardApp
+
+    # Emit build.init immediately so the TUI shows something on startup
+    if event_bus is not None:
+        event_bus.emit(BuildEvent(
+            event_type=EventType.BUILD_INIT,
+            data={"command": command_description},
+        ))
 
     app = DashboardApp()
     tui_subscriber.app = app

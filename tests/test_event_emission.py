@@ -55,7 +55,9 @@ class TestCompileProjectEmission:
             events = _collect_events(core, bus, lambda c: c.compile_project(generate_tests=False))
 
         types = [e.event_type for e in events]
-        assert types[0] == EventType.BUILD_STARTED
+        assert types[0] == EventType.BUILD_SPECS_DISCOVERED
+        assert types[1] == EventType.BUILD_DEPS_RESOLVED
+        assert types[2] == EventType.BUILD_STARTED
         assert types[-1] == EventType.BUILD_COMPLETED
 
     def test_build_started_data(self, project_dir):
@@ -65,7 +67,7 @@ class TestCompileProjectEmission:
         with patch.object(core, "compile_spec", return_value="Compiled"):
             events = _collect_events(core, bus, lambda c: c.compile_project(generate_tests=False))
 
-        start = events[0]
+        start = [e for e in events if e.event_type == EventType.BUILD_STARTED][0]
         assert start.data["total_specs"] == 1
         assert start.data["build_order"] == ["greeter"]
         assert "parallel" in start.data
@@ -134,7 +136,7 @@ class TestCompileProjectEmission:
         assert result.success
 
     def test_event_order(self, project_dir):
-        """Events should follow: build.started → spec.compile.started → spec.compile.completed → build.completed."""
+        """Events should follow: discovery → deps → build.started → spec events → build.completed."""
         bus = EventBus()
         core = SpecSoloistCore(project_dir, event_bus=bus)
 
@@ -143,6 +145,8 @@ class TestCompileProjectEmission:
 
         types = [e.event_type for e in events]
         assert types == [
+            EventType.BUILD_SPECS_DISCOVERED,
+            EventType.BUILD_DEPS_RESOLVED,
             EventType.BUILD_STARTED,
             EventType.SPEC_COMPILE_STARTED,
             EventType.SPEC_COMPILE_COMPLETED,

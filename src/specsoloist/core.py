@@ -482,7 +482,23 @@ class SpecSoloistCore:
             BuildResult with compilation status and details.
         """
         t0 = time.monotonic()
+
+        # Pre-build discovery events
+        all_specs = self.list_specs()
+        self._emit(
+            EventType.BUILD_SPECS_DISCOVERED,
+            count=len(all_specs),
+            specs=[s.replace(".spec.md", "") for s in all_specs],
+        )
+
         build_order = self.resolver.resolve_build_order(specs)
+        levels = self.resolver.get_parallel_build_order(specs)
+        self._emit(
+            EventType.BUILD_DEPS_RESOLVED,
+            levels=len(levels),
+            build_order=build_order,
+        )
+
         self._emit(
             EventType.BUILD_STARTED,
             total_specs=len(build_order),
