@@ -81,6 +81,8 @@ Append-only log of completed tasks and roadmap phases, in order of completion.
 | 35 | Directory-based spec discovery (`{path}` pattern) | 2026-03-29 | `{path}` variable in `output_paths` includes subdirectory prefix; resolver leaf-name index for unambiguous dep resolution; `score/` reorganized with `subscribers/` subdir; `sp init` templates default to `{path}`; 4 arrangement + 4 resolver tests |
 | HK-26 | Update score specs for event bus integration | 2026-03-29 | Added `events.spec.md`, `subscribers/ndjson.spec.md`, `subscribers/tui.spec.md`; updated `core.spec.md`, `compiler.spec.md`, `subscribers/build_state.spec.md`, `tui.spec.md`; score now 21 specs |
 | HK-28 | Apply `specs_path` from arrangement in `sp validate` | 2026-03-29 | 4-line fix in `cmd_validate()` — resolves arrangement and sets `parser.src_dir` before validation; fixes "Spec file not found" for nested specs like `subscribers/build_state` |
+| 37 | `sp diff` defaults to all-specs + daily CI drift check | 2026-03-30 | `sp diff` with no args checks all specs for drift (AST-based, no LLM); `--arrangement` flag for path resolution; `.github/workflows/spec-drift.yaml` runs daily + on PR; reference specs skipped; JSON array output in all-specs mode; 2 new tests |
+| 38 | TUI startup feedback + error handling | 2026-03-29 | Pre-build events (build.init, build.specs.discovered, build.deps.resolved); preflight validation; build.error event; "Press q to exit" hints; Rich markup escaping; event bus threading to conductor; 10 new tests |
 
 ## Completed Roadmap Phases
 
