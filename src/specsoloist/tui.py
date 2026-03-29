@@ -191,6 +191,11 @@ class StatusBar(Static):
             self.update("  |  ".join(parts))
             return
 
+        # Fatal error — show prominently with exit hint
+        if state.status == "failed" and state.error:
+            self.update(f"[bold red]Error: {state.error}[/]  |  Press q to exit")
+            return
+
         parts = [
             f"Tokens: {state.total_input_tokens:,} in / {state.total_output_tokens:,} out",
             f"Progress: {state.specs_completed}/{state.total_specs} specs",
@@ -198,6 +203,8 @@ class StatusBar(Static):
         if state.elapsed > 0:
             parts.append(f"Elapsed: {state.elapsed:.1f}s")
         parts.append(f"Status: {state.status}")
+        if state.status in ("completed", "failed"):
+            parts.append("Press q to exit")
 
         self.update("  |  ".join(parts))
 
@@ -246,6 +253,12 @@ class DashboardApp(App):
 
         status_bar = self.query_one("#status-bar", StatusBar)
         status_bar.update_state(state)
+
+        # Show fatal error in the detail panel when no specs are available
+        if state.error and not state.build_order:
+            info = self.query_one("#spec-info", SpecInfoWidget)
+            info.update(f"[bold red]{state.error}[/]")
+            return
 
         # Update detail panel for currently selected spec
         self._update_detail_for_selection()

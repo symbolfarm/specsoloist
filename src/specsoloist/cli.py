@@ -389,6 +389,7 @@ def main():
             cmd_fix(core, args.name, args.no_agent, args.auto_accept, args.model)
         elif args.command == "build":
             if use_tui:
+                _preflight_tui(getattr(args, "arrangement", None))
                 _run_with_tui(tui_subscriber, lambda: cmd_build(
                     core, args.incremental, args.parallel, args.workers,
                     args.model, not args.no_tests, args.arrangement),
@@ -403,6 +404,7 @@ def main():
                      args.resume, args.no_agent, args.auto_accept, args.model)
         elif args.command == "conduct":
             if use_tui and args.no_agent:
+                _preflight_tui(getattr(args, "arrangement", None))
                 _cmd_desc = f"sp conduct {args.src_dir or ''} --no-agent".strip()
                 _run_with_tui(tui_subscriber, lambda: cmd_conduct(
                     core, args.src_dir, args.no_agent, args.auto_accept,
@@ -923,6 +925,18 @@ def _fix_with_llm(core: SpecSoloistCore, name: str, model: str | None = None):
             sys.exit(1)
 
 
+def _preflight_tui(arrangement_arg: str | None) -> None:
+    """Pre-validate common error conditions before launching the TUI.
+
+    Raises SystemExit with a clear message for problems that would otherwise
+    be swallowed by the TUI's build thread.
+    """
+    if arrangement_arg and not os.path.exists(arrangement_arg):
+        ui.print_error(f"Arrangement file not found: {arrangement_arg}")
+        sys.exit(1)
+    _check_api_key()
+
+
 def _run_with_tui(tui_subscriber, build_fn, event_bus=None, command_description: str = ""):
     """Run a build function in a background thread with the Textual TUI in the foreground."""
     import threading
@@ -941,14 +955,36 @@ def _run_with_tui(tui_subscriber, build_fn, event_bus=None, command_description:
 
     build_error = None
 
+    def _emit_error(msg: str) -> None:
+        if event_bus is not None:
+            event_bus.emit(BuildEvent(
+                event_type=EventType.BUILD_ERROR,
+                data={"error": msg},
+            ))
+
     def _run_build():
         nonlocal build_error
+        # Intercept ui.print_error calls to capture the last error message,
+        # since Rich output is swallowed by Textual's screen.
+        last_error_msg = []
+        original_print_error = ui.print_error
+
+        def _capture_error(msg, *a, **kw):
+            last_error_msg.append(str(msg))
+            original_print_error(msg, *a, **kw)
+
+        ui.print_error = _capture_error
         try:
             build_fn()
-        except SystemExit:
-            pass  # cmd_build/cmd_conduct call sys.exit on failure
+        except SystemExit as e:
+            if e.code and e.code != 0:
+                msg = last_error_msg[-1] if last_error_msg else f"Build exited with code {e.code}"
+                _emit_error(msg)
         except Exception as e:
             build_error = e
+            _emit_error(str(e))
+        finally:
+            ui.print_error = original_print_error
 
     thread = threading.Thread(target=_run_build, daemon=True)
     thread.start()

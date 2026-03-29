@@ -378,6 +378,37 @@ class TestPreBuildEvents:
         assert d["phase"] == "Initializing..."
 
 
+class TestBuildError:
+    """Tests for build.error event handling."""
+
+    def test_error_sets_failed_status(self):
+        state = BuildState()
+        state.apply(_event(EventType.BUILD_INIT, command="sp build"))
+        state.apply(_event(EventType.BUILD_ERROR, error="Arrangement file not found: bad.yaml"))
+        assert state.status == "failed"
+        assert state.error == "Arrangement file not found: bad.yaml"
+        assert state.phase == ""
+
+    def test_error_during_build(self):
+        state = _started_state(["a", "b"])
+        state.apply(_event(EventType.BUILD_ERROR, error="LLM connection failed"))
+        assert state.status == "failed"
+        assert state.error == "LLM connection failed"
+
+    def test_error_without_message(self):
+        state = BuildState()
+        state.apply(_event(EventType.BUILD_ERROR))
+        assert state.status == "failed"
+        assert state.error == "Unknown error"
+
+    def test_error_serialized(self):
+        state = BuildState()
+        state.apply(_event(EventType.BUILD_ERROR, error="something broke"))
+        d = state.to_dict()
+        assert d["error"] == "something broke"
+        assert d["status"] == "failed"
+
+
 class TestFullSequence:
     def test_realistic_build_sequence(self):
         state = BuildState()

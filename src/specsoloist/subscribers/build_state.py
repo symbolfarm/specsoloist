@@ -48,6 +48,7 @@ class BuildState:
     status: str = "idle"  # idle | initializing | building | completed | failed
     command: str = ""  # description of the command that launched the build
     phase: str = ""  # current pre-build phase (e.g. "Discovering specs...")
+    error: str = ""  # top-level build error message (fatal errors)
 
     def apply(self, event: BuildEvent) -> None:
         """Apply a single event to update state. Ignores unknown event types."""
@@ -96,6 +97,12 @@ def _on_build_completed(state: BuildState, event: BuildEvent) -> None:
     if state.start_time is not None:
         state.elapsed = time.monotonic() - state.start_time
     state.status = "failed" if state.specs_failed > 0 else "completed"
+
+
+def _on_build_error(state: BuildState, event: BuildEvent) -> None:
+    state.status = "failed"
+    state.error = event.data.get("error", "Unknown error")
+    state.phase = ""
 
 
 def _on_build_level_started(state: BuildState, event: BuildEvent) -> None:
@@ -183,6 +190,7 @@ _EVENT_HANDLERS: dict[str, callable] = {
     EventType.BUILD_DEPS_RESOLVED: _on_build_deps_resolved,
     EventType.BUILD_STARTED: _on_build_started,
     EventType.BUILD_COMPLETED: _on_build_completed,
+    EventType.BUILD_ERROR: _on_build_error,
     EventType.BUILD_LEVEL_STARTED: _on_build_level_started,
     EventType.SPEC_COMPILE_STARTED: _on_spec_compile_started,
     EventType.SPEC_COMPILE_COMPLETED: _on_spec_compile_completed,

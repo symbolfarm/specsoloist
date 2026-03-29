@@ -19,6 +19,7 @@ class EventType:
     BUILD_DEPS_RESOLVED = "build.deps.resolved"
     BUILD_STARTED = "build.started"
     BUILD_COMPLETED = "build.completed"
+    BUILD_ERROR = "build.error"
     BUILD_LEVEL_STARTED = "build.level.started"
     SPEC_COMPILE_STARTED = "spec.compile.started"
     SPEC_COMPILE_COMPLETED = "spec.compile.completed"
