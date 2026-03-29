@@ -62,6 +62,7 @@ These flags apply to all commands:
 | `sp schema [topic]` | Show annotated schema for `arrangement.yaml` (`--json` for JSON Schema; topic to zoom in) |
 | `sp help [topic]` | Show a bundled reference guide (`arrangement`, `spec-format`, `conduct`, `overrides`, `specs-path`) |
 | `sp doctor` | Check environment health (API keys, CLIs, tools) |
+| `sp dashboard` | Connect to a running build's live dashboard (requires `sp conduct --serve`) |
 
 ---
 
@@ -86,6 +87,8 @@ Orchestrates a full project build by spawning agent soloists in dependency order
 | `--workers N` | Max parallel workers (default: 4) |
 | `--no-agent` | Use direct LLM API instead of agent CLI |
 | `--auto-accept` | Skip interactive review prompts |
+| `--log-file PATH` | Write NDJSON build events to file (use `-` for stdout) |
+| `--tui` | Run build inside a live Textual dashboard (requires `--no-agent`) |
 
 ### `sp vibe`
 
@@ -126,6 +129,8 @@ Non-agent build: compiles all specs via direct LLM API calls in dependency order
 | `--parallel` | Compile concurrently |
 | `--workers N` | Max parallel workers (default: 4) |
 | `--no-tests` | Skip test generation |
+| `--log-file PATH` | Write NDJSON build events to file (use `-` for stdout) |
+| `--tui` | Run build inside a live Textual dashboard |
 
 ### `sp init`
 

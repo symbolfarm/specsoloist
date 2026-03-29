@@ -370,3 +370,39 @@ class TestLogPanel:
             log = sub.state.specs["x"].log
             assert "Fix attempt 1" in log[3]
             assert "Fix applied, re-testing" in log[4]
+
+
+# ---------------------------------------------------------------------------
+# CLI flag parsing
+# ---------------------------------------------------------------------------
+
+class TestCliFlags:
+    def test_conduct_tui_flag_parsed(self):
+        """The --tui flag is accepted by sp conduct."""
+        import subprocess
+        result = subprocess.run(
+            ["uv", "run", "sp", "conduct", "--tui", "--help"],
+            capture_output=True, text=True,
+        )
+        assert result.returncode == 0
+        assert "--tui" in result.stdout
+
+    def test_build_tui_flag_parsed(self):
+        """The --tui flag is accepted by sp build."""
+        import subprocess
+        result = subprocess.run(
+            ["uv", "run", "sp", "build", "--help"],
+            capture_output=True, text=True,
+        )
+        assert result.returncode == 0
+        assert "--tui" in result.stdout
+
+    def test_dashboard_command_exists(self):
+        """sp dashboard prints a helpful message about SSE not being implemented yet."""
+        import subprocess
+        result = subprocess.run(
+            ["uv", "run", "sp", "dashboard"],
+            capture_output=True, text=True,
+        )
+        assert result.returncode == 0
+        assert "not yet implemented" in result.stdout.lower() or "task 32" in result.stdout.lower()

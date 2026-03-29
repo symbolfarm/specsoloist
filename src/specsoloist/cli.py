@@ -109,6 +109,7 @@ def main():
     build_parser.add_argument("--no-tests", action="store_true", help="Skip test generation")
     build_parser.add_argument("--arrangement", metavar="FILE", help="Path to arrangement YAML file")
     build_parser.add_argument("--log-file", metavar="PATH", help="Write NDJSON build events to file (use - for stdout)")
+    build_parser.add_argument("--tui", action="store_true", help="Run build inside a live Textual dashboard")
 
     # compose
     compose_parser = subparsers.add_parser("compose", help="Draft architecture and specs from natural language")
@@ -130,6 +131,7 @@ def main():
     conduct_parser.add_argument("--model", help="Override LLM model")
     conduct_parser.add_argument("--arrangement", metavar="FILE", help="Path to arrangement YAML file")
     conduct_parser.add_argument("--log-file", metavar="PATH", help="Write NDJSON build events to file (use - for stdout)")
+    conduct_parser.add_argument("--tui", action="store_true", help="Run build inside a live Textual dashboard")
     resume_group = conduct_parser.add_mutually_exclusive_group()
     resume_group.add_argument(
         "--resume", action="store_true",
@@ -241,6 +243,12 @@ def main():
         help="Target directory for skills (default: .claude/skills)"
     )
 
+    # dashboard
+    subparsers.add_parser(
+        "dashboard",
+        help="Connect to a running build's live dashboard (requires sp conduct --serve)"
+    )
+
     # help
     help_parser = subparsers.add_parser(
         "help",
@@ -301,6 +309,9 @@ def main():
     if args.command == "install-skills":
         cmd_install_skills(args.target)
         return
+    if args.command == "dashboard":
+        cmd_dashboard()
+        return
     if args.command == "help":
         cmd_help(getattr(args, "topic", None))
         return
@@ -332,6 +343,17 @@ def main():
         if event_bus is None:
             event_bus = EventBus()
         event_bus.subscribe(NdjsonSubscriber(sys.stdout))
+
+    # Set up TUI subscriber if --tui is specified
+    tui_subscriber = None
+    use_tui = getattr(args, "tui", False)
+    if use_tui and args.command in ("conduct", "build"):
+        from .events import EventBus
+        from .subscribers.tui import TuiSubscriber
+        if event_bus is None:
+            event_bus = EventBus()
+        tui_subscriber = TuiSubscriber()
+        event_bus.subscribe(tui_subscriber)
 
     # Initialize core
     try:
@@ -366,16 +388,30 @@ def main():
         elif args.command == "fix":
             cmd_fix(core, args.name, args.no_agent, args.auto_accept, args.model)
         elif args.command == "build":
-            cmd_build(core, args.incremental, args.parallel, args.workers, args.model, not args.no_tests, args.arrangement)
+            if use_tui:
+                _run_with_tui(tui_subscriber, lambda: cmd_build(
+                    core, args.incremental, args.parallel, args.workers,
+                    args.model, not args.no_tests, args.arrangement))
+            else:
+                cmd_build(core, args.incremental, args.parallel, args.workers, args.model, not args.no_tests, args.arrangement)
         elif args.command == "compose":
             cmd_compose(core, args.request, args.no_agent, args.auto_accept, args.model)
         elif args.command == "vibe":
             cmd_vibe(core, args.brief, args.template, args.pause_for_review,
                      args.resume, args.no_agent, args.auto_accept, args.model)
         elif args.command == "conduct":
-            cmd_conduct(core, args.src_dir, args.no_agent, args.auto_accept,
-                        args.incremental, args.parallel, args.workers, args.model, args.arrangement,
-                        resume=args.resume, force=args.force)
+            if use_tui and args.no_agent:
+                _run_with_tui(tui_subscriber, lambda: cmd_conduct(
+                    core, args.src_dir, args.no_agent, args.auto_accept,
+                    args.incremental, args.parallel, args.workers, args.model,
+                    args.arrangement, resume=args.resume, force=args.force))
+            elif use_tui:
+                ui.print_warning("--tui requires --no-agent for sp conduct (agent mode uses its own output)")
+                sys.exit(1)
+            else:
+                cmd_conduct(core, args.src_dir, args.no_agent, args.auto_accept,
+                            args.incremental, args.parallel, args.workers, args.model, args.arrangement,
+                            resume=args.resume, force=args.force)
         elif args.command == "diff":
             if args.right is None and args.runs is None:
                 # Spec-drift mode: single spec name argument
@@ -876,6 +912,43 @@ def _fix_with_llm(core: SpecSoloistCore, name: str, model: str | None = None):
         except Exception as e:
             ui.print_error(f"Fix failed: {e}")
             sys.exit(1)
+
+
+def _run_with_tui(tui_subscriber, build_fn):
+    """Run a build function in a background thread with the Textual TUI in the foreground."""
+    import threading
+    from .tui import DashboardApp
+
+    app = DashboardApp()
+    tui_subscriber.app = app
+
+    build_error = None
+
+    def _run_build():
+        nonlocal build_error
+        try:
+            build_fn()
+        except SystemExit:
+            pass  # cmd_build/cmd_conduct call sys.exit on failure
+        except Exception as e:
+            build_error = e
+
+    thread = threading.Thread(target=_run_build, daemon=True)
+    thread.start()
+    app.run()
+    thread.join(timeout=2.0)
+
+    if build_error:
+        ui.print_error(f"Build error: {build_error}")
+        sys.exit(1)
+
+
+def cmd_dashboard():
+    """Connect to a running build's live dashboard via SSE."""
+    ui.print_info("sp dashboard connects to a running 'sp conduct --serve' instance.")
+    ui.print_info("SSE server mode is not yet implemented (see task 32).")
+    ui.print_info("")
+    ui.print_info("For now, use 'sp conduct --no-agent --tui' to run a build with a live dashboard.")
 
 
 def cmd_build(core: SpecSoloistCore, incremental: bool, parallel: bool, workers: int, model: str,

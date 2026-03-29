@@ -111,6 +111,7 @@ sp conduct specs/mymodule.spec.md --arrangement arrangement.yaml
 | `sp test [--all]` | Run tests for a spec (or all compiled specs) |
 | `sp diff` | Compare spec against compiled implementation (drift detection) |
 | `sp build` | Compile all specs (direct LLM, no agents) |
+| `sp dashboard` | Connect to a running build's live dashboard |
 | `sp list` | List all specs |
 | `sp create` | Create a new spec manually |
 | `sp graph` | Export dependency graph (Mermaid.js) |
