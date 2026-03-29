@@ -22,7 +22,7 @@ and Next.js web applications.**
 |-------|--------|
 | Core framework | Stable — parser, compiler, runner, resolver, manifest |
 | Agent-first CLI | Done — `sp conduct`, `sp compose`, `sp respec`, `sp fix`, `sp vibe`, `sp diff` |
-| Quine (self-hosting) | Score updated — 21 specs (16 flat + 3 subscribers + 2 spechestra); last validated 584/584 (2026-03-27); weekly CI in `.github/workflows/quine.yaml` |
+| Quine (self-hosting) | Score updated — 21 specs (14 flat + 3 subscribers + 2 spechestra + spec_format + events); last validated 584/584 (2026-03-27); needs re-validation after {path} pattern + new subscriber specs; weekly CI in `.github/workflows/quine.yaml` |
 | FastHTML example | Validated — 23 tests passing (`examples/fasthtml_app/`) |
 | Next.js example | Validated — 22 tests passing (`examples/nextjs_ai_chat/`) |
 | Documentation | Solid — mkdocstrings + Google docstrings live; spec-types.md + example docs complete (HK-11 done) |
@@ -30,7 +30,7 @@ and Next.js web applications.**
 
 Key commands:
 ```bash
-uv run python -m pytest tests/   # 525 tests — must stay green
+uv run python -m pytest tests/   # ~525 tests — must stay green
 uv run ruff check src/           # must pass with 0 errors
 sp conduct score/ --model haiku --auto-accept   # quine attempt (see task 26)
 ```
@@ -53,7 +53,7 @@ sp conduct score/ --model haiku --auto-accept   # quine attempt (see task 26)
 | 31d | [CLI integration (`--tui`, `sp dashboard`)](31-tui-dashboard.md) | Small | 31b | ✅ |
 | 32 | [SSE server (`sp conduct --serve`)](32-sse-server.md) | Medium | 31a | 🔲 |
 
-Tasks 27–31d are done. Next: 32 (SSE server) and 35 (directory-based discovery).
+Tasks 27–31d and 35 are done. Next: 32 (SSE server).
 
 ### Other Features
 
@@ -63,12 +63,12 @@ Tasks 27–31d are done. Next: 32 (SSE server) and 35 (directory-based discovery
 | 34 | [`sp dashboard --replay`](34-ndjson-replay.md) | Small | 31b | 🔲 |
 | 35 | [Directory-based spec discovery (`{path}` pattern)](35-directory-based-spec-discovery.md) | Medium | — | ✅ |
 | 36 | [External dependency declaration (`requires:` in frontmatter)](36-external-dependency-declaration.md) | Medium | — | 🔲 |
+| 37 | [Make `sp diff --all` the default behavior](37-diff-all-default.md) | Small | — | 🔲 |
 
 ### 🔲 Housekeeping
 
 | # | Task | Status |
 |---|------|--------|
-| HK-26 | [Update score specs for event bus integration](HK-26-update-score-for-events.md) | ✅ |
 | HK-27 | [README refresh — badges, logo, demo GIF, fix PyPI links](HK-27-readme-refresh.md) | 🔲 |
 
 See also: [spechestra-tasks.md](spechestra-tasks.md) for the Spechestra (web dashboard) backlog.

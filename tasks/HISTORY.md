@@ -70,6 +70,17 @@ Append-only log of completed tasks and roadmap phases, in order of completion.
 | UA-02 | Delete `PYPI_API_TOKEN` from GitHub release environment secrets | 2026-03-27 | Done by Toby |
 | 26 | Run quine with `score/arrangement.yaml` | 2026-03-27 | 584/584 tests pass; conductor/composer in `build/quine/src/spechestra/` ✓; help/ and skills/ static artifacts copied ✓; quine generated 584 tests vs 411 in original suite (specs prompt more thorough generation) |
 | HK-25 | Integrate `score/arrangement.yaml` with quine mode | 2026-03-27 | Quine agent prompt now injects per-spec output overrides (prefixed with `build/quine/`) and static artifact copy instructions from the arrangement; also reverted HK-23's arrangement-file-dir change back to `os.getcwd()` (consistent with conductor's `project_dir` approach; arrangement-file-dir was wrong for `score/arrangement.yaml` which lives in a subdirectory with repo-root-relative paths) |
+| 27 | Event bus and BuildEvent model | 2026-03-29 | `EventBus` (queue.Queue-based), `BuildEvent` dataclass, `EventType` enum, `EventSubscriber` protocol; thread-safe subscriber notification; drain helper for tests |
+| 28 | Wire event emission into core/runner/compiler | 2026-03-29 | `event_bus` parameter threaded through `SpecSoloistCore`, `compile_code()`, `_generate()`; emits build/spec/test/fix events at all lifecycle points |
+| 29 | Provider token tracking | 2026-03-29 | `LLMResponse` dataclass with `input_tokens`/`output_tokens`; providers return it; `llm.response` events emitted by compiler |
+| 30 | NDJSON subscriber + `--log-file` | 2026-03-29 | `NdjsonSubscriber` writes one JSON line per event to a file; `--log-file` flag on `sp conduct`/`sp build` |
+| 31a | BuildState model + TuiSubscriber | 2026-03-29 | `BuildState`/`SpecState` dataclasses; `.apply(event)` state machine; `TuiSubscriber` bridges events to Textual via `call_from_thread` |
+| 31b | Textual app skeleton + spec list | 2026-03-29 | `DashboardApp`, `SpecListWidget`, `StatusBar`; navigable spec list with status icons; headless testing via `run_test()` |
+| 31c | Spec detail panel (LogPanel) | 2026-03-29 | `SpecInfoWidget` (metadata), `LogPanel` (RichLog), `SpecDetailWidget` (container); `SpecState.log` field for accumulated event log lines; 8 new tests |
+| 31d | CLI integration (`--tui`, `sp dashboard`) | 2026-03-29 | `--tui` flag on conduct/build; `_run_with_tui()` runs build in bg thread, Textual in fg; `sp dashboard` placeholder for SSE (task 32); requires `--no-agent` (agent subprocess can't share event bus) |
+| 35 | Directory-based spec discovery (`{path}` pattern) | 2026-03-29 | `{path}` variable in `output_paths` includes subdirectory prefix; resolver leaf-name index for unambiguous dep resolution; `score/` reorganized with `subscribers/` subdir; `sp init` templates default to `{path}`; 4 arrangement + 4 resolver tests |
+| HK-26 | Update score specs for event bus integration | 2026-03-29 | Added `events.spec.md`, `subscribers/ndjson.spec.md`, `subscribers/tui.spec.md`; updated `core.spec.md`, `compiler.spec.md`, `subscribers/build_state.spec.md`, `tui.spec.md`; score now 21 specs |
+| HK-28 | Apply `specs_path` from arrangement in `sp validate` | 2026-03-29 | 4-line fix in `cmd_validate()` — resolves arrangement and sets `parser.src_dir` before validation; fixes "Spec file not found" for nested specs like `subscribers/build_state` |
 
 ## Completed Roadmap Phases
 
