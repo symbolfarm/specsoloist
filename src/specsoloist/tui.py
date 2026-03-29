@@ -6,6 +6,7 @@ navigable spec list with status icons, detail panel, and aggregate status bar.
 
 from __future__ import annotations
 
+from rich.markup import escape as rich_escape
 from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.containers import Horizontal, Vertical
@@ -111,7 +112,7 @@ class SpecInfoWidget(Static):
         if spec.input_tokens or spec.output_tokens:
             lines.append(f"Tokens: {spec.input_tokens:,} in / {spec.output_tokens:,} out")
         if spec.error:
-            lines.append(f"[red]Error: {spec.error}[/red]")
+            lines.append(f"[red]Error: {rich_escape(spec.error)}[/red]")
 
         self.update("\n".join(lines))
 
@@ -193,7 +194,7 @@ class StatusBar(Static):
 
         # Fatal error — show prominently with exit hint
         if state.status == "failed" and state.error:
-            self.update(f"[bold red]Error: {state.error}[/]  |  Press q to exit")
+            self.update(f"[bold red]Error: {rich_escape(state.error)}[/]  |  Press q to exit")
             return
 
         parts = [
@@ -257,7 +258,7 @@ class DashboardApp(App):
         # Show fatal error in the detail panel when no specs are available
         if state.error and not state.build_order:
             info = self.query_one("#spec-info", SpecInfoWidget)
-            info.update(f"[bold red]{state.error}[/]")
+            info.update(f"[bold red]{rich_escape(state.error)}[/]")
             return
 
         # Update detail panel for currently selected spec
