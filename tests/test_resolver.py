@@ -235,3 +235,91 @@ def test_parallel_build_order_diamond(test_env):
     assert set(levels[1]) == {"auth", "users"}
     # Level 2: api
     assert levels[2] == ["api"]
+
+
+# ---------------------------------------------------------------------------
+# Directory-based spec discovery (nested subdirectories)
+# ---------------------------------------------------------------------------
+
+def create_nested_spec(src_dir: str, rel_path: str, deps: list = None):
+    """Create a spec at a nested path like 'subscribers/build_state'."""
+    deps = deps or []
+    name = rel_path.rsplit("/", 1)[-1] if "/" in rel_path else rel_path
+    deps_yaml = "\n".join([f'  - name: X\n    from: {d}.spec.md' for d in deps])
+    if deps_yaml:
+        deps_yaml = f"dependencies:\n{deps_yaml}"
+    else:
+        deps_yaml = "dependencies: []"
+
+    content = f"""---
+name: {name}
+type: module
+status: draft
+{deps_yaml}
+---
+
+# Overview
+Test spec for {name}.
+"""
+    full_path = os.path.join(src_dir, f"{rel_path}.spec.md")
+    os.makedirs(os.path.dirname(full_path), exist_ok=True)
+    with open(full_path, 'w') as f:
+        f.write(content)
+
+
+def test_nested_specs_discovered(test_env):
+    """Specs in subdirectories are found by list_specs."""
+    src_dir = os.path.join(test_env, "src")
+    create_nested_spec(src_dir, "config")
+    create_nested_spec(src_dir, "subscribers/ndjson")
+    create_nested_spec(src_dir, "subscribers/build_state")
+
+    parser = SpecParser(src_dir)
+    specs = parser.list_specs()
+
+    assert "config.spec.md" in specs
+    assert os.path.join("subscribers", "build_state.spec.md") in specs
+    assert os.path.join("subscribers", "ndjson.spec.md") in specs
+
+
+def test_nested_spec_deps_resolved_by_leaf_name(test_env):
+    """A nested spec can depend on another by leaf name if unambiguous."""
+    src_dir = os.path.join(test_env, "src")
+    create_nested_spec(src_dir, "events")
+    # build_state depends on 'events' (leaf name)
+    create_nested_spec(src_dir, "subscribers/build_state", deps=["events"])
+
+    parser = SpecParser(src_dir)
+    resolver = DependencyResolver(parser)
+
+    order = resolver.resolve_build_order()
+    assert order.index("events") < order.index(os.path.join("subscribers", "build_state"))
+
+
+def test_nested_spec_deps_resolved_by_full_path(test_env):
+    """Deps can reference specs by full relative path."""
+    src_dir = os.path.join(test_env, "src")
+    create_nested_spec(src_dir, "models/user")
+    create_nested_spec(src_dir, "services/auth", deps=["models/user"])
+
+    parser = SpecParser(src_dir)
+    resolver = DependencyResolver(parser)
+
+    order = resolver.resolve_build_order()
+    assert order.index(os.path.join("models", "user")) < order.index(os.path.join("services", "auth"))
+
+
+def test_flat_and_nested_coexist(test_env):
+    """Flat specs and nested specs work together in the same score."""
+    src_dir = os.path.join(test_env, "src")
+    create_nested_spec(src_dir, "config")
+    create_nested_spec(src_dir, "models/user")
+    create_nested_spec(src_dir, "services/auth", deps=["config", "models/user"])
+
+    parser = SpecParser(src_dir)
+    resolver = DependencyResolver(parser)
+
+    order = resolver.resolve_build_order()
+    auth_idx = order.index(os.path.join("services", "auth"))
+    assert order.index("config") < auth_idx
+    assert order.index(os.path.join("models", "user")) < auth_idx

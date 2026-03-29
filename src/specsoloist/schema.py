@@ -97,11 +97,13 @@ class ArrangementOutputPathOverride(BaseModel):
 class ArrangementOutputPaths(BaseModel):
     """Output paths for implementation and tests, with optional per-spec overrides."""
     implementation: str = Field(
-        description="Path template for implementation files. Use {name} as the spec name placeholder. "
-                    "e.g. 'src/{name}.py' or 'src/app/api/{name}/route.ts'."
+        description="Path template for implementation files. Use {name} (leaf name) or {path} "
+                    "(relative path including subdirectories) as placeholders. "
+                    "e.g. 'src/{name}.py', 'src/{path}.py', or 'src/app/api/{name}/route.ts'."
     )
     tests: str = Field(
-        description="Path template for test files. Use {name} as the spec name placeholder. "
+        description="Path template for test files. Use {name} (leaf name) or {path} "
+                    "(relative path including subdirectories) as placeholders. "
                     "e.g. 'tests/test_{name}.py' or 'tests/{name}.test.ts'."
     )
     overrides: Dict[str, ArrangementOutputPathOverride] = Field(
@@ -111,18 +113,32 @@ class ArrangementOutputPaths(BaseModel):
     )
 
     def resolve_implementation(self, name: str) -> str:
-        """Return the implementation path for a spec, checking per-spec overrides first."""
+        """Return the implementation path for a spec, checking per-spec overrides first.
+
+        Args:
+            name: Spec identifier — may be a leaf name ("config") or a path
+                  ("subscribers/build_state"). Both {name} (leaf) and {path}
+                  (full relative) are available as pattern variables.
+        """
         override = self.overrides.get(name)
         if override and override.implementation:
             return override.implementation
-        return self.implementation.format(name=name)
+        leaf = name.rsplit("/", 1)[-1] if "/" in name else name
+        return self.implementation.format(name=leaf, path=name)
 
     def resolve_tests(self, name: str) -> str:
-        """Return the tests path for a spec, checking per-spec overrides first."""
+        """Return the tests path for a spec, checking per-spec overrides first.
+
+        Args:
+            name: Spec identifier — may be a leaf name ("config") or a path
+                  ("subscribers/build_state"). Both {name} (leaf) and {path}
+                  (full relative) are available as pattern variables.
+        """
         override = self.overrides.get(name)
         if override and override.tests:
             return override.tests
-        return self.tests.format(name=name)
+        leaf = name.rsplit("/", 1)[-1] if "/" in name else name
+        return self.tests.format(name=leaf, path=name)
 
 
 class ArrangementEnvironment(BaseModel):

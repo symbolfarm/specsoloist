@@ -98,12 +98,20 @@ class DependencyResolver:
         if spec_names is None:
             spec_names = [s.replace(".spec.md", "") for s in self.parser.list_specs()]
 
+        # Build leaf-name -> full-path index for ambiguous name resolution
+        self._leaf_index: Dict[str, List[str]] = {}
+        for sn in spec_names:
+            leaf = sn.rsplit("/", 1)[-1] if "/" in sn else sn
+            self._leaf_index.setdefault(leaf, []).append(sn)
+
         graph = DependencyGraph()
 
         for name in spec_names:
             spec = self.parser.parse_spec(name)
             deps = self._extract_deps(spec)
-            graph.add_spec(name, deps)
+            # Resolve each dep to its canonical name
+            resolved_deps = [self._resolve_dep_name(d, spec_names) for d in deps]
+            graph.add_spec(name, resolved_deps)
 
         # Validate all dependencies exist
         for name in graph.specs:
@@ -112,6 +120,22 @@ class DependencyResolver:
                     raise MissingDependencyError(name, dep)
 
         return graph
+
+    def _resolve_dep_name(self, dep: str, spec_names: List[str]) -> str:
+        """Resolve a dependency name to its canonical spec identifier.
+
+        If `dep` is already a full path present in spec_names, return as-is.
+        Otherwise, look up by leaf name. If exactly one match, return it.
+        If ambiguous, raise MissingDependencyError.
+        """
+        if dep in spec_names:
+            return dep
+        # Try leaf-name lookup
+        candidates = self._leaf_index.get(dep, [])
+        if len(candidates) == 1:
+            return candidates[0]
+        # Not found or ambiguous — return as-is, validation will catch it
+        return dep
 
     def _extract_deps(self, spec: ParsedSpec) -> List[str]:
         seen = set()

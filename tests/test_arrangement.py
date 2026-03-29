@@ -240,6 +240,54 @@ def test_partial_override_falls_back_for_missing_field():
     assert paths.resolve_tests("chat_route") == "tests/chat_route.test.ts"
 
 
+# ---------------------------------------------------------------------------
+# {path} pattern variable (directory-based spec discovery)
+# ---------------------------------------------------------------------------
+
+def test_resolve_implementation_with_path_pattern():
+    """{path} resolves to the full relative path including subdirectories."""
+    paths = ArrangementOutputPaths(
+        implementation="src/specsoloist/{path}.py",
+        tests="tests/test_{name}.py",
+    )
+    assert paths.resolve_implementation("subscribers/build_state") == "src/specsoloist/subscribers/build_state.py"
+    # Flat names also work — {path} equals {name} when no subdirectory
+    assert paths.resolve_implementation("config") == "src/specsoloist/config.py"
+
+
+def test_resolve_tests_with_path_pattern():
+    """{name} extracts the leaf name even when input is a path."""
+    paths = ArrangementOutputPaths(
+        implementation="src/{path}.py",
+        tests="tests/test_{name}.py",
+    )
+    assert paths.resolve_tests("subscribers/build_state") == "tests/test_build_state.py"
+    assert paths.resolve_tests("config") == "tests/test_config.py"
+
+
+def test_path_pattern_with_override_takes_precedence():
+    """Per-spec overrides still win over {path} patterns."""
+    paths = ArrangementOutputPaths(
+        implementation="src/{path}.py",
+        tests="tests/test_{name}.py",
+        overrides={
+            "subscribers/build_state": ArrangementOutputPathOverride(
+                implementation="src/special/build_state.py"
+            )
+        },
+    )
+    assert paths.resolve_implementation("subscribers/build_state") == "src/special/build_state.py"
+
+
+def test_mixed_name_and_path_in_same_template():
+    """Both {name} and {path} can appear in the same template."""
+    paths = ArrangementOutputPaths(
+        implementation="src/{path}.py",
+        tests="tests/{path}/test_{name}.py",
+    )
+    assert paths.resolve_tests("models/user") == "tests/models/user/test_user.py"
+
+
 def test_arrangement_override_round_trips_through_yaml():
     """Overrides survive a round-trip through YAML parsing."""
     yaml_content = """\
