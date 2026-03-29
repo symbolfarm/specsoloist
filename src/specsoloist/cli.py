@@ -1399,7 +1399,7 @@ def _conduct_with_llm(core: SpecSoloistCore, src_dir: str | None, incremental: b
         # e.g. if src_dir is 'examples/ts_demo/src/', project_base is 'examples/ts_demo/'
         project_base = os.path.abspath(os.path.join(src_dir, ".."))
 
-    conductor = SpecConductor(project_base)
+    conductor = SpecConductor(project_base, event_bus=core._event_bus)
 
     if src_dir:
         conductor.parser.src_dir = os.path.abspath(src_dir)
