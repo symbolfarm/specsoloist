@@ -297,6 +297,40 @@ class TestSerialization:
 # Full event sequence
 # ---------------------------------------------------------------------------
 
+class TestSpecLog:
+    def test_compile_started_logs(self):
+        state = _started_state(["config"])
+        state.apply(_event(EventType.SPEC_COMPILE_STARTED, spec_name="config"))
+        assert state.specs["config"].log == ["Generating implementation..."]
+
+    def test_compile_completed_logs_with_duration(self):
+        state = _started_state(["config"])
+        state.apply(_event(EventType.SPEC_COMPILE_STARTED, spec_name="config"))
+        state.apply(_event(EventType.SPEC_COMPILE_COMPLETED, spec_name="config", duration_seconds=2.5))
+        assert "2.5s" in state.specs["config"].log[-1]
+
+    def test_test_failure_logs(self):
+        state = _started_state(["p"])
+        state.apply(_event(EventType.SPEC_TESTS_STARTED, spec_name="p"))
+        state.apply(_event(EventType.SPEC_TESTS_COMPLETED, spec_name="p", success=False))
+        assert "Tests failed" in state.specs["p"].log[-1]
+
+    def test_fix_cycle_logs(self):
+        state = _started_state(["x"])
+        state.apply(_event(EventType.SPEC_FIX_STARTED, spec_name="x"))
+        state.apply(_event(EventType.SPEC_FIX_COMPLETED, spec_name="x"))
+        assert "Fix attempt 1" in state.specs["x"].log[0]
+        assert "re-testing" in state.specs["x"].log[1]
+
+    def test_full_sequence_log_accumulates(self):
+        state = _started_state(["a"])
+        state.apply(_event(EventType.SPEC_COMPILE_STARTED, spec_name="a"))
+        state.apply(_event(EventType.SPEC_TESTS_STARTED, spec_name="a"))
+        state.apply(_event(EventType.SPEC_TESTS_COMPLETED, spec_name="a", success=True))
+        state.apply(_event(EventType.SPEC_COMPILE_COMPLETED, spec_name="a", duration_seconds=1.0))
+        assert len(state.specs["a"].log) == 4
+
+
 class TestFullSequence:
     def test_realistic_build_sequence(self):
         state = BuildState()

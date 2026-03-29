@@ -24,6 +24,7 @@ class SpecState:
     output_tokens: int = 0
     error: str | None = None
     retries: int = 0
+    log: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -88,6 +89,7 @@ def _on_build_level_started(state: BuildState, event: BuildEvent) -> None:
 def _on_spec_compile_started(state: BuildState, event: BuildEvent) -> None:
     spec = _ensure_spec(state, event.spec_name)
     spec.status = "compiling"
+    spec.log.append("Generating implementation...")
 
 
 def _on_spec_compile_completed(state: BuildState, event: BuildEvent) -> None:
@@ -95,6 +97,8 @@ def _on_spec_compile_completed(state: BuildState, event: BuildEvent) -> None:
     spec.status = "passed"
     spec.duration = event.data.get("duration_seconds")
     state.specs_completed += 1
+    duration_str = f" ({spec.duration:.1f}s)" if spec.duration else ""
+    spec.log.append(f"Compilation complete{duration_str}")
 
 
 def _on_spec_compile_failed(state: BuildState, event: BuildEvent) -> None:
@@ -102,11 +106,13 @@ def _on_spec_compile_failed(state: BuildState, event: BuildEvent) -> None:
     spec.status = "failed"
     spec.error = event.data.get("error")
     state.specs_failed += 1
+    spec.log.append(f"Compilation failed: {spec.error or 'unknown error'}")
 
 
 def _on_spec_tests_started(state: BuildState, event: BuildEvent) -> None:
     spec = _ensure_spec(state, event.spec_name)
     spec.status = "testing"
+    spec.log.append("Running tests...")
 
 
 def _on_spec_tests_completed(state: BuildState, event: BuildEvent) -> None:
@@ -119,18 +125,23 @@ def _on_spec_tests_completed(state: BuildState, event: BuildEvent) -> None:
         if spec.error is None:
             state.specs_failed += 1
         spec.error = "tests failed"
+        spec.log.append("Tests failed")
+    else:
+        spec.log.append("Tests passed")
 
 
 def _on_spec_fix_started(state: BuildState, event: BuildEvent) -> None:
     spec = _ensure_spec(state, event.spec_name)
     spec.status = "fixing"
     spec.retries += 1
+    spec.log.append(f"Fix attempt {spec.retries}...")
 
 
 def _on_spec_fix_completed(state: BuildState, event: BuildEvent) -> None:
     spec = _ensure_spec(state, event.spec_name)
     # After a fix, the spec goes back to testing (tests will be re-run)
     spec.status = "testing"
+    spec.log.append("Fix applied, re-testing...")
 
 
 def _on_llm_response(state: BuildState, event: BuildEvent) -> None:

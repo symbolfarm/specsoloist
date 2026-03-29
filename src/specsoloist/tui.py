@@ -8,9 +8,9 @@ from __future__ import annotations
 
 from textual.app import App, ComposeResult
 from textual.binding import Binding
-from textual.containers import Horizontal
+from textual.containers import Horizontal, Vertical
 from textual.reactive import reactive
-from textual.widgets import Label, ListItem, ListView, Static
+from textual.widgets import Label, ListItem, ListView, RichLog, Static
 
 from .subscribers.build_state import BuildState, SpecState
 
@@ -83,19 +83,19 @@ class SpecListWidget(ListView):
             self.index = 0
 
 
-class SpecDetailWidget(Static):
-    """Right panel — details for the currently selected spec."""
+class SpecInfoWidget(Static):
+    """Top portion of the detail panel — spec metadata."""
 
     DEFAULT_CSS = """
-    SpecDetailWidget {
-        width: 2fr;
-        border: solid $secondary;
-        padding: 1 2;
+    SpecInfoWidget {
+        height: auto;
+        max-height: 8;
+        padding: 0 1;
     }
     """
 
     def update_spec(self, spec: SpecState | None) -> None:
-        """Update the detail view for a spec."""
+        """Update the info view for a spec."""
         if spec is None:
             self.update("Select a spec to view details")
             return
@@ -114,6 +114,50 @@ class SpecDetailWidget(Static):
             lines.append(f"[red]Error: {spec.error}[/red]")
 
         self.update("\n".join(lines))
+
+
+class LogPanel(RichLog):
+    """Scrollable log of events for the selected spec."""
+
+    DEFAULT_CSS = """
+    LogPanel {
+        height: 1fr;
+        border: solid $secondary;
+        padding: 0 1;
+    }
+    """
+
+    def set_log(self, lines: list[str]) -> None:
+        """Replace log content with the given lines."""
+        self.clear()
+        for line in lines:
+            self.write(line)
+
+
+class SpecDetailWidget(Vertical):
+    """Right panel — spec info + scrollable log."""
+
+    DEFAULT_CSS = """
+    SpecDetailWidget {
+        width: 2fr;
+        border: solid $secondary;
+        padding: 1 2;
+    }
+    """
+
+    def compose(self) -> ComposeResult:
+        """Create the spec info and log subwidgets."""
+        yield SpecInfoWidget(id="spec-info")
+        yield LogPanel(id="log-panel")
+
+    def update_spec(self, spec: SpecState | None) -> None:
+        """Update both info and log for a spec."""
+        self.query_one("#spec-info", SpecInfoWidget).update_spec(spec)
+        log_panel = self.query_one("#log-panel", LogPanel)
+        if spec is not None:
+            log_panel.set_log(spec.log)
+        else:
+            log_panel.set_log([])
 
 
 class StatusBar(Static):
@@ -181,7 +225,7 @@ class DashboardApp(App):
 
     def on_mount(self) -> None:
         """Show waiting message on startup."""
-        self.query_one("#spec-detail", SpecDetailWidget).update(
+        self.query_one("#spec-info", SpecInfoWidget).update(
             "Waiting for build..."
         )
 

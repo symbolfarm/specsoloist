@@ -6,7 +6,9 @@ import pytest_asyncio  # noqa: F401 — ensures plugin is loaded
 from specsoloist.subscribers.build_state import BuildState, SpecState
 from textual.widgets import Label
 
-from specsoloist.tui import DashboardApp, SpecDetailWidget, SpecListWidget, StatusBar
+from specsoloist.tui import (
+    DashboardApp, LogPanel, SpecDetailWidget, SpecInfoWidget, SpecListWidget, StatusBar,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -51,8 +53,8 @@ class TestAppLifecycle:
     @pytest.mark.asyncio
     async def test_app_launches_with_waiting_message(self):
         async with DashboardApp().run_test() as pilot:
-            detail = pilot.app.query_one("#spec-detail", SpecDetailWidget)
-            assert "Waiting" in str(detail.render())
+            info = pilot.app.query_one("#spec-info", SpecInfoWidget)
+            assert "Waiting" in str(info.render())
 
     @pytest.mark.asyncio
     async def test_status_bar_shows_no_build_initially(self):
@@ -152,8 +154,8 @@ class TestDetailPanel:
             await pilot.pause()
 
             # First spec should be auto-selected
-            detail = pilot.app.query_one("#spec-detail", SpecDetailWidget)
-            rendered = str(detail.render())
+            info = pilot.app.query_one("#spec-info", SpecInfoWidget)
+            rendered = str(info.render())
             assert "config" in rendered
             assert "passed" in rendered
 
@@ -169,8 +171,8 @@ class TestDetailPanel:
             pilot.app.refresh_state(state)
             await pilot.pause()
 
-            detail = pilot.app.query_one("#spec-detail", SpecDetailWidget)
-            rendered = str(detail.render())
+            info = pilot.app.query_one("#spec-info", SpecInfoWidget)
+            rendered = str(info.render())
             assert "LLM timeout" in rendered
 
     @pytest.mark.asyncio
@@ -179,8 +181,8 @@ class TestDetailPanel:
             pilot.app.refresh_state(_completed_state())
             await pilot.pause()
 
-            detail = pilot.app.query_one("#spec-detail", SpecDetailWidget)
-            rendered = str(detail.render())
+            info = pilot.app.query_one("#spec-info", SpecInfoWidget)
+            rendered = str(info.render())
             assert "1.2s" in rendered
 
     @pytest.mark.asyncio
@@ -195,14 +197,14 @@ class TestDetailPanel:
             pilot.app.refresh_state(state)
             await pilot.pause()
 
-            detail = pilot.app.query_one("#spec-detail", SpecDetailWidget)
-            assert "2" in str(detail.render())
+            info = pilot.app.query_one("#spec-info", SpecInfoWidget)
+            assert "2" in str(info.render())
 
     @pytest.mark.asyncio
     async def test_placeholder_when_no_spec(self):
         async with DashboardApp().run_test() as pilot:
-            detail = pilot.app.query_one("#spec-detail", SpecDetailWidget)
-            assert "Waiting" in str(detail.render())
+            info = pilot.app.query_one("#spec-info", SpecInfoWidget)
+            assert "Waiting" in str(info.render())
 
 
 # ---------------------------------------------------------------------------
@@ -289,3 +291,82 @@ class TestTuiIntegration:
             # Verify the subscriber's state is correct
             assert sub.state.specs["a"].status == "compiling"
             assert sub.state.specs["b"].status == "queued"
+
+
+# ---------------------------------------------------------------------------
+# Log panel
+# ---------------------------------------------------------------------------
+
+class TestLogPanel:
+    @pytest.mark.asyncio
+    async def test_log_panel_shows_spec_events(self):
+        """Log panel displays accumulated log lines for the selected spec."""
+        from specsoloist.events import BuildEvent, EventType
+        from specsoloist.subscribers.tui import TuiSubscriber
+
+        async with DashboardApp().run_test() as pilot:
+            sub = TuiSubscriber()
+            sub(BuildEvent(
+                event_type=EventType.BUILD_STARTED,
+                data={"total_specs": 2, "build_order": ["a", "b"]},
+            ))
+            sub(BuildEvent(
+                event_type=EventType.SPEC_COMPILE_STARTED,
+                spec_name="a",
+            ))
+            sub(BuildEvent(
+                event_type=EventType.SPEC_TESTS_STARTED,
+                spec_name="a",
+            ))
+            sub(BuildEvent(
+                event_type=EventType.SPEC_TESTS_COMPLETED,
+                spec_name="a",
+                data={"success": True},
+            ))
+
+            pilot.app.refresh_state(sub.state)
+            await pilot.pause()
+
+            # Check that log lines accumulated in SpecState
+            assert len(sub.state.specs["a"].log) == 3
+            assert "Generating implementation" in sub.state.specs["a"].log[0]
+            assert "Running tests" in sub.state.specs["a"].log[1]
+            assert "Tests passed" in sub.state.specs["a"].log[2]
+
+    @pytest.mark.asyncio
+    async def test_log_panel_empty_for_queued_spec(self):
+        async with DashboardApp().run_test() as pilot:
+            state = _building_state({"a": "queued"})
+            pilot.app.refresh_state(state)
+            await pilot.pause()
+
+            log_panel = pilot.app.query_one("#log-panel", LogPanel)
+            # Queued spec has no log lines
+            assert state.specs["a"].log == []
+
+    @pytest.mark.asyncio
+    async def test_log_panel_shows_fix_retries(self):
+        from specsoloist.events import BuildEvent, EventType
+        from specsoloist.subscribers.tui import TuiSubscriber
+
+        async with DashboardApp().run_test() as pilot:
+            sub = TuiSubscriber()
+            sub(BuildEvent(
+                event_type=EventType.BUILD_STARTED,
+                data={"total_specs": 1, "build_order": ["x"]},
+            ))
+            sub(BuildEvent(event_type=EventType.SPEC_COMPILE_STARTED, spec_name="x"))
+            sub(BuildEvent(event_type=EventType.SPEC_TESTS_STARTED, spec_name="x"))
+            sub(BuildEvent(
+                event_type=EventType.SPEC_TESTS_COMPLETED,
+                spec_name="x", data={"success": False},
+            ))
+            sub(BuildEvent(event_type=EventType.SPEC_FIX_STARTED, spec_name="x"))
+            sub(BuildEvent(event_type=EventType.SPEC_FIX_COMPLETED, spec_name="x"))
+
+            pilot.app.refresh_state(sub.state)
+            await pilot.pause()
+
+            log = sub.state.specs["x"].log
+            assert "Fix attempt 1" in log[3]
+            assert "Fix applied, re-testing" in log[4]
