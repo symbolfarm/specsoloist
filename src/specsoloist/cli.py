@@ -570,6 +570,10 @@ def cmd_validate(core: SpecSoloistCore, name: str, arrangement_arg: str | None =
     """Validate a spec's structure and frontmatter."""
     import json as _json
 
+    arrangement = _resolve_arrangement(core, arrangement_arg)
+    if arrangement:
+        core.parser.src_dir = os.path.abspath(arrangement.specs_path)
+
     if not json_output:
         ui.print_header("Validating Spec", name)
     result = core.validate_spec(name)
