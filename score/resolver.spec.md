@@ -99,10 +99,11 @@ Build a dependency graph from specs.
   - `metadata.dependencies`: a list where each entry is either a string (spec name) or a dict with a `"from"` key containing the spec filename.
   - `schema.steps`: if present (workflow specs), each step has a `spec` attribute naming a dependency.
 - Strip `.spec.md` extensions from dependency names.
-- Validate that every referenced dependency actually exists (in the input list or in the parser's storage).
+- Resolve dependency names using leaf-name matching: if a dependency name (e.g., `"user"`) is not found directly in the spec set, check whether it matches the leaf segment of exactly one spec (e.g., `"models/user"`). If exactly one match, use it. If ambiguous (multiple specs share the same leaf name), raise `MissingDependencyError`.
+- Validate that every referenced dependency actually exists (in the input list or in the parser's storage) after leaf-name resolution.
 
 **Errors:**
-- Raises `MissingDependencyError` if a dependency doesn't exist.
+- Raises `MissingDependencyError` if a dependency doesn't exist (even after leaf-name resolution).
 
 ### resolve_build_order(spec_names=None) -> list of strings
 
@@ -151,6 +152,12 @@ Given specs: types (no deps), auth (depends on types), users (depends on types),
 | `get_parallel_build_order()` | all specs | Level 0: [types, unrelated], Level 1: [auth, users], Level 2: [api] |
 | `get_affected_specs("types")` | "types" changed | ["types", "auth", "users", "api"] (not "unrelated") |
 | `get_affected_specs("api")` | "api" changed | ["api"] only |
+
+Given nested specs: config (flat), models/user, services/auth (depends on "config" and "user"):
+
+| Method | Input | Expected Output |
+|--------|-------|----------------|
+| `resolve_build_order()` | all specs | config and models/user before services/auth; "user" resolves to "models/user" via leaf-name match |
 
 Given specs: a -> b -> c -> a (circular):
 
