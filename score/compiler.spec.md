@@ -1,6 +1,8 @@
 ---
 name: compiler
 type: bundle
+dependencies:
+  - events
 tags:
   - core
   - compilation
@@ -14,7 +16,7 @@ Compiles SpecSoloist specifications into implementation code, type definitions, 
 
 ## SpecCompiler
 
-Compiler for specs. Constructed with an `LLMProvider` instance and an optional `global_context` string (project-wide context included in all prompts).
+Compiler for specs. Constructed with an `LLMProvider` instance, an optional `global_context` string (project-wide context included in all prompts), and an optional `event_bus` (EventBus).
 
 # Functions
 
@@ -51,3 +53,4 @@ Parse the LLM fix response to extract file contents. Finds all `### FILE: <path>
 - Dependency context is built from `spec.metadata.dependencies` (supports both string and dict formats)
 - When an `arrangement` is provided, its target language, output paths, dependency versions, env vars, and build commands are injected into the prompt as additional context
 - Reference spec bodies are injected verbatim as API documentation, not as import lines
+- When `event_bus` is provided, a `_generate()` wrapper around LLM calls emits `llm.request` (with model name) and `llm.response` (with input_tokens and output_tokens) events

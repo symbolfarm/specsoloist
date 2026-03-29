@@ -8,6 +8,7 @@ dependencies:
   - runner
   - resolver
   - manifest
+  - events
 tags:
   - core
   - orchestration
@@ -27,7 +28,7 @@ Result of a multi-spec build operation.
 
 ## SpecSoloistCore
 
-Main orchestrator class. Constructed with `root_dir` (string, default "."), optional `api_key`, and optional `config` (SpecSoloistConfig). If config is not provided, loads from environment.
+Main orchestrator class. Constructed with `root_dir` (string, default "."), optional `api_key`, optional `config` (SpecSoloistConfig), and optional `event_bus` (EventBus). If config is not provided, loads from environment.
 
 On initialization:
 - Sets up config, ensures directories exist
@@ -96,3 +97,12 @@ With `incremental=True`, `compile_project` checks each spec's content hash and d
 ## Self-healing loop
 
 `attempt_fix` runs tests, and if they fail, sends the spec (source of truth), current code, current tests, and error output to the LLM. The LLM response contains corrected files which are applied to the build directory.
+
+## Event emission
+
+When `event_bus` is provided, the core emits `BuildEvent`s at method boundaries:
+- `compile_project`: emits `build.started` (with total_specs and build_order), per-spec `spec.compile.started`/`spec.compile.completed`/`spec.compile.failed`, `build.level.started` for parallel levels, and `build.completed`.
+- `run_tests`: emits `spec.tests.started` and `spec.tests.completed` (with success flag).
+- `attempt_fix`: emits `spec.fix.started` and `spec.fix.completed`.
+
+A private `_emit()` helper sends events only when `event_bus` is set.

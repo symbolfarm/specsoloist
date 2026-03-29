@@ -2,7 +2,7 @@
 name: tui
 type: bundle
 dependencies:
-  - from: build_state.spec.md
+  - from: subscribers/build_state.spec.md
 tags:
   - observability
   - ui
@@ -45,12 +45,28 @@ Left panel. Renders the spec list from `BuildState` in dependency order.
 
 ## SpecDetailWidget
 
-Right panel. Shows details for the currently selected spec.
+Right panel. A vertical container holding a `SpecInfoWidget` (metadata) and a `LogPanel` (scrollable event log).
 
 **Behavior:**
-- Displays: spec name, status, duration (if available), token counts, retry count, error message (if any)
-- When no spec is selected, shows a placeholder message
 - Updates when selection changes or when state refreshes
+- Delegates to child widgets for rendering
+
+## SpecInfoWidget
+
+Top portion of the detail panel. Displays spec metadata.
+
+**Behavior:**
+- Displays: spec name (bold), status with icon, duration (if available), retry count, token counts, error message (if any, in red)
+- When no spec is selected, shows a placeholder message
+
+## LogPanel
+
+Scrollable log of events for the selected spec. Extends `RichLog`.
+
+**Behavior:**
+- Shows the accumulated `log` lines from the selected `SpecState`
+- `set_log(lines)` replaces the log content (clears and re-writes all lines)
+- Scrolls automatically to show the latest entries
 
 ## StatusBar
 
