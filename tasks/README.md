@@ -22,7 +22,7 @@ and Next.js web applications.**
 |-------|--------|
 | Core framework | Stable — parser, compiler, runner, resolver, manifest |
 | Agent-first CLI | Done — `sp conduct`, `sp compose`, `sp respec`, `sp fix`, `sp vibe`, `sp diff` |
-| Quine (self-hosting) | Validated — 584/584 tests pass (2026-03-27); static artifacts + spechestra overrides confirmed; weekly CI in `.github/workflows/quine.yaml` |
+| Quine (self-hosting) | Score updated — 21 specs (16 flat + 3 subscribers + 2 spechestra); last validated 584/584 (2026-03-27); weekly CI in `.github/workflows/quine.yaml` |
 | FastHTML example | Validated — 23 tests passing (`examples/fasthtml_app/`) |
 | Next.js example | Validated — 22 tests passing (`examples/nextjs_ai_chat/`) |
 | Documentation | Solid — mkdocstrings + Google docstrings live; spec-types.md + example docs complete (HK-11 done) |
@@ -68,7 +68,7 @@ Tasks 27–31d are done. Next: 32 (SSE server) and 35 (directory-based discovery
 
 | # | Task | Status |
 |---|------|--------|
-| HK-26 | [Update score specs for event bus integration](HK-26-update-score-for-events.md) | 🔲 |
+| HK-26 | [Update score specs for event bus integration](HK-26-update-score-for-events.md) | ✅ |
 | HK-27 | [README refresh — badges, logo, demo GIF, fix PyPI links](HK-27-readme-refresh.md) | 🔲 |
 
 See also: [spechestra-tasks.md](spechestra-tasks.md) for the Spechestra (web dashboard) backlog.
