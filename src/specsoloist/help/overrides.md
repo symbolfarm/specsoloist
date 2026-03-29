@@ -1,8 +1,8 @@
 # output_paths.overrides Reference
 
 `output_paths.overrides` lets you route specific specs to exact file paths, overriding
-the default `{name}` template. This is essential for frameworks with strict file naming
-conventions (e.g. Next.js App Router, FastHTML route files).
+the default `{name}` / `{path}` template. This is essential for frameworks with strict
+file naming conventions (e.g. Next.js App Router, FastHTML route files).
 
 ---
 
@@ -52,15 +52,16 @@ In this example:
 
 ## Example: Python submodules
 
+**Tip**: Use `{path}` in the default template to avoid overrides for specs in
+subdirectories. `{path}` includes the subdirectory prefix; `{name}` is just the leaf.
+
 ```yaml
 output_paths:
-  implementation: src/myapp/{name}.py
-  tests: tests/test_{name}.py
+  implementation: src/myapp/{path}.py    # subscribers/ndjson → src/myapp/subscribers/ndjson.py
+  tests: tests/test_{name}.py           # subscribers/ndjson → tests/test_ndjson.py
   overrides:
-    db:
-      implementation: src/myapp/data/db.py
-    components:
-      implementation: src/myapp/html/components.py
+    middleware:
+      implementation: src/myapp/http/middleware.py  # different target package
 ```
 
 ---

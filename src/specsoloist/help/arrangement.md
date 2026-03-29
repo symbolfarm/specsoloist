@@ -39,7 +39,8 @@ specs_path: specs/       # if your specs live in specs/ instead of src/
 
 ### `output_paths` (required)
 
-Where to write generated files. Both fields use `{name}` as the spec name placeholder.
+Where to write generated files. Use `{name}` for the leaf spec name or `{path}` for the
+full relative path (including subdirectories). For flat specs, `{path}` equals `{name}`.
 
 ```yaml
 output_paths:

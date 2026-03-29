@@ -1907,14 +1907,12 @@ target_language: python
 # specs_path: specs/
 
 output_paths:
-  implementation: src/{name}.py
+  implementation: src/{path}.py     # {path} includes subdirs; {name} is the leaf
   tests: tests/test_{name}.py
-  # Per-spec overrides for modules in subdirectories:
+  # Per-spec overrides for non-standard locations:
   # overrides:
-  #   data:
-  #     implementation: myapp/data/postgres/data.py
-  #   components:
-  #     implementation: myapp/html/components.py
+  #   special_module:
+  #     implementation: src/special/module.py
 
 environment:
   tools:
@@ -1961,7 +1959,7 @@ target_language: typescript
 # specs_path: specs/    # default is src/
 
 output_paths:
-  implementation: src/{name}.ts
+  implementation: src/{path}.ts      # {path} includes subdirs; {name} is the leaf
   tests: tests/{name}.test.ts
   # overrides:
   #   chat_route:

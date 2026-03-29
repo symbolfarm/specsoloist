@@ -39,7 +39,7 @@ sp init --list-templates
 target_language: python
 
 output_paths:
-  implementation: src/mypackage/{name}.py   # {name} is the spec name
+  implementation: src/mypackage/{path}.py   # {path} includes subdirs; {name} is the leaf
   tests: tests/test_{name}.py
 
 environment:
@@ -78,8 +78,8 @@ model: claude-haiku-4-5-20251001   # optional: pin LLM model for this project
 | --- | --- |
 | `target_language` | Target language (e.g. `python`, `typescript`) |
 | `specs_path` | Directory where spec files are discovered (default: `src/`); used by `sp list`, `sp status`, `sp graph`, and `sp conduct` |
-| `output_paths.implementation` | Path template for generated implementation files (`{name}` = spec name) |
-| `output_paths.tests` | Path template for generated test files |
+| `output_paths.implementation` | Path template for generated implementation files. `{name}` = leaf spec name, `{path}` = relative path including subdirectories |
+| `output_paths.tests` | Path template for generated test files. Same `{name}` and `{path}` placeholders |
 | `output_paths.overrides` | Per-spec path overrides (see below) |
 | `environment.tools` | Tools the agent should use (informational, injected into prompts) |
 | `environment.setup_commands` | Shell commands run before each test invocation |
@@ -125,6 +125,8 @@ output_paths:
 ```
 
 Each key under `overrides` is the spec name (without `.spec.md`). You can override `implementation`, `tests`, or both — omitting one falls back to the default template.
+
+**Tip**: Using `{path}` in the default template (e.g., `src/mypackage/{path}.py`) often eliminates the need for overrides, since specs in subdirectories automatically map to the corresponding source subdirectory. Overrides are still useful when specs need to go to a completely different package or non-standard location.
 
 ## `setup_commands`
 
