@@ -23,7 +23,7 @@ These flags apply to all commands:
 | `sp validate <name>` | Validate a spec's structure and frontmatter |
 | `sp verify` | Verify all specs for orchestration readiness (dependencies, types) |
 | `sp graph [--arrangement FILE]` | Export the dependency graph as Mermaid markup |
-| `sp diff <name>` | Detect drift between a spec and its compiled code |
+| `sp diff` | Detect drift between specs and compiled code (all specs, or single) |
 
 ### Building
 
@@ -110,12 +110,18 @@ Compose + conduct in a single command. Pass a `.md` file path or a plain string 
 ### `sp diff`
 
 ```
-sp diff <name>           # spec-drift mode: compare spec to compiled code
+sp diff                  # check all specs for drift (default)
+sp diff <name>           # check a single spec for drift
 sp diff <left> <right>   # build-diff mode: compare two build directories
 sp diff --runs N         # build-diff mode: compare the last N build runs
 ```
 
-In **spec-drift mode**, reports `MISSING` (spec defines, code lacks), `UNDOCUMENTED` (code has, spec lacks), and `TEST_GAP` (spec defines, no test covers). Add `--json` for machine-readable output.
+| Option | Description |
+| --- | --- |
+| `--arrangement FILE` | Path to arrangement YAML (for path resolution) |
+| `--json` | Machine-readable JSON output |
+
+In **spec-drift mode**, reports `MISSING` (spec defines, code lacks), `UNDOCUMENTED` (code has, spec lacks), and `TEST_GAP` (spec defines, no test covers). Running with no arguments checks all specs in the project.
 
 ### `sp build`
 

@@ -467,3 +467,30 @@ class TestCLISpDiff:
         data = json.loads(result.stdout)
         assert "spec_name" in data
         assert "issues" in data
+
+    def test_diff_all_specs_default(self):
+        """sp diff with no args should check all specs."""
+        import subprocess
+        result = subprocess.run(
+            ["uv", "run", "sp", "diff", "--arrangement", "score/arrangement.yaml"],
+            capture_output=True, text=True,
+            cwd=Path(__file__).parent.parent
+        )
+        # Should run without crashing; may exit 1 due to real drift
+        assert result.returncode in (0, 1), f"Unexpected exit code: {result.returncode}\n{result.stderr}"
+        assert "Spec Drift Check" in result.stdout
+        assert "specs" in result.stdout
+
+    def test_diff_all_json_output(self):
+        """sp diff --json with no spec name should produce a JSON array."""
+        import subprocess
+        result = subprocess.run(
+            ["uv", "run", "sp", "diff", "--arrangement", "score/arrangement.yaml", "--json"],
+            capture_output=True, text=True,
+            cwd=Path(__file__).parent.parent
+        )
+        assert result.returncode in (0, 1)
+        data = json.loads(result.stdout)
+        assert isinstance(data, list)
+        assert len(data) > 0
+        assert "spec_name" in data[0]

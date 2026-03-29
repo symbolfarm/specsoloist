@@ -179,12 +179,17 @@ def main():
         help="Detect spec vs code drift, or compare two build directories"
     )
     diff_parser.add_argument(
-        "left",
-        help="Spec name (e.g. 'parser') for spec-drift mode, or left directory for build-diff mode"
+        "left", nargs="?", default=None,
+        help="Spec name (e.g. 'parser') for spec-drift mode, or left directory for build-diff mode. "
+             "Omit to check all specs for drift."
     )
     diff_parser.add_argument(
         "right", nargs="?", default=None,
         help="Right directory for build-diff mode (omit to use spec-drift mode)"
+    )
+    diff_parser.add_argument(
+        "--arrangement", default=None, metavar="PATH",
+        help="Arrangement file for path resolution (spec-drift mode)"
     )
     diff_parser.add_argument(
         "--json", dest="json_output", action="store_true",
@@ -420,8 +425,12 @@ def main():
                             args.incremental, args.parallel, args.workers, args.model, args.arrangement,
                             resume=args.resume, force=args.force)
         elif args.command == "diff":
-            if args.right is None and args.runs is None:
-                # Spec-drift mode: single spec name argument
+            if args.left is None and args.right is None and args.runs is None:
+                # All-specs drift mode (default)
+                cmd_spec_diff_all(core, getattr(args, "arrangement", None),
+                                  json_output=args.json_output)
+            elif args.right is None and args.runs is None:
+                # Single-spec drift mode
                 cmd_spec_diff(core, args.left, args.json_output)
             else:
                 cmd_diff(core, args.left, args.right, args.label_left, args.label_right,
@@ -1576,6 +1585,65 @@ def cmd_spec_diff(core: SpecSoloistCore, spec_name: str, json_output: bool = Fal
     # Exit 1 if there are MISSING or TEST_GAP issues
     critical = [i for i in result.issues if i.kind in ("MISSING", "TEST_GAP")]
     if critical:
+        sys.exit(1)
+
+
+def cmd_spec_diff_all(core: SpecSoloistCore, arrangement_arg: str | None = None,
+                      json_output: bool = False):
+    """Compare all specs against their implementations and report drift."""
+    import json as _json
+    from .spec_diff import diff_spec, format_result_text, format_result_json
+
+    arrangement = _resolve_arrangement(core, arrangement_arg)
+    if arrangement:
+        core.parser.src_dir = os.path.abspath(arrangement.specs_path)
+
+    specs = core.list_specs()
+    if not specs:
+        path = arrangement.specs_path if arrangement else "src/"
+        ui.print_warning(f"No specs found in {path}")
+        sys.exit(1)
+
+    ui.print_header("Spec Drift Check", f"{len(specs)} specs")
+
+    root_dir = core.root_dir
+    all_results = []
+    has_critical = False
+
+    for spec_file in specs:
+        spec_name = spec_file.replace(".spec.md", "")
+
+        # Skip non-code spec types
+        try:
+            parsed = core.parser.parse_spec(spec_name)
+            if parsed.metadata.type in ("reference", "specification"):
+                continue
+        except Exception:
+            pass
+
+        result = diff_spec(spec_name, root_dir, arrangement=arrangement)
+        all_results.append(result)
+
+        critical = [i for i in result.issues if i.kind in ("MISSING", "TEST_GAP")]
+        if critical:
+            has_critical = True
+
+    if json_output:
+        print(_json.dumps([_json.loads(format_result_json(r)) for r in all_results], indent=2))
+    else:
+        clean = 0
+        for result in all_results:
+            if result.issues:
+                print(format_result_text(result))
+            else:
+                clean += 1
+
+        if clean > 0:
+            ui.print_success(f"{clean} spec(s) in sync")
+        if has_critical:
+            ui.print_error("Drift detected — specs and code are out of sync")
+
+    if has_critical:
         sys.exit(1)
 
 

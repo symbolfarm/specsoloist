@@ -1,0 +1,34 @@
+name: Spec Drift Check
+
+# Daily check that score/ specs still describe src/ accurately.
+# Uses AST-based comparison only — no LLM calls, no API keys needed.
+# Catches features added to code but not documented in specs.
+
+on:
+  schedule:
+    - cron: '0 6 * * *'   # Daily at 6am UTC
+  workflow_dispatch:        # allow manual trigger
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'score/**'
+
+jobs:
+  drift-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Set up Python
+        run: uv python install 3.10
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Check spec drift
+        run: uv run sp diff --arrangement score/arrangement.yaml
