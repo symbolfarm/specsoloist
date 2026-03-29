@@ -390,7 +390,7 @@ class TestLogPanel:
             # Check that log lines accumulated in SpecState
             assert len(sub.state.specs["a"].log) == 3
             assert "Generating implementation" in sub.state.specs["a"].log[0]
-            assert "Running tests" in sub.state.specs["a"].log[1]
+            assert "Generating tests" in sub.state.specs["a"].log[1]
             assert "Tests passed" in sub.state.specs["a"].log[2]
 
     @pytest.mark.asyncio

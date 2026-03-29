@@ -112,8 +112,12 @@ def _on_build_level_started(state: BuildState, event: BuildEvent) -> None:
 
 def _on_spec_compile_started(state: BuildState, event: BuildEvent) -> None:
     spec = _ensure_spec(state, event.spec_name)
-    spec.status = "compiling"
-    spec.log.append("Generating implementation...")
+    if event.data.get("reference"):
+        spec.status = "compiling"
+        spec.log.append("Reference spec — no compilation needed")
+    else:
+        spec.status = "compiling"
+        spec.log.append("Generating implementation...")
 
 
 def _on_spec_compile_completed(state: BuildState, event: BuildEvent) -> None:
@@ -136,7 +140,7 @@ def _on_spec_compile_failed(state: BuildState, event: BuildEvent) -> None:
 def _on_spec_tests_started(state: BuildState, event: BuildEvent) -> None:
     spec = _ensure_spec(state, event.spec_name)
     spec.status = "testing"
-    spec.log.append("Running tests...")
+    spec.log.append("Generating tests...")
 
 
 def _on_spec_tests_completed(state: BuildState, event: BuildEvent) -> None:

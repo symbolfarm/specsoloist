@@ -657,38 +657,62 @@ class SpecSoloistCore:
                     for d in spec.metadata.dependencies
                     if isinstance(d, dict)]
 
+            # Reference and specification types produce no output — skip entirely
+            if spec.metadata.type in ("reference", "specification"):
+                self._emit(
+                    EventType.SPEC_COMPILE_STARTED,
+                    spec_name=spec_name,
+                    dependencies=deps,
+                    reference=True,
+                )
+                self._emit(
+                    EventType.SPEC_COMPILE_COMPLETED,
+                    spec_name=spec_name,
+                    duration_seconds=time.monotonic() - t0,
+                    reference=True,
+                )
+                return {"success": True, "error": ""}
+
             self._emit(
                 EventType.SPEC_COMPILE_STARTED,
                 spec_name=spec_name,
                 dependencies=deps,
             )
 
-            # Compile the spec
+            # Compile the spec (generate implementation via LLM)
             self.compile_spec(spec_name, model=model, arrangement=arrangement)
 
-            # Reference specs produce no output files — skip tracking and test generation
-            if spec.metadata.type == "reference":
-                return {"success": True, "error": ""}
-
-            # Determine output files
+            # Determine output files and generate tests
             if arrangement:
                 module_name = self.parser.get_module_name(spec_name)
                 impl_path = arrangement.output_paths.resolve_implementation(module_name)
                 output_files = [os.path.basename(impl_path)]
 
                 if generate_tests and spec.metadata.type != "typedef":
+                    self._emit(EventType.SPEC_TESTS_STARTED, spec_name=spec_name)
                     self.compile_tests(spec_name, model=model, arrangement=arrangement)
                     test_path = arrangement.output_paths.resolve_tests(module_name)
                     output_files.append(os.path.basename(test_path))
+                    self._emit(
+                        EventType.SPEC_TESTS_COMPLETED,
+                        spec_name=spec_name,
+                        success=True,
+                    )
             else:
                 code_path = os.path.basename(self.runner.get_code_path(spec_name, language=lang))
                 output_files = [code_path]
-                
+
                 # Generate tests if requested and not a typedef
                 if generate_tests and spec.metadata.type != "typedef":
+                    self._emit(EventType.SPEC_TESTS_STARTED, spec_name=spec_name)
                     self.compile_tests(spec_name, model=model)
                     test_path = os.path.basename(self.runner.get_test_path(spec_name, language=lang))
                     output_files.append(test_path)
+                    self._emit(
+                        EventType.SPEC_TESTS_COMPLETED,
+                        spec_name=spec_name,
+                        success=True,
+                    )
 
             # Update manifest
             manifest = self._get_manifest()
