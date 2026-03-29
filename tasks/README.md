@@ -30,7 +30,7 @@ and Next.js web applications.**
 
 Key commands:
 ```bash
-uv run python -m pytest tests/   # 517 tests — must stay green
+uv run python -m pytest tests/   # 525 tests — must stay green
 uv run ruff check src/           # must pass with 0 errors
 sp conduct score/ --model haiku --auto-accept   # quine attempt (see task 26)
 ```
@@ -61,7 +61,7 @@ Tasks 27–31d are done. Next: 32 (SSE server) and 35 (directory-based discovery
 |---|------|--------|---------|--------|
 | 33 | [Formalize task tracking as agent skill](33-task-format-skill.md) | Medium | — | 🔲 |
 | 34 | [`sp dashboard --replay`](34-ndjson-replay.md) | Small | 31b | 🔲 |
-| 35 | [Directory-based spec discovery (`{path}` pattern)](35-directory-based-spec-discovery.md) | Medium | — | 🔲 |
+| 35 | [Directory-based spec discovery (`{path}` pattern)](35-directory-based-spec-discovery.md) | Medium | — | ✅ |
 | 36 | [External dependency declaration (`requires:` in frontmatter)](36-external-dependency-declaration.md) | Medium | — | 🔲 |
 
 ### 🔲 Housekeeping
