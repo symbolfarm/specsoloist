@@ -262,6 +262,9 @@ def main():
     )
     dashboard_parser.add_argument("--port", type=int, default=4510, help="SSE server port (default: 4510)")
     dashboard_parser.add_argument("--host", default="localhost", help="SSE server host (default: localhost)")
+    dashboard_parser.add_argument("--replay", metavar="FILE", help="Replay an NDJSON log file in the TUI")
+    dashboard_parser.add_argument("--speed", type=float, default=10.0, help="Replay speed multiplier (default: 10x, 0=instant)")
+    dashboard_parser.add_argument("--follow", metavar="FILE", help="Tail a growing NDJSON log file in real time")
 
     # help
     help_parser = subparsers.add_parser(
@@ -324,7 +327,14 @@ def main():
         cmd_install_skills(args.target)
         return
     if args.command == "dashboard":
-        cmd_dashboard(getattr(args, "host", "localhost"), getattr(args, "port", 4510))
+        _replay = getattr(args, "replay", None)
+        _follow = getattr(args, "follow", None)
+        if _replay:
+            cmd_dashboard_replay(_replay, getattr(args, "speed", 10.0))
+        elif _follow:
+            cmd_dashboard_follow(_follow)
+        else:
+            cmd_dashboard(getattr(args, "host", "localhost"), getattr(args, "port", 4510))
         return
     if args.command == "help":
         cmd_help(getattr(args, "topic", None))
@@ -1138,6 +1148,158 @@ def cmd_dashboard(host: str = "localhost", port: int = 4510):
 
     stream_thread = threading.Thread(target=_stream_and_seed, daemon=True)
     stream_thread.start()
+
+    app.run()
+
+
+def _parse_ndjson_event(line: str):
+    """Parse an NDJSON line into a BuildEvent, or return None on failure."""
+    import json as _json
+    from .events import BuildEvent
+    try:
+        data = _json.loads(line)
+    except (ValueError, TypeError):
+        return None
+    if not isinstance(data, dict) or "event_type" not in data:
+        return None
+    return BuildEvent(
+        event_type=data["event_type"],
+        spec_name=data.get("spec_name"),
+        data={k: v for k, v in data.items()
+              if k not in ("event_type", "timestamp", "spec_name")},
+    )
+
+
+def _parse_ndjson_timestamp(line: str) -> float | None:
+    """Extract epoch seconds from an NDJSON line's timestamp field."""
+    import json as _json
+    from datetime import datetime
+    try:
+        data = _json.loads(line)
+        ts = data.get("timestamp")
+        if ts:
+            dt = datetime.fromisoformat(ts)
+            return dt.timestamp()
+    except (ValueError, TypeError, KeyError):
+        pass
+    return None
+
+
+def cmd_dashboard_replay(file_path: str, speed: float = 10.0):
+    """Replay an NDJSON log file in the TUI at configurable speed."""
+    import time as _time
+    from .subscribers.build_state import BuildState
+    from .tui import DashboardApp
+
+    if not os.path.exists(file_path):
+        ui.print_error(f"File not found: {file_path}")
+        sys.exit(1)
+
+    with open(file_path) as f:
+        lines = [line.strip() for line in f if line.strip()]
+
+    if not lines:
+        ui.print_error(f"No events found in {file_path}")
+        sys.exit(1)
+
+    ui.print_info(f"Replaying {len(lines)} events from {file_path} (speed: {speed}x)")
+
+    app = DashboardApp()
+    state = BuildState()
+
+    def _replay():
+        # Wait for app to be ready
+        for _ in range(50):
+            if app.is_running:
+                break
+            _time.sleep(0.05)
+
+        prev_ts = None
+        for line in lines:
+            event = _parse_ndjson_event(line)
+            if event is None:
+                continue
+
+            # Delay based on timestamp gap
+            if speed > 0:
+                ts = _parse_ndjson_timestamp(line)
+                if ts is not None and prev_ts is not None:
+                    delay = (ts - prev_ts) / speed
+                    if delay > 0:
+                        _time.sleep(delay)
+                if ts is not None:
+                    prev_ts = ts
+
+            state.apply(event)
+            try:
+                app.call_from_thread(app.refresh_state, state)
+            except Exception:
+                break
+
+    replay_thread = threading.Thread(target=_replay, daemon=True)
+    replay_thread.start()
+
+    app.run()
+
+
+def cmd_dashboard_follow(file_path: str):
+    """Tail a growing NDJSON log file and display in the TUI in real time."""
+    import time as _time
+    from .subscribers.build_state import BuildState
+    from .tui import DashboardApp
+
+    if not os.path.exists(file_path):
+        ui.print_error(f"File not found: {file_path}")
+        sys.exit(1)
+
+    ui.print_info(f"Following {file_path} (Ctrl+C or q to stop)")
+
+    app = DashboardApp()
+    state = BuildState()
+
+    def _follow():
+        # Wait for app to be ready
+        for _ in range(50):
+            if app.is_running:
+                break
+            _time.sleep(0.05)
+
+        # Read existing content first (catch up)
+        with open(file_path) as f:
+            while True:
+                line = f.readline()
+                if not line:
+                    break
+                line = line.strip()
+                if not line:
+                    continue
+                event = _parse_ndjson_event(line)
+                if event is None:
+                    continue
+                state.apply(event)
+                try:
+                    app.call_from_thread(app.refresh_state, state)
+                except Exception:
+                    return
+
+            # Now tail for new lines
+            while True:
+                line = f.readline()
+                if line:
+                    line = line.strip()
+                    if line:
+                        event = _parse_ndjson_event(line)
+                        if event is not None:
+                            state.apply(event)
+                            try:
+                                app.call_from_thread(app.refresh_state, state)
+                            except Exception:
+                                return
+                else:
+                    _time.sleep(0.1)
+
+    follow_thread = threading.Thread(target=_follow, daemon=True)
+    follow_thread.start()
 
     app.run()
 

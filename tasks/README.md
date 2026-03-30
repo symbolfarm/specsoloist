@@ -53,14 +53,14 @@ sp conduct score/ --model haiku --auto-accept   # quine attempt (see task 26)
 | 31d | [CLI integration (`--tui`, `sp dashboard`)](31-tui-dashboard.md) | Small | 31b | ✅ |
 | 32 | [SSE server (`sp conduct --serve`)](32-sse-server.md) | Medium | 31a | ✅ |
 
-Tasks 27–32 and 35 are done. Next: 33 (task tracking skill) or 34 (NDJSON replay).
+Tasks 27–32, 34, and 35 are done. Next: 33 (task tracking skill) or 36 (external deps) or 39 (TUI file viewer).
 
 ### Other Features
 
 | # | Task | Effort | Depends | Status |
 |---|------|--------|---------|--------|
 | 33 | [Formalize task tracking as agent skill](33-task-format-skill.md) | Medium | — | 🔲 |
-| 34 | [`sp dashboard --replay`](34-ndjson-replay.md) | Small | 31b | 🔲 |
+| 34 | [`sp dashboard --replay` / `--follow`](34-ndjson-replay.md) | Small | 31b | ✅ |
 | 35 | [Directory-based spec discovery (`{path}` pattern)](35-directory-based-spec-discovery.md) | Medium | — | ✅ |
 | 36 | [External dependency declaration (`requires:` in frontmatter)](36-external-dependency-declaration.md) | Medium | — | 🔲 |
 | 37 | [`sp diff` defaults to all-specs + daily CI drift check](37-diff-all-default.md) | Small | — | ✅ |
