@@ -83,6 +83,7 @@ Append-only log of completed tasks and roadmap phases, in order of completion.
 | HK-28 | Apply `specs_path` from arrangement in `sp validate` | 2026-03-29 | 4-line fix in `cmd_validate()` — resolves arrangement and sets `parser.src_dir` before validation; fixes "Spec file not found" for nested specs like `subscribers/build_state` |
 | 37 | `sp diff` defaults to all-specs + daily CI drift check | 2026-03-30 | `sp diff` with no args checks all specs for drift (AST-based, no LLM); `--arrangement` flag for path resolution; `.github/workflows/spec-drift.yaml` runs daily + on PR; reference specs skipped; JSON array output in all-specs mode; 2 new tests |
 | 38 | TUI startup feedback + error handling | 2026-03-29 | Pre-build events (build.init, build.specs.discovered, build.deps.resolved); preflight validation; build.error event; "Press q to exit" hints; Rich markup escaping; event bus threading to conductor; 10 new tests |
+| 32 | SSE server (`sp conduct --serve`) | 2026-03-30 | `SSEServer` (stdlib `ThreadingHTTPServer`), `SSESubscriber`, `SSEHandler` (GET /events SSE stream, GET /status JSON snapshot, CORS); `--serve`/`--port`/`--keep-alive` flags on conduct/build; `sp dashboard` connects to SSE stream and displays in existing TUI; `score/subscribers/sse.spec.md`; 10 new tests; 555 total |
 
 ## Completed Roadmap Phases
 

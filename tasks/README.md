@@ -22,7 +22,7 @@ and Next.js web applications.**
 |-------|--------|
 | Core framework | Stable — parser, compiler, runner, resolver, manifest |
 | Agent-first CLI | Done — `sp conduct`, `sp compose`, `sp respec`, `sp fix`, `sp vibe`, `sp diff` |
-| Quine (self-hosting) | Score updated — 21 specs (14 flat + 3 subscribers + 2 spechestra + spec_format + events); last validated 584/584 (2026-03-27); needs re-validation after {path} pattern + new subscriber specs; weekly CI in `.github/workflows/quine.yaml` |
+| Quine (self-hosting) | Score updated — 22 specs (14 flat + 4 subscribers + 2 spechestra + spec_format + events); last validated 584/584 (2026-03-27); needs re-validation after {path} pattern + new subscriber specs; weekly CI in `.github/workflows/quine.yaml` |
 | FastHTML example | Validated — 23 tests passing (`examples/fasthtml_app/`) |
 | Next.js example | Validated — 22 tests passing (`examples/nextjs_ai_chat/`) |
 | Documentation | Solid — mkdocstrings + Google docstrings live; spec-types.md + example docs complete (HK-11 done) |
@@ -51,9 +51,9 @@ sp conduct score/ --model haiku --auto-accept   # quine attempt (see task 26)
 | 31b | [Textual app skeleton + spec list](31-tui-dashboard.md) | Medium | 31a | ✅ |
 | 31c | [Spec detail panel](31-tui-dashboard.md) | Small–Med | 31b | ✅ |
 | 31d | [CLI integration (`--tui`, `sp dashboard`)](31-tui-dashboard.md) | Small | 31b | ✅ |
-| 32 | [SSE server (`sp conduct --serve`)](32-sse-server.md) | Medium | 31a | 🔲 |
+| 32 | [SSE server (`sp conduct --serve`)](32-sse-server.md) | Medium | 31a | ✅ |
 
-Tasks 27–31d and 35 are done. Next: 32 (SSE server).
+Tasks 27–32 and 35 are done. Next: 33 (task tracking skill) or 34 (NDJSON replay).
 
 ### Other Features
 
