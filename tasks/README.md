@@ -65,6 +65,7 @@ Tasks 27–32 and 35 are done. Next: 33 (task tracking skill) or 34 (NDJSON repl
 | 36 | [External dependency declaration (`requires:` in frontmatter)](36-external-dependency-declaration.md) | Medium | — | 🔲 |
 | 37 | [`sp diff` defaults to all-specs + daily CI drift check](37-diff-all-default.md) | Small | — | ✅ |
 | 38 | [TUI startup feedback](38-tui-startup-feedback.md) | Small | 31d | ✅ |
+| 39 | [TUI file viewer (spec, code, tests)](39-tui-file-viewer.md) | Small–Med | 31c | 🔲 |
 
 ### 🔲 Housekeeping
 
