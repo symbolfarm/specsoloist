@@ -17,6 +17,7 @@ import argparse
 import importlib.metadata
 import sys
 import os
+import threading
 
 from .core import SpecSoloistCore
 from .resolver import CircularDependencyError, MissingDependencyError
@@ -110,6 +111,9 @@ def main():
     build_parser.add_argument("--arrangement", metavar="FILE", help="Path to arrangement YAML file")
     build_parser.add_argument("--log-file", metavar="PATH", help="Write NDJSON build events to file (use - for stdout)")
     build_parser.add_argument("--tui", action="store_true", help="Run build inside a live Textual dashboard")
+    build_parser.add_argument("--serve", action="store_true", help="Start an SSE server for live build monitoring")
+    build_parser.add_argument("--port", type=int, default=4510, help="SSE server port (default: 4510)")
+    build_parser.add_argument("--keep-alive", action="store_true", help="Keep SSE server running after build completes")
 
     # compose
     compose_parser = subparsers.add_parser("compose", help="Draft architecture and specs from natural language")
@@ -132,6 +136,9 @@ def main():
     conduct_parser.add_argument("--arrangement", metavar="FILE", help="Path to arrangement YAML file")
     conduct_parser.add_argument("--log-file", metavar="PATH", help="Write NDJSON build events to file (use - for stdout)")
     conduct_parser.add_argument("--tui", action="store_true", help="Run build inside a live Textual dashboard")
+    conduct_parser.add_argument("--serve", action="store_true", help="Start an SSE server for live build monitoring")
+    conduct_parser.add_argument("--port", type=int, default=4510, help="SSE server port (default: 4510)")
+    conduct_parser.add_argument("--keep-alive", action="store_true", help="Keep SSE server running after build completes")
     resume_group = conduct_parser.add_mutually_exclusive_group()
     resume_group.add_argument(
         "--resume", action="store_true",
@@ -249,10 +256,12 @@ def main():
     )
 
     # dashboard
-    subparsers.add_parser(
+    dashboard_parser = subparsers.add_parser(
         "dashboard",
         help="Connect to a running build's live dashboard (requires sp conduct --serve)"
     )
+    dashboard_parser.add_argument("--port", type=int, default=4510, help="SSE server port (default: 4510)")
+    dashboard_parser.add_argument("--host", default="localhost", help="SSE server host (default: localhost)")
 
     # help
     help_parser = subparsers.add_parser(
@@ -315,7 +324,7 @@ def main():
         cmd_install_skills(args.target)
         return
     if args.command == "dashboard":
-        cmd_dashboard()
+        cmd_dashboard(getattr(args, "host", "localhost"), getattr(args, "port", 4510))
         return
     if args.command == "help":
         cmd_help(getattr(args, "topic", None))
@@ -359,6 +368,22 @@ def main():
             event_bus = EventBus()
         tui_subscriber = TuiSubscriber()
         event_bus.subscribe(tui_subscriber)
+
+    # Set up SSE server if --serve is specified
+    sse_server = None
+    use_serve = getattr(args, "serve", False)
+    if use_serve and args.command in ("conduct", "build"):
+        if use_tui:
+            ui.print_error("--serve and --tui are mutually exclusive. Use 'sp dashboard' to connect to a running --serve instance.")
+            sys.exit(1)
+        from .events import EventBus
+        from .subscribers.sse import SSEServer, SSESubscriber
+        if event_bus is None:
+            event_bus = EventBus()
+        sse_server = SSEServer(port=getattr(args, "port", 4510))
+        sse_server.start()
+        event_bus.subscribe(SSESubscriber(sse_server))
+        ui.print_info(f"SSE server listening on http://localhost:{sse_server.port}/events")
 
     # Initialize core
     try:
@@ -420,6 +445,9 @@ def main():
             elif use_tui:
                 ui.print_warning("--tui requires --no-agent for sp conduct (agent mode uses its own output)")
                 sys.exit(1)
+            elif use_serve and not args.no_agent:
+                ui.print_warning("--serve requires --no-agent for sp conduct (agent mode uses its own output)")
+                sys.exit(1)
             else:
                 cmd_conduct(core, args.src_dir, args.no_agent, args.auto_accept,
                             args.incremental, args.parallel, args.workers, args.model, args.arrangement,
@@ -456,6 +484,14 @@ def main():
     finally:
         if event_bus is not None:
             event_bus.close()
+        if sse_server is not None:
+            if getattr(args, "keep_alive", False):
+                ui.print_info("Build complete. SSE server still running (--keep-alive). Press Ctrl+C to stop.")
+                try:
+                    threading.Event().wait()  # Block until interrupted
+                except KeyboardInterrupt:
+                    pass
+            sse_server.stop()
         if log_file_handle is not None and log_file_handle is not sys.stdout:
             log_file_handle.close()
 
@@ -1005,12 +1041,105 @@ def _run_with_tui(tui_subscriber, build_fn, event_bus=None, command_description:
         sys.exit(1)
 
 
-def cmd_dashboard():
-    """Connect to a running build's live dashboard via SSE."""
-    ui.print_info("sp dashboard connects to a running 'sp conduct --serve' instance.")
-    ui.print_info("SSE server mode is not yet implemented (see task 32).")
-    ui.print_info("")
-    ui.print_info("For now, use 'sp conduct --no-agent --tui' to run a build with a live dashboard.")
+def cmd_dashboard(host: str = "localhost", port: int = 4510):
+    """Connect to a running build's SSE server and display in the TUI."""
+    import json as _json
+    from http.client import HTTPConnection
+    from .subscribers.build_state import BuildState
+    from .tui import DashboardApp
+
+    base_url = f"{host}:{port}"
+    ui.print_info(f"Connecting to SSE server at http://{base_url}/events ...")
+
+    # Seed initial state from /status
+    state = BuildState()
+    try:
+        conn = HTTPConnection(host, port, timeout=5)
+        conn.request("GET", "/status")
+        resp = conn.getresponse()
+        if resp.status == 200:
+            snapshot = _json.loads(resp.read().decode())
+            # Reconstruct BuildState from snapshot
+            state.status = snapshot.get("status", "idle")
+            state.command = snapshot.get("command", "")
+            state.phase = snapshot.get("phase", "")
+            state.total_specs = snapshot.get("total_specs", 0)
+            state.specs_completed = snapshot.get("specs_completed", 0)
+            state.specs_failed = snapshot.get("specs_failed", 0)
+            state.total_input_tokens = snapshot.get("total_input_tokens", 0)
+            state.total_output_tokens = snapshot.get("total_output_tokens", 0)
+            state.elapsed = snapshot.get("elapsed", 0.0)
+            state.error = snapshot.get("error", "")
+            state.build_order = snapshot.get("build_order", [])
+            from .subscribers.build_state import SpecState
+            for name, spec_data in snapshot.get("specs", {}).items():
+                state.specs[name] = SpecState(
+                    name=spec_data.get("name", name),
+                    status=spec_data.get("status", "queued"),
+                    duration=spec_data.get("duration"),
+                    input_tokens=spec_data.get("input_tokens", 0),
+                    output_tokens=spec_data.get("output_tokens", 0),
+                    error=spec_data.get("error"),
+                    retries=spec_data.get("retries", 0),
+                    log=spec_data.get("log", []),
+                )
+        conn.close()
+    except (ConnectionRefusedError, OSError) as e:
+        ui.print_error(f"Cannot connect to SSE server at http://{base_url}/status: {e}")
+        ui.print_info("Make sure 'sp conduct --serve --no-agent' is running.")
+        sys.exit(1)
+
+    app = DashboardApp()
+
+    def _stream_events():
+        """Connect to SSE stream and feed events to the TUI."""
+        from .events import BuildEvent  # noqa: F811
+        try:
+            conn = HTTPConnection(host, port, timeout=None)
+            conn.request("GET", "/events")
+            resp = conn.getresponse()
+            buf = b""
+            while True:
+                chunk = resp.read(1)
+                if not chunk:
+                    break
+                buf += chunk
+                # SSE messages end with \n\n
+                if buf.endswith(b"\n\n"):
+                    for line in buf.decode().strip().split("\n"):
+                        if line.startswith("data: "):
+                            data = _json.loads(line[6:])
+                            event = BuildEvent(
+                                event_type=data.get("event_type", ""),
+                                spec_name=data.get("spec_name"),
+                                data={k: v for k, v in data.items()
+                                      if k not in ("event_type", "timestamp", "spec_name")},
+                            )
+                            state.apply(event)
+                            app.call_from_thread(app.refresh_state, state)
+                    buf = b""
+        except (ConnectionResetError, BrokenPipeError, OSError):
+            pass
+
+    def _stream_and_seed():
+        """Push seeded state, then stream live events."""
+        # Wait for the Textual app to be ready
+        import time
+        for _ in range(50):
+            if app.is_running:
+                break
+            time.sleep(0.05)
+        # Push initial seeded state
+        try:
+            app.call_from_thread(app.refresh_state, state)
+        except Exception:
+            pass
+        _stream_events()
+
+    stream_thread = threading.Thread(target=_stream_and_seed, daemon=True)
+    stream_thread.start()
+
+    app.run()
 
 
 def cmd_build(core: SpecSoloistCore, incremental: bool, parallel: bool, workers: int, model: str,

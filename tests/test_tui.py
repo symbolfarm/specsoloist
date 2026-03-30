@@ -458,14 +458,14 @@ class TestCliFlags:
         assert "--tui" in result.stdout
 
     def test_dashboard_command_exists(self):
-        """sp dashboard prints a helpful message about SSE not being implemented yet."""
+        """sp dashboard exits with connection error when no SSE server is running."""
         import subprocess
         result = subprocess.run(
             ["uv", "run", "sp", "dashboard"],
             capture_output=True, text=True,
         )
-        assert result.returncode == 0
-        assert "not yet implemented" in result.stdout.lower() or "task 32" in result.stdout.lower()
+        assert result.returncode == 1
+        assert "connect" in result.stdout.lower() or "sp conduct --serve" in result.stdout.lower()
 
 
 class TestPreflightTui:

@@ -14,6 +14,8 @@ output_paths:
       tests: tests/test_composer.py
     subscribers/tui:
       tests: tests/test_tui_subscriber.py
+    subscribers/sse:
+      tests: tests/test_sse_server.py
 
 static:
   - source: src/specsoloist/help/
