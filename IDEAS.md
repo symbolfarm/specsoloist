@@ -116,6 +116,26 @@ When `src/specsoloist/foo.py` changes, `score/foo.spec.md` may be out of date.
 A `sp score check` command (or hook in `sp build`) compares spec-described API against
 actual implementation and warns about drift. Inverse of what soloists do.
 
+### 2f. Symbol drift vs behavioral drift
+
+`sp diff` catches **symbol drift** (functions/types missing or undocumented) via AST
+comparison — cheap, no LLM, runs in CI daily. But it cannot catch **behavioral drift**:
+a function exists and is documented, but the spec doesn't describe a behavior the code
+implements (e.g., leaf-name resolution was in resolver.py but not resolver.spec.md).
+
+The quine is currently the only check for behavioral drift — if the spec doesn't describe
+a behavior, the quine-generated code won't have it, and its tests will fail. But the quine
+is expensive (LLM calls) and weekly.
+
+Potential approaches for cheap behavioral drift detection:
+- Compare spec examples/verification snippets against actual test files (do the tests
+  cover more behaviors than the spec describes?)
+- Diff the docstrings/comments in generated code against spec descriptions
+- Track "spec last modified" vs "code last modified" as a staleness signal
+
+This is important because every code change needs a corresponding spec update for the
+quine to stay green — but nothing currently enforces that at the spec level.
+
 ---
 
 ## 3. Observability & Dashboard
@@ -156,7 +176,22 @@ Other commercial possibilities:
 - **Cost reports**: token usage per spec, per run, per team member
 - **Spec library**: shared reference specs across projects (like npm for specs)
 
-### 3d. Token usage tracking
+### 3d. TUI interactive review
+
+After a build completes, the TUI currently shows status and logs but the developer can't
+inspect what was generated. An interactive review mode would let the user:
+- Browse generated files per spec (implementation + tests)
+- View diffs against previous versions (if any)
+- Accept/reject individual spec outputs
+- Trigger a re-compilation of a single spec from within the TUI
+
+This turns the TUI from a passive observer into a review tool. The "Press q to exit"
+end state is the natural place to offer "Press r to review" or similar.
+
+*Relationship to `sp vibe --pause-for-review`:* That flag pauses between compose and
+conduct. This would be a post-conduct review within the TUI itself.
+
+### 3e. Token usage tracking
 
 Track input/output tokens per spec compilation. Store in run archive and manifest.
 Answers: which specs are most expensive? Which need many retries (multiplying cost)?

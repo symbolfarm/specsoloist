@@ -92,12 +92,51 @@ Write `score/sse.spec.md` covering the SSE subscriber and server endpoints.
 - The `/status` endpoint serializes `BuildState` to JSON — reuse `BuildState` from task 31a.
   If 31a isn't done yet, a simple dict accumulator works as a stopgap.
 
+## Lessons from TUI Implementation (tasks 31/38)
+
+These came up during TUI development and directly apply here:
+
+**Event bus threading is the #1 pitfall.** `_conduct_with_llm` was creating
+`SpecConductor(project_base)` without passing the event bus — the TUI showed nothing
+and the failure was completely silent. Fixed by passing `event_bus=core._event_bus`.
+The SSE wiring must thread the bus the same way. If events aren't flowing, check
+the bus connection first.
+
+**TuiSubscriber is the template for SSESubscriber.** Both subscribe to EventBus,
+accumulate BuildState, and push updates to a consumer. TUI uses `call_from_thread`;
+SSE would push to per-client queues. The interface is identical.
+
+**Pre-build events exist and should be streamed.** `build.init` (with command
+description), `build.specs.discovered`, `build.deps.resolved` all fire before
+`build.started`. Late-joining clients hitting `/status` will see the initializing
+state if they connect during setup.
+
+**Error events need Rich markup escaping.** Error messages can contain `[brackets]`
+that crash Rich rendering. The TUI escapes with `rich.markup.escape()`. SSE clients
+rendering with Rich (like `sp dashboard`) need the same treatment.
+
+**`sp dashboard` is the SSE client.** Currently a placeholder in `cli.py` (line ~963).
+The natural UX:
+- Terminal 1: `sp conduct --serve --no-agent` (build + SSE)
+- Terminal 2: `sp dashboard` (connects to SSE, shows TUI)
+
+For the first version, `sp dashboard` could reconstruct BuildState from the SSE
+stream and feed it to the existing `DashboardApp.refresh_state()`. That reuses
+everything from tasks 31/38 with zero TUI changes.
+
+**Build in-process mode first.** `--serve --no-agent` keeps everything in one process
+(EventBus subscriber → SSE server → clients). Agent mode (`--serve` without `--no-agent`)
+is harder — the agent subprocess would need to POST events back. Defer that to a follow-up.
+
 ## Files to Read Before Starting
 
-- `src/specsoloist/events.py` — BuildEvent, EventBus
-- `src/specsoloist/subscribers/ndjson.py` — subscriber pattern
-- `src/specsoloist/subscribers/build_state.py` — BuildState (from task 31a, if done)
-- `src/specsoloist/cli.py` — `cmd_conduct()`, how `--log-file` was wired (pattern to follow)
+- `src/specsoloist/events.py` — BuildEvent, EventBus, all event types
+- `src/specsoloist/subscribers/tui.py` — TuiSubscriber (the pattern to follow)
+- `src/specsoloist/subscribers/ndjson.py` — another subscriber example
+- `src/specsoloist/subscribers/build_state.py` — BuildState (shared model for /status)
+- `src/specsoloist/tui.py` — DashboardApp.refresh_state() (the `sp dashboard` consumer)
+- `src/specsoloist/cli.py` — `_run_with_tui` (~line 926), `cmd_dashboard` (~line 963),
+  event bus setup (~line 340), `_preflight_tui` pattern for pre-validation
 - `pyproject.toml` — current dependencies
 
 ## Success Criteria
