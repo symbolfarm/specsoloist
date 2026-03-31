@@ -53,7 +53,7 @@ sp conduct score/ --model haiku --auto-accept   # quine attempt (see task 26)
 | 31d | [CLI integration (`--tui`, `sp dashboard`)](31-tui-dashboard.md) | Small | 31b | ✅ |
 | 32 | [SSE server (`sp conduct --serve`)](32-sse-server.md) | Medium | 31a | ✅ |
 
-Tasks 27–32, 34, and 35 are done. Next: 33 (task tracking skill) or 36 (external deps) or 39 (TUI file viewer).
+Tasks 27–32, 34–39 (except 33) are done. Next: 33 (task tracking skill).
 
 ### Other Features
 
@@ -65,7 +65,7 @@ Tasks 27–32, 34, and 35 are done. Next: 33 (task tracking skill) or 36 (extern
 | 36 | [External dependency declaration (`requires:` in frontmatter)](36-external-dependency-declaration.md) | Medium | — | ✅ |
 | 37 | [`sp diff` defaults to all-specs + daily CI drift check](37-diff-all-default.md) | Small | — | ✅ |
 | 38 | [TUI startup feedback](38-tui-startup-feedback.md) | Small | 31d | ✅ |
-| 39 | [TUI file viewer (spec, code, tests)](39-tui-file-viewer.md) | Small–Med | 31c | 🔲 |
+| 39 | [TUI file viewer (spec, code, tests)](39-tui-file-viewer.md) | Small–Med | 31c | ✅ |
 
 ### 🔲 Housekeeping
 
