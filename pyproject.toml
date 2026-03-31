@@ -29,7 +29,9 @@ dependencies = [
 
 [project.urls]
 Homepage = "https://github.com/symbolfarm/specsoloist"
+Documentation = "https://symbolfarm.github.io/specsoloist/"
 Repository = "https://github.com/symbolfarm/specsoloist"
+Changelog = "https://github.com/symbolfarm/specsoloist/blob/main/CHANGELOG.md"
 Issues = "https://github.com/symbolfarm/specsoloist/issues"
 
 [tool.ruff.lint]
