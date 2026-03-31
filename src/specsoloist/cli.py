@@ -1327,6 +1327,9 @@ def cmd_build(core: SpecSoloistCore, incremental: bool, parallel: bool, workers:
     _apply_arrangement(core, arrangement)
     model = _resolve_model(model, arrangement)
 
+    # Pre-flight: check external requirements declared in spec frontmatter
+    _check_spec_requirements(core)
+
     with ui.spinner("Compiling project..."):
         result = core.compile_project(
             model=model,
@@ -1715,6 +1718,9 @@ def _conduct_with_llm(core: SpecSoloistCore, src_dir: str | None, incremental: b
 
     if effective_incremental and (resume or not force):
         _show_resume_plan(conductor._core, parallel)
+
+    # Pre-flight: check external requirements declared in spec frontmatter
+    _check_spec_requirements(conductor._core)
 
     with ui.spinner("Orchestrating build..."):
         result = conductor.build(
@@ -2142,6 +2148,42 @@ def cmd_doctor(arrangement_arg: str | None = None):
                         )
         except Exception as e:
             ui.console.print(f"[warning]~[/] Could not parse arrangement env_vars: {e}")
+
+    # Spec external requirements check
+    try:
+        from .core import SpecSoloistCore as _Core
+        _doctor_core = _Core(root_dir=os.getcwd())
+        # If arrangement specifies specs_path, honour it
+        if arr_path and os.path.exists(arr_path):
+            try:
+                _doctor_arr = _resolve_arrangement(_doctor_core, arr_path)
+                if _doctor_arr:
+                    _apply_arrangement(_doctor_core, _doctor_arr)
+            except Exception:
+                pass
+        _missing_reqs = _doctor_core.check_requirements()
+        if _missing_reqs:
+            ui.console.print()
+            ui.console.print("[dim]Spec external requirements:[/]")
+            for _req_str, _spec_names in _missing_reqs.items():
+                ui.console.print(
+                    f"  [error]✗[/] {_req_str}  "
+                    f"[dim](required by: {', '.join(_spec_names)})[/]"
+                )
+        elif _doctor_core.list_specs():
+            # Only show the success line if there are specs to check
+            _all_reqs = set()
+            for _sf in _doctor_core.list_specs():
+                _sn = _sf.replace(".spec.md", "")
+                try:
+                    _ps = _doctor_core.parser.parse_spec(_sn)
+                    _all_reqs.update(_ps.metadata.requires)
+                except Exception:
+                    pass
+            if _all_reqs:
+                ui.console.print(f"[success]✓[/] All spec requirements satisfied ({len(_all_reqs)} packages)")
+    except Exception:
+        pass
 
     # Installed skill staleness check
     _current_version = importlib.metadata.version("specsoloist")
@@ -2814,6 +2856,18 @@ def _resolve_model(cli_model: str | None, arrangement) -> str | None:
     if arrangement and getattr(arrangement, "model", None):
         return arrangement.model
     return None
+
+
+def _check_spec_requirements(core: SpecSoloistCore):
+    """Fail fast if specs declare external packages that aren't installed."""
+    missing = core.check_requirements()
+    if missing:
+        ui.print_error("Missing packages required by specs:")
+        for req_str, spec_names in missing.items():
+            ui.console.print(f"  [error]✗[/] {req_str}  [dim](required by: {', '.join(spec_names)})[/]")
+        ui.console.print()
+        ui.print_info("Install the missing packages and retry.")
+        sys.exit(1)
 
 
 def _check_api_key():

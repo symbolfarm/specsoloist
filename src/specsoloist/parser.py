@@ -39,6 +39,7 @@ class SpecMetadata:
     version: str = ""
     tags: List[str] = field(default_factory=list)
     dependencies: List[Any] = field(default_factory=list)  # Can be strings or dicts
+    requires: List[str] = field(default_factory=list)  # PEP 508 external deps
     # Language target is now optional (build config, not spec)
     language_target: Optional[str] = None
     raw: Dict[str, Any] = field(default_factory=dict)
@@ -506,6 +507,11 @@ Describe each export's public interface and behavior below.
         deps = raw.get("dependencies", [])
         if isinstance(deps, list):
             metadata.dependencies = deps
+
+        # Parse external requirements (PEP 508 specifiers)
+        requires = raw.get("requires", [])
+        if isinstance(requires, list):
+            metadata.requires = [str(r) for r in requires]
 
         metadata.raw = raw
 

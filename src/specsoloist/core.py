@@ -4,7 +4,9 @@ This module provides the high-level API for compiling specs to code.
 It delegates to specialized modules for parsing, compilation, and testing.
 """
 
+import importlib.metadata
 import os
+import re
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
@@ -20,6 +22,69 @@ from .manifest import BuildManifest, IncrementalBuilder, compute_content_hash
 from .providers import LLMProvider
 from .parser import ParsedSpec
 from .schema import Arrangement
+
+# Regex to split a PEP 508 requirement into package name and version specifier.
+# Handles: "textual>=1.0", "python-fasthtml", "rich>=13,<14", "foo[extra]>=1.0"
+_REQ_RE = re.compile(r"^([A-Za-z0-9_][A-Za-z0-9._-]*(?:\[[^\]]+\])?)\s*(.*)?$")
+
+
+def _requirement_satisfied(req_str: str) -> bool:
+    """Check whether a PEP 508 requirement string is satisfied by installed packages."""
+    m = _REQ_RE.match(req_str.strip())
+    if not m:
+        return False
+    pkg_name = m.group(1).split("[")[0]  # strip extras for lookup
+    version_spec = (m.group(2) or "").strip()
+
+    try:
+        dist = importlib.metadata.distribution(pkg_name)
+    except importlib.metadata.PackageNotFoundError:
+        return False
+
+    if not version_spec:
+        return True  # installed, no version constraint
+
+    # Use packaging if available, fall back to basic comparison
+    try:
+        from packaging.specifiers import SpecifierSet
+        from packaging.version import Version
+        return Version(dist.version) in SpecifierSet(version_spec)
+    except ImportError:
+        # Without packaging, do a best-effort single-specifier check
+        return _basic_version_check(dist.version, version_spec)
+
+
+def _basic_version_check(installed: str, spec: str) -> bool:
+    """Best-effort version check without the packaging library."""
+    # Handle comma-separated specifiers
+    for part in spec.split(","):
+        part = part.strip()
+        if not part:
+            continue
+        for op in (">=", "<=", "!=", "==", ">", "<"):
+            if part.startswith(op):
+                required = part[len(op):].strip()
+                inst_parts = [int(x) for x in installed.split(".")[:3] if x.isdigit()]
+                req_parts = [int(x) for x in required.split(".")[:3] if x.isdigit()]
+                # Pad to same length
+                while len(inst_parts) < len(req_parts):
+                    inst_parts.append(0)
+                while len(req_parts) < len(inst_parts):
+                    req_parts.append(0)
+                if op == ">=" and inst_parts < req_parts:
+                    return False
+                if op == "<=" and inst_parts > req_parts:
+                    return False
+                if op == ">" and inst_parts <= req_parts:
+                    return False
+                if op == "<" and inst_parts >= req_parts:
+                    return False
+                if op == "==" and inst_parts != req_parts:
+                    return False
+                if op == "!=" and inst_parts == req_parts:
+                    return False
+                break
+    return True
 
 
 @dataclass
@@ -334,6 +399,42 @@ class SpecSoloistCore:
             
         return errors
 
+
+    # =========================================================================
+    # Public API - Requirements Checking
+    # =========================================================================
+
+    def check_requirements(
+        self, specs: Optional[List[str]] = None
+    ) -> Dict[str, List[str]]:
+        """Check that external packages declared in spec `requires:` fields are installed.
+
+        Args:
+            specs: List of spec names to check. If None, checks all specs.
+
+        Returns:
+            Dict mapping PEP 508 requirement string to list of spec names that need it,
+            for requirements that are NOT satisfied. Empty dict means all satisfied.
+        """
+        spec_files = specs or self.list_specs()
+        # requirement string -> list of spec names that declare it
+        req_to_specs: Dict[str, List[str]] = {}
+
+        for spec_file in spec_files:
+            spec_name = spec_file.replace(".spec.md", "")
+            try:
+                parsed = self.parser.parse_spec(spec_name)
+            except Exception:
+                continue
+            for req_str in parsed.metadata.requires:
+                req_to_specs.setdefault(req_str, []).append(spec_name)
+
+        missing: Dict[str, List[str]] = {}
+        for req_str, declaring_specs in req_to_specs.items():
+            if not _requirement_satisfied(req_str):
+                missing[req_str] = declaring_specs
+
+        return missing
 
     # =========================================================================
     # Public API - Compilation
