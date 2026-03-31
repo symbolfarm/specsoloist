@@ -86,6 +86,7 @@ Append-only log of completed tasks and roadmap phases, in order of completion.
 | 32 | SSE server (`sp conduct --serve`) | 2026-03-30 | `SSEServer` (stdlib `ThreadingHTTPServer`), `SSESubscriber`, `SSEHandler` (GET /events SSE stream, GET /status JSON snapshot, CORS); `--serve`/`--port`/`--keep-alive` flags on conduct/build; `sp dashboard` connects to SSE stream and displays in existing TUI; `score/subscribers/sse.spec.md`; 10 new tests; 555 total |
 | 34 | `sp dashboard --replay` / `--follow` | 2026-03-30 | `--replay FILE` plays back NDJSON log at configurable `--speed` (default 10x, 0=instant); `--follow FILE` tails a growing log in real time (`tail -f` style); shared `_parse_ndjson_event`/`_parse_ndjson_timestamp` helpers; 16 new tests; 571 total |
 | HK-27 | README refresh | 2026-03-31 | Badges, placeholder logo/demo, absolute URLs for PyPI rendering, trim to elevator pitch; detailed CLI/config/Docker moved to docs; `Documentation`/`Changelog` URLs in pyproject.toml |
+| 36 | External dependency declaration (`requires:`) | 2026-03-31 | `requires:` PEP 508 list in spec frontmatter; `check_requirements()` on core; pre-flight fail-fast in `sp build`/`sp conduct --no-agent`; `sp doctor` reports missing; 14 new tests; 585 total |
 
 ## Completed Roadmap Phases
 

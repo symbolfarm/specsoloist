@@ -62,7 +62,7 @@ Tasks 27–32, 34, and 35 are done. Next: 33 (task tracking skill) or 36 (extern
 | 33 | [Formalize task tracking as agent skill](33-task-format-skill.md) | Medium | — | 🔲 |
 | 34 | [`sp dashboard --replay` / `--follow`](34-ndjson-replay.md) | Small | 31b | ✅ |
 | 35 | [Directory-based spec discovery (`{path}` pattern)](35-directory-based-spec-discovery.md) | Medium | — | ✅ |
-| 36 | [External dependency declaration (`requires:` in frontmatter)](36-external-dependency-declaration.md) | Medium | — | 🔲 |
+| 36 | [External dependency declaration (`requires:` in frontmatter)](36-external-dependency-declaration.md) | Medium | — | ✅ |
 | 37 | [`sp diff` defaults to all-specs + daily CI drift check](37-diff-all-default.md) | Small | — | ✅ |
 | 38 | [TUI startup feedback](38-tui-startup-feedback.md) | Small | 31d | ✅ |
 | 39 | [TUI file viewer (spec, code, tests)](39-tui-file-viewer.md) | Small–Med | 31c | 🔲 |
