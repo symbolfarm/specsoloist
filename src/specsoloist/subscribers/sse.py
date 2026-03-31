@@ -4,6 +4,10 @@ Bridges the EventBus to external HTTP consumers. Any client — browser,
 curl, VS Code extension — can connect to /events for real-time build
 events or /status for a JSON snapshot of current build state.
 
+GET /files?path=<relative> serves file contents (text/plain) for the
+TUI file viewer in remote mode. A path traversal guard ensures only files
+under the project root are served.
+
 Uses stdlib http.server (zero dependencies). Thread-safe via per-client
 queue.Queue instances.
 """
@@ -11,10 +15,12 @@ queue.Queue instances.
 from __future__ import annotations
 
 import json
+import os
 import queue
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any
+from urllib.parse import parse_qs, urlparse
 
 from ..events import BuildEvent
 from .build_state import BuildState
@@ -27,13 +33,15 @@ class SSEServer:
     clients. Runs in a daemon thread.
     """
 
-    def __init__(self, port: int = 4510) -> None:
+    def __init__(self, port: int = 4510, project_root: str | None = None) -> None:
         """Initialize the SSE server.
 
         Args:
             port: Port to listen on (default 4510).
+            project_root: Root directory for file serving (path traversal guard).
         """
         self.port = port
+        self.project_root = os.path.realpath(project_root or os.getcwd())
         self.state = BuildState()
         self._clients: list[queue.Queue[str | None]] = []
         self._clients_lock = threading.Lock()
@@ -48,10 +56,13 @@ class SSEServer:
             """HTTP request handler for SSE and status endpoints."""
 
             def do_GET(self) -> None:  # noqa: N802
-                if self.path == "/events":
+                parsed = urlparse(self.path)
+                if parsed.path == "/events":
                     self._handle_events()
-                elif self.path == "/status":
+                elif parsed.path == "/status":
                     self._handle_status()
+                elif parsed.path == "/files":
+                    self._handle_files(parsed)
                 else:
                     self.send_error(404)
 
@@ -99,6 +110,42 @@ class SSEServer:
                 self._send_cors_headers()
                 self.end_headers()
                 self.wfile.write(body.encode())
+
+            def _handle_files(self, parsed) -> None:
+                qs = parse_qs(parsed.query)
+                rel_path = qs.get("path", [None])[0]
+                if not rel_path:
+                    self.send_error(400, "Missing ?path= parameter")
+                    return
+
+                # Path traversal guard
+                requested = os.path.realpath(
+                    os.path.join(server_ref.project_root, rel_path)
+                )
+                if not requested.startswith(server_ref.project_root + os.sep):
+                    self.send_response(403)
+                    self._send_cors_headers()
+                    self.end_headers()
+                    self.wfile.write(b"Forbidden: path traversal blocked")
+                    return
+
+                if not os.path.isfile(requested):
+                    self.send_error(404, "File not found")
+                    return
+
+                try:
+                    with open(requested, "r", encoding="utf-8", errors="replace") as f:
+                        content = f.read()
+                except OSError:
+                    self.send_error(500, "Could not read file")
+                    return
+
+                body = content.encode("utf-8")
+                self.send_response(200)
+                self.send_header("Content-Type", "text/plain; charset=utf-8")
+                self._send_cors_headers()
+                self.end_headers()
+                self.wfile.write(body)
 
             def log_message(self, format: str, *args: Any) -> None:  # noqa: A002
                 # Suppress default stderr logging

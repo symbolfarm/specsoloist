@@ -2,11 +2,18 @@
 
 Built on the Textual framework. Displays a live view of build progress:
 navigable spec list with status icons, detail panel, and aggregate status bar.
+
+File viewer (s/c/t/l keys): view spec source, generated code, generated tests,
+or build log for the selected spec.
 """
 
 from __future__ import annotations
 
+import os
+from typing import Callable, Optional
+
 from rich.markup import escape as rich_escape
+from rich.syntax import Syntax
 from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.containers import Horizontal, Vertical
@@ -14,6 +21,34 @@ from textual.reactive import reactive
 from textual.widgets import Label, ListItem, ListView, RichLog, Static
 
 from .subscribers.build_state import BuildState, SpecState
+
+# File type identifiers for the file viewer
+VIEW_LOG = "log"
+VIEW_SPEC = "spec"
+VIEW_CODE = "code"
+VIEW_TESTS = "tests"
+
+# Callable that resolves (spec_name, file_type) -> file content or None
+FileResolver = Callable[[str, str], Optional[str]]
+
+# Map file extensions to Rich Syntax lexer names
+_EXT_TO_LEXER: dict[str, str] = {
+    ".py": "python",
+    ".ts": "typescript",
+    ".tsx": "tsx",
+    ".js": "javascript",
+    ".jsx": "jsx",
+    ".md": "markdown",
+    ".yaml": "yaml",
+    ".yml": "yaml",
+    ".json": "json",
+}
+
+
+def _guess_lexer(path: str) -> str:
+    """Guess the Rich Syntax lexer name from a file path."""
+    _, ext = os.path.splitext(path)
+    return _EXT_TO_LEXER.get(ext, "text")
 
 # ---------------------------------------------------------------------------
 # Status icon mapping
@@ -134,6 +169,13 @@ class LogPanel(RichLog):
         for line in lines:
             self.write(line)
 
+    def set_file_content(self, content: str, file_path: str = "") -> None:
+        """Display file content with syntax highlighting."""
+        self.clear()
+        lexer = _guess_lexer(file_path)
+        syntax = Syntax(content, lexer, line_numbers=True, word_wrap=False)
+        self.write(syntax)
+
 
 class SpecDetailWidget(Vertical):
     """Right panel — spec info + scrollable log."""
@@ -151,14 +193,29 @@ class SpecDetailWidget(Vertical):
         yield SpecInfoWidget(id="spec-info")
         yield LogPanel(id="log-panel")
 
-    def update_spec(self, spec: SpecState | None) -> None:
-        """Update both info and log for a spec."""
+    def update_spec(self, spec: SpecState | None, view_mode: str = VIEW_LOG,
+                    file_content: str | None = None, file_path: str = "") -> None:
+        """Update both info and log for a spec.
+
+        Args:
+            spec: The spec state to display.
+            view_mode: One of VIEW_LOG, VIEW_SPEC, VIEW_CODE, VIEW_TESTS.
+            file_content: Pre-resolved file content for file view modes.
+            file_path: Path hint for syntax highlighting.
+        """
         self.query_one("#spec-info", SpecInfoWidget).update_spec(spec)
         log_panel = self.query_one("#log-panel", LogPanel)
-        if spec is not None:
-            log_panel.set_log(spec.log)
-        else:
+
+        if spec is None:
             log_panel.set_log([])
+            return
+
+        if view_mode == VIEW_LOG:
+            log_panel.set_log(spec.log)
+        elif file_content is not None:
+            log_panel.set_file_content(file_content, file_path)
+        else:
+            log_panel.set_log([f"[dim]No {view_mode} file available[/dim]"])
 
 
 class StatusBar(Static):
@@ -228,9 +285,24 @@ class DashboardApp(App):
 
     BINDINGS = [
         Binding("q", "quit", "Quit"),
+        Binding("l", "view_log", "Log", show=True),
+        Binding("s", "view_spec", "Spec", show=True),
+        Binding("c", "view_code", "Code", show=True),
+        Binding("t", "view_tests", "Tests", show=True),
     ]
 
     _build_state: reactive[BuildState | None] = reactive(None)
+    _view_mode: reactive[str] = reactive(VIEW_LOG)
+
+    def __init__(self, file_resolver: FileResolver | None = None, **kwargs) -> None:
+        """Initialize the dashboard app.
+
+        Args:
+            file_resolver: Callback (spec_name, file_type) -> content or None.
+            **kwargs: Passed to App.__init__.
+        """
+        super().__init__(**kwargs)
+        self._file_resolver = file_resolver
 
     def compose(self) -> ComposeResult:
         """Create the initial layout."""
@@ -264,6 +336,30 @@ class DashboardApp(App):
         # Update detail panel for currently selected spec
         self._update_detail_for_selection()
 
+    # -- View mode actions ---------------------------------------------------
+
+    def action_view_log(self) -> None:
+        """Switch to build log view."""
+        self._view_mode = VIEW_LOG
+        self._update_detail_for_selection()
+
+    def action_view_spec(self) -> None:
+        """Switch to spec source view."""
+        self._view_mode = VIEW_SPEC
+        self._update_detail_for_selection()
+
+    def action_view_code(self) -> None:
+        """Switch to generated code view."""
+        self._view_mode = VIEW_CODE
+        self._update_detail_for_selection()
+
+    def action_view_tests(self) -> None:
+        """Switch to generated tests view."""
+        self._view_mode = VIEW_TESTS
+        self._update_detail_for_selection()
+
+    # -- Event handlers ------------------------------------------------------
+
     def on_list_view_selected(self, event: ListView.Selected) -> None:
         """Handle spec selection from the list."""
         self._update_detail_for_selection()
@@ -286,7 +382,24 @@ class DashboardApp(App):
             if 0 <= idx < len(spec_list.spec_names):
                 name = spec_list.spec_names[idx]
                 spec = state.specs.get(name)
-                detail.update_spec(spec)
+
+                file_content = None
+                file_path = ""
+                if self._view_mode != VIEW_LOG and self._file_resolver is not None:
+                    file_content = self._file_resolver(name, self._view_mode)
+                    # Build a synthetic path for lexer detection
+                    if file_content is not None:
+                        if self._view_mode == VIEW_SPEC:
+                            file_path = f"{name}.spec.md"
+                        elif self._view_mode == VIEW_CODE:
+                            file_path = f"{name}.py"
+                        elif self._view_mode == VIEW_TESTS:
+                            file_path = f"test_{name}.py"
+
+                detail.update_spec(
+                    spec, view_mode=self._view_mode,
+                    file_content=file_content, file_path=file_path,
+                )
                 return
 
         detail.update_spec(None)

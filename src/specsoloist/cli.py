@@ -430,11 +430,15 @@ def main():
         elif args.command == "build":
             if use_tui:
                 _preflight_tui(getattr(args, "arrangement", None))
+                _tui_arr = _resolve_arrangement(core, getattr(args, "arrangement", None))
+                if _tui_arr:
+                    _apply_arrangement(core, _tui_arr)
                 _run_with_tui(tui_subscriber, lambda: cmd_build(
                     core, args.incremental, args.parallel, args.workers,
                     args.model, not args.no_tests, args.arrangement),
                     event_bus=event_bus,
-                    command_description="sp build")
+                    command_description="sp build",
+                    file_resolver=_make_local_file_resolver(core, _tui_arr))
             else:
                 cmd_build(core, args.incremental, args.parallel, args.workers, args.model, not args.no_tests, args.arrangement)
         elif args.command == "compose":
@@ -446,12 +450,16 @@ def main():
             if use_tui and args.no_agent:
                 _preflight_tui(getattr(args, "arrangement", None))
                 _cmd_desc = f"sp conduct {args.src_dir or ''} --no-agent".strip()
+                _tui_arr = _resolve_arrangement(core, getattr(args, "arrangement", None))
+                if _tui_arr:
+                    _apply_arrangement(core, _tui_arr)
                 _run_with_tui(tui_subscriber, lambda: cmd_conduct(
                     core, args.src_dir, args.no_agent, args.auto_accept,
                     args.incremental, args.parallel, args.workers, args.model,
                     args.arrangement, resume=args.resume, force=args.force),
                     event_bus=event_bus,
-                    command_description=_cmd_desc)
+                    command_description=_cmd_desc,
+                    file_resolver=_make_local_file_resolver(core, _tui_arr))
             elif use_tui:
                 ui.print_warning("--tui requires --no-agent for sp conduct (agent mode uses its own output)")
                 sys.exit(1)
@@ -992,7 +1000,42 @@ def _preflight_tui(arrangement_arg: str | None) -> None:
     _check_api_key()
 
 
-def _run_with_tui(tui_subscriber, build_fn, event_bus=None, command_description: str = ""):
+def _make_local_file_resolver(core: SpecSoloistCore, arrangement=None):
+    """Create a file resolver that reads files from the local filesystem."""
+    from .tui import VIEW_SPEC, VIEW_CODE, VIEW_TESTS
+
+    def _resolve(spec_name: str, file_type: str) -> str | None:
+        try:
+            if file_type == VIEW_SPEC:
+                # Try to read the spec file
+                return core.parser.read_spec(spec_name)
+            elif file_type == VIEW_CODE:
+                if arrangement:
+                    module_name = core.parser.get_module_name(spec_name)
+                    path = arrangement.output_paths.resolve_implementation(module_name)
+                else:
+                    path = core.runner.get_code_path(spec_name)
+                if os.path.isfile(path):
+                    with open(path, "r", encoding="utf-8", errors="replace") as f:
+                        return f.read()
+            elif file_type == VIEW_TESTS:
+                if arrangement:
+                    module_name = core.parser.get_module_name(spec_name)
+                    path = arrangement.output_paths.resolve_tests(module_name)
+                else:
+                    path = core.runner.get_test_path(spec_name)
+                if os.path.isfile(path):
+                    with open(path, "r", encoding="utf-8", errors="replace") as f:
+                        return f.read()
+        except Exception:
+            pass
+        return None
+
+    return _resolve
+
+
+def _run_with_tui(tui_subscriber, build_fn, event_bus=None, command_description: str = "",
+                  file_resolver=None):
     """Run a build function in a background thread with the Textual TUI in the foreground."""
     import threading
     from .events import BuildEvent, EventType
@@ -1005,7 +1048,7 @@ def _run_with_tui(tui_subscriber, build_fn, event_bus=None, command_description:
             data={"command": command_description},
         ))
 
-    app = DashboardApp()
+    app = DashboardApp(file_resolver=file_resolver)
     tui_subscriber.app = app
 
     build_error = None
@@ -1099,7 +1142,44 @@ def cmd_dashboard(host: str = "localhost", port: int = 4510):
         ui.print_info("Make sure 'sp conduct --serve --no-agent' is running.")
         sys.exit(1)
 
-    app = DashboardApp()
+    def _remote_file_resolver(spec_name: str, file_type: str) -> str | None:
+        """Fetch file content from the SSE server's /files endpoint."""
+        from .tui import VIEW_SPEC, VIEW_CODE, VIEW_TESTS
+        from urllib.parse import quote
+        # We need a way to resolve spec_name + file_type to a relative path.
+        # The SSE server's /status snapshot includes build_order and arrangement info,
+        # but not file paths. For now, use common conventions. The server-side
+        # arrangement would resolve the actual paths, but the client doesn't have it.
+        # Instead, fetch using the /files endpoint with a guessed path;
+        # if it 404s, we return None.
+        if file_type == VIEW_SPEC:
+            # Try common spec locations
+            candidates = [
+                f"specs/{spec_name}.spec.md",
+                f"src/{spec_name}.spec.md",
+                f"score/{spec_name}.spec.md",
+            ]
+        elif file_type == VIEW_CODE:
+            candidates = [f"src/{spec_name}.py", f"src/specsoloist/{spec_name}.py"]
+        elif file_type == VIEW_TESTS:
+            candidates = [f"tests/test_{spec_name}.py"]
+        else:
+            return None
+
+        for candidate in candidates:
+            try:
+                c = HTTPConnection(host, port, timeout=5)
+                c.request("GET", f"/files?path={quote(candidate)}")
+                r = c.getresponse()
+                if r.status == 200:
+                    return r.read().decode("utf-8", errors="replace")
+                r.read()  # drain
+                c.close()
+            except Exception:
+                pass
+        return None
+
+    app = DashboardApp(file_resolver=_remote_file_resolver)
 
     def _stream_events():
         """Connect to SSE stream and feed events to the TUI."""
