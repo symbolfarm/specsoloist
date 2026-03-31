@@ -69,9 +69,7 @@ Tasks 27–32, 34, and 35 are done. Next: 33 (task tracking skill) or 36 (extern
 
 ### 🔲 Housekeeping
 
-| # | Task | Status |
-|---|------|--------|
-| HK-27 | [README refresh — badges, logo, demo GIF, fix PyPI links](HK-27-readme-refresh.md) | 🔲 |
+(none pending)
 
 See also: [spechestra-tasks.md](spechestra-tasks.md) for the Spechestra (web dashboard) backlog.
 
