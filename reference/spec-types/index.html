@@ -1,0 +1,2161 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Spec-as-Source AI coding framework">
+      
+      
+        <meta name="author" content="Toby Lightheart">
+      
+      
+      
+        <link rel="prev" href="../cli/">
+      
+      
+        <link rel="next" href="../api/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Spec Types - SpecSoloist</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#spec-types" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="SpecSoloist" class="md-header__button md-logo" aria-label="SpecSoloist" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            SpecSoloist
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Spec Types
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/symbolfarm/specsoloist" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../getting_started/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Getting Started
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../guide/workflow/" class="md-tabs__link">
+          
+  
+  
+  Guide
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../concepts/spec_as_source/" class="md-tabs__link">
+          
+  
+  
+  Core Concepts
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../cli/" class="md-tabs__link">
+          
+  
+  
+  Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../incremental-adoption/" class="md-tabs__link">
+          
+  
+  
+  Patterns
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../examples/math_demo/" class="md-tabs__link">
+          
+  
+  
+  Examples
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="SpecSoloist" class="md-nav__button md-logo" aria-label="SpecSoloist" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    SpecSoloist
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/symbolfarm/specsoloist" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../getting_started/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Getting Started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Guide
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Guide
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guide/workflow/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The Workflow
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guide/arrangement/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Arrangement
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../guide/agents/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Agents
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Core Concepts
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Core Concepts
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts/spec_as_source/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Spec-as-Source
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../concepts/self_healing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Self-Healing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Reference
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Reference
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    CLI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Spec Types
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Spec Types
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#quick-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quick Reference
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#bundle" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        bundle
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#function" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        function
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Public API
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../internals/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Internals
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_6" >
+        
+          
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Patterns
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Patterns
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../incremental-adoption/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Incremental Adoption
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../database-patterns/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Database Patterns
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../e2e-testing/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    E2E Testing
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_7" >
+        
+          
+          <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Examples
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_7">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Examples
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/math_demo/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Math (Python)
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/fasthtml_app/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FastHTML Todo App
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/fasthtml_incremental/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    FastHTML Incremental
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../examples/nextjs_ai_chat/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Next.js AI Chat
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#quick-reference" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Quick Reference
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#bundle" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        bundle
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#function" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        function
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="spec-types">Spec Types</h1>
+<p>Specs are Markdown files with a YAML frontmatter block. The <code>type</code> field controls which
+sections are required, how the parser validates the spec, and what code (if any) the
+compiler generates.</p>
+<h2 id="quick-reference">Quick Reference</h2>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Use when</th>
+<th>Generates</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>bundle</code></td>
+<td>A module with several related functions/types</td>
+<td>Implementation + tests</td>
+</tr>
+<tr>
+<td><code>function</code></td>
+<td>A single complex function needing full specification</td>
+<td>Implementation + tests</td>
+</tr>
+<tr>
+<td><code>type</code></td>
+<td>A data structure or schema</td>
+<td>Type definition + tests</td>
+</tr>
+<tr>
+<td><code>module</code></td>
+<td>Aggregating sub-specs into a single public API</td>
+<td>Re-exports</td>
+</tr>
+<tr>
+<td><code>workflow</code></td>
+<td>A multi-step execution pipeline</td>
+<td>Runner script</td>
+</tr>
+<tr>
+<td><code>reference</code></td>
+<td>Documenting a third-party library</td>
+<td>Verification tests only</td>
+</tr>
+</tbody>
+</table>
+<p>When in doubt, start with <code>bundle</code>. It handles the vast majority of modules and is the
+most flexible type.</p>
+<hr />
+<h2 id="bundle"><code>bundle</code></h2>
+<p>The default type. Use it for any module that groups related functions and/or types. Each
+item in a bundle has a one-line <code>behavior</code> field rather than a full spec section.</p>
+<p><strong>Key sections:</strong> <code># Overview</code>, <code># Types</code> (optional), <code># Functions</code>, <code># Behavior</code>,
+<code># Examples</code></p>
+<p><strong>Bundle function fields:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>inputs</code></td>
+<td>Yes</td>
+<td>Named parameters with types</td>
+</tr>
+<tr>
+<td><code>outputs</code></td>
+<td>Yes</td>
+<td>Return type(s)</td>
+</tr>
+<tr>
+<td><code>behavior</code></td>
+<td>Yes</td>
+<td>One-line description</td>
+</tr>
+<tr>
+<td><code>contract</code></td>
+<td>No</td>
+<td>Pre/post conditions</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Example</strong> — <code>score/manifest.spec.md</code>, SpecSoloist's own build manifest:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>---
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>name: manifest
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>type: bundle
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>tags:
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">  </span><span class="k">-</span><span class="w"> </span>core
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="gu">  - builds</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="gu">---</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="gh"># Overview</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>Build manifest for tracking spec compilation state. Enables incremental builds by recording what was built, when, and from what inputs — so only changed specs (and their dependents) need recompilation.
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="gh"># Types</span>
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="gu">## SpecBuildInfo</span>
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>
+<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>Build record for a single spec. Tracks the spec content hash at build time, the build timestamp, its dependencies, and the output files produced.
+<a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>
+<a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a><span class="gs">**Fields:**</span> <span class="sb">`spec_hash`</span> (string), <span class="sb">`built_at`</span> (ISO timestamp string), <span class="sb">`dependencies`</span> (list of spec name strings), <span class="sb">`output_files`</span> (list of relative file path strings).
+<a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>
+<a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>Must support round-tripping to/from dict for JSON serialization (<span class="sb">`to_dict`</span>, <span class="sb">`from_dict`</span>).
+<a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>
+<a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a><span class="gu">## BuildManifest</span>
+<a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a>
+<a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a>Collection of build records, persisted as <span class="sb">`.specsoloist-manifest.json`</span> in the build directory.
+<a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a>
+<a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a><span class="gs">**Fields:**</span> <span class="sb">`version`</span> (string, default <span class="sb">`&quot;1.0&quot;`</span>), <span class="sb">`specs`</span> (dict mapping spec name to <span class="sb">`SpecBuildInfo`</span>).
+<a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a>
+<a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a><span class="gs">**Methods:**</span>
+<a id="__codelineno-0-30" name="__codelineno-0-30" href="#__codelineno-0-30"></a><span class="k">-</span><span class="w"> </span><span class="sb">`get_spec_info(name)`</span> -&gt; <span class="sb">`SpecBuildInfo`</span> or <span class="sb">`None`</span>
+<a id="__codelineno-0-31" name="__codelineno-0-31" href="#__codelineno-0-31"></a><span class="k">-</span><span class="w"> </span><span class="sb">`update_spec(name, spec_hash, dependencies, output_files)`</span> — record a successful build with current UTC timestamp
+<a id="__codelineno-0-32" name="__codelineno-0-32" href="#__codelineno-0-32"></a><span class="k">-</span><span class="w"> </span><span class="sb">`remove_spec(name)`</span> — remove a spec&#39;s build record
+<a id="__codelineno-0-33" name="__codelineno-0-33" href="#__codelineno-0-33"></a><span class="k">-</span><span class="w"> </span><span class="sb">`save(build_dir)`</span> — write manifest to <span class="sb">`{build_dir}/.specsoloist-manifest.json`</span> as JSON
+<a id="__codelineno-0-34" name="__codelineno-0-34" href="#__codelineno-0-34"></a><span class="k">-</span><span class="w"> </span><span class="sb">`load(build_dir)`</span> (classmethod) — load manifest from file; return empty manifest if file doesn&#39;t exist or is corrupted/invalid JSON
+<a id="__codelineno-0-35" name="__codelineno-0-35" href="#__codelineno-0-35"></a>
+<a id="__codelineno-0-36" name="__codelineno-0-36" href="#__codelineno-0-36"></a><span class="gu">## IncrementalBuilder</span>
+<a id="__codelineno-0-37" name="__codelineno-0-37" href="#__codelineno-0-37"></a>
+<a id="__codelineno-0-38" name="__codelineno-0-38" href="#__codelineno-0-38"></a>Determines which specs need rebuilding. Constructed with a <span class="sb">`BuildManifest`</span> and a <span class="sb">`src_dir`</span> string.
+<a id="__codelineno-0-39" name="__codelineno-0-39" href="#__codelineno-0-39"></a>
+<a id="__codelineno-0-40" name="__codelineno-0-40" href="#__codelineno-0-40"></a><span class="gs">**Methods:**</span>
+<a id="__codelineno-0-41" name="__codelineno-0-41" href="#__codelineno-0-41"></a><span class="k">-</span><span class="w"> </span><span class="sb">`needs_rebuild(spec_name, current_hash, current_deps, rebuilt_specs)`</span> -&gt; bool
+<a id="__codelineno-0-42" name="__codelineno-0-42" href="#__codelineno-0-42"></a><span class="k">-</span><span class="w"> </span><span class="sb">`get_rebuild_plan(build_order, spec_hashes, spec_deps)`</span> -&gt; list of spec names
+<a id="__codelineno-0-43" name="__codelineno-0-43" href="#__codelineno-0-43"></a>
+<a id="__codelineno-0-44" name="__codelineno-0-44" href="#__codelineno-0-44"></a><span class="gh"># Functions</span>
+<a id="__codelineno-0-45" name="__codelineno-0-45" href="#__codelineno-0-45"></a>
+<a id="__codelineno-0-46" name="__codelineno-0-46" href="#__codelineno-0-46"></a><span class="gu">## compute_file_hash(path) -&gt; string</span>
+<a id="__codelineno-0-47" name="__codelineno-0-47" href="#__codelineno-0-47"></a>
+<a id="__codelineno-0-48" name="__codelineno-0-48" href="#__codelineno-0-48"></a>Compute SHA-256 hash of a file&#39;s contents. Returns empty string if file doesn&#39;t exist.
+<a id="__codelineno-0-49" name="__codelineno-0-49" href="#__codelineno-0-49"></a>
+<a id="__codelineno-0-50" name="__codelineno-0-50" href="#__codelineno-0-50"></a><span class="gu">## compute_content_hash(content) -&gt; string</span>
+<a id="__codelineno-0-51" name="__codelineno-0-51" href="#__codelineno-0-51"></a>
+<a id="__codelineno-0-52" name="__codelineno-0-52" href="#__codelineno-0-52"></a>Compute SHA-256 hash of a string.
+<a id="__codelineno-0-53" name="__codelineno-0-53" href="#__codelineno-0-53"></a>
+<a id="__codelineno-0-54" name="__codelineno-0-54" href="#__codelineno-0-54"></a><span class="gh"># Behavior</span>
+<a id="__codelineno-0-55" name="__codelineno-0-55" href="#__codelineno-0-55"></a>
+<a id="__codelineno-0-56" name="__codelineno-0-56" href="#__codelineno-0-56"></a><span class="gu">## Incremental rebuild logic</span>
+<a id="__codelineno-0-57" name="__codelineno-0-57" href="#__codelineno-0-57"></a>
+<a id="__codelineno-0-58" name="__codelineno-0-58" href="#__codelineno-0-58"></a>A spec needs rebuilding if ANY of:
+<a id="__codelineno-0-59" name="__codelineno-0-59" href="#__codelineno-0-59"></a><span class="k">1.</span> It has never been built (not in manifest)
+<a id="__codelineno-0-60" name="__codelineno-0-60" href="#__codelineno-0-60"></a><span class="k">2.</span> Its content hash has changed since last build
+<a id="__codelineno-0-61" name="__codelineno-0-61" href="#__codelineno-0-61"></a><span class="k">3.</span> Its dependency list has changed since last build
+<a id="__codelineno-0-62" name="__codelineno-0-62" href="#__codelineno-0-62"></a><span class="k">4.</span> Any of its current dependencies were rebuilt in this build cycle
+<a id="__codelineno-0-63" name="__codelineno-0-63" href="#__codelineno-0-63"></a>
+<a id="__codelineno-0-64" name="__codelineno-0-64" href="#__codelineno-0-64"></a><span class="sb">`get_rebuild_plan`</span> walks the build order (which is topological — dependencies first), checking each spec against the above rules. When a spec is marked for rebuild, it&#39;s added to the &quot;rebuilt&quot; set so downstream dependents will also trigger.
+<a id="__codelineno-0-65" name="__codelineno-0-65" href="#__codelineno-0-65"></a>
+<a id="__codelineno-0-66" name="__codelineno-0-66" href="#__codelineno-0-66"></a><span class="gh"># Examples</span>
+<a id="__codelineno-0-67" name="__codelineno-0-67" href="#__codelineno-0-67"></a>
+<a id="__codelineno-0-68" name="__codelineno-0-68" href="#__codelineno-0-68"></a>| Scenario | needs_rebuild? | Why |
+<a id="__codelineno-0-69" name="__codelineno-0-69" href="#__codelineno-0-69"></a>|----------|---------------|-----|
+<a id="__codelineno-0-70" name="__codelineno-0-70" href="#__codelineno-0-70"></a>| Spec &quot;foo&quot; not in manifest | Yes | Never built |
+<a id="__codelineno-0-71" name="__codelineno-0-71" href="#__codelineno-0-71"></a>| Spec &quot;foo&quot; hash changed from &quot;abc&quot; to &quot;def&quot; | Yes | Content changed |
+<a id="__codelineno-0-72" name="__codelineno-0-72" href="#__codelineno-0-72"></a>| Spec &quot;foo&quot; deps were <span class="sb">`[]`</span>, now <span class="sb">`[&quot;bar&quot;]`</span> | Yes | Dependencies changed |
+<a id="__codelineno-0-73" name="__codelineno-0-73" href="#__codelineno-0-73"></a>| Spec &quot;foo&quot; unchanged, but dep &quot;bar&quot; was rebuilt this cycle | Yes | Dependency rebuilt |
+<a id="__codelineno-0-74" name="__codelineno-0-74" href="#__codelineno-0-74"></a>| Spec &quot;foo&quot; unchanged, deps unchanged, no deps rebuilt | No | Nothing changed |
+</code></pre></div>
+<hr />
+<h2 id="function"><code>function</code></h2>
+<p>For a single function complex enough to warrant its own Behavior, Constraints, Contract,
+and Test Scenarios sections. If you find yourself writing a bundle with one item, use
+<code>function</code> instead.</p>
+<p><strong>Key sections:</strong> <code># Overview</code>, <code># Interface</code> (yaml:schema), <code># Behavior</code>,
+<code># Constraints</code>, <code># Contract</code>, <code># Test Scenarios</code></p>
+<p><strong>Example</strong> — <code>examples/math/factorial.spec.md</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>---
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>name: factorial
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>type: function
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>status: stable
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>tags:
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">  </span><span class="k">-</span><span class="w"> </span>math
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="gu">  - pure</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="gu">---</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="gh"># 1. Overview</span>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>Computes the factorial of a non-negative integer. The factorial of n (written n!) is the product of all positive integers less than or equal to n.
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="gh"># 2. Interface Specification</span>
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>
+<a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>```yaml:schema
+<a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>inputs:
+<a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>  n:
+<a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a>    type: integer
+<a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a>    minimum: 0
+<a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a>    maximum: 20
+<a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a>    description: &quot;The non-negative integer to compute factorial of&quot;
+<a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a>outputs:
+<a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a>  result:
+<a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a>    type: integer
+<a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a>    minimum: 1
+</code></pre></div>
+<h1 id="3-functional-requirements-behavior">3. Functional Requirements (Behavior)</h1>
+<ul>
+<li><strong>FR-01</strong>: Return 1 when n is 0 (base case: 0! = 1).</li>
+<li><strong>FR-02</strong>: Return the product of all positive integers from 1 up to n for n &gt; 0.</li>
+<li><strong>FR-03</strong>: Raise an error for negative inputs.</li>
+<li><strong>FR-04</strong>: Raise an error for inputs exceeding 20 to prevent overflow in restricted environments.</li>
+</ul>
+<h1 id="4-non-functional-requirements-constraints">4. Non-Functional Requirements (Constraints)</h1>
+<ul>
+<li><strong>NFR-Purity</strong>: Must be a pure function with no side effects.</li>
+<li><strong>NFR-Performance</strong>: Implementation should favor iterative approach over deep recursion.</li>
+</ul>
+<h1 id="5-design-contract">5. Design Contract</h1>
+<ul>
+<li><strong>Pre-condition</strong>: n is an integer where 0 &lt;= n &lt;= 20.</li>
+<li><strong>Post-condition</strong>: result is equal to the mathematical factorial n!.</li>
+</ul>
+<h1 id="6-test-scenarios">6. Test Scenarios</h1>
+<table>
+<thead>
+<tr>
+<th>Scenario</th>
+<th>Input</th>
+<th>Expected Output</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Base case</td>
+<td><code>n: 0</code></td>
+<td><code>1</code></td>
+</tr>
+<tr>
+<td>Small integer</td>
+<td><code>n: 1</code></td>
+<td><code>1</code></td>
+</tr>
+<tr>
+<td>Typical case</td>
+<td><code>n: 5</code></td>
+<td><code>120</code></td>
+</tr>
+<tr>
+<td>Maximum supported</td>
+<td><code>n: 20</code></td>
+<td><code>2432902008176640000</code></td>
+</tr>
+<tr>
+<td>Negative input</td>
+<td><code>n: -1</code></td>
+<td><code>Error</code></td>
+</tr>
+<tr>
+<td>Out of range</td>
+<td><code>n: 21</code></td>
+<td><code>Error</code></td>
+</tr>
+</tbody>
+</table>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>---
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
+<a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>## `type`
+<a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>
+<a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>For a data structure or schema. No functions — just the shape of the data, its
+<a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>constraints, and examples of valid/invalid values. The compiler generates a type
+<a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>definition (dataclass, Pydantic model, TypeScript interface, etc.).
+<a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>
+<a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>**Key sections:** `# Overview`, `# Schema` (yaml:schema), `# Constraints`, `# Examples`
+<a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>
+<a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>**Example** — `examples/math/user.spec.md`:
+<a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>
+<a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>```markdown
+<a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>---
+<a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a>name: user
+<a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a>type: type
+<a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a>status: stable
+<a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a>tags:
+<a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a>  - auth
+<a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a>  - core
+<a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a>---
+<a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a>
+<a id="__codelineno-2-23" name="__codelineno-2-23" href="#__codelineno-2-23"></a># 1. Overview
+<a id="__codelineno-2-24" name="__codelineno-2-24" href="#__codelineno-2-24"></a>Represents a user account in the system with a unique identifier, email address, display name, and timestamps.
+<a id="__codelineno-2-25" name="__codelineno-2-25" href="#__codelineno-2-25"></a>
+<a id="__codelineno-2-26" name="__codelineno-2-26" href="#__codelineno-2-26"></a># 2. Interface Specification
+<a id="__codelineno-2-27" name="__codelineno-2-27" href="#__codelineno-2-27"></a>
+<a id="__codelineno-2-28" name="__codelineno-2-28" href="#__codelineno-2-28"></a>```yaml:schema
+<a id="__codelineno-2-29" name="__codelineno-2-29" href="#__codelineno-2-29"></a>properties:
+<a id="__codelineno-2-30" name="__codelineno-2-30" href="#__codelineno-2-30"></a>  id:
+<a id="__codelineno-2-31" name="__codelineno-2-31" href="#__codelineno-2-31"></a>    type: string
+<a id="__codelineno-2-32" name="__codelineno-2-32" href="#__codelineno-2-32"></a>    format: uuid
+<a id="__codelineno-2-33" name="__codelineno-2-33" href="#__codelineno-2-33"></a>    description: &quot;Unique identifier, assigned at creation&quot;
+<a id="__codelineno-2-34" name="__codelineno-2-34" href="#__codelineno-2-34"></a>  email:
+<a id="__codelineno-2-35" name="__codelineno-2-35" href="#__codelineno-2-35"></a>    type: string
+<a id="__codelineno-2-36" name="__codelineno-2-36" href="#__codelineno-2-36"></a>    format: email
+<a id="__codelineno-2-37" name="__codelineno-2-37" href="#__codelineno-2-37"></a>    description: &quot;Primary email address, must be unique&quot;
+<a id="__codelineno-2-38" name="__codelineno-2-38" href="#__codelineno-2-38"></a>  name:
+<a id="__codelineno-2-39" name="__codelineno-2-39" href="#__codelineno-2-39"></a>    type: string
+<a id="__codelineno-2-40" name="__codelineno-2-40" href="#__codelineno-2-40"></a>    minLength: 1
+<a id="__codelineno-2-41" name="__codelineno-2-41" href="#__codelineno-2-41"></a>    maxLength: 100
+<a id="__codelineno-2-42" name="__codelineno-2-42" href="#__codelineno-2-42"></a>    description: &quot;Display name&quot;
+<a id="__codelineno-2-43" name="__codelineno-2-43" href="#__codelineno-2-43"></a>  role:
+<a id="__codelineno-2-44" name="__codelineno-2-44" href="#__codelineno-2-44"></a>    type: string
+<a id="__codelineno-2-45" name="__codelineno-2-45" href="#__codelineno-2-45"></a>    enum: [user, admin, guest]
+<a id="__codelineno-2-46" name="__codelineno-2-46" href="#__codelineno-2-46"></a>    description: &quot;Access level&quot;
+<a id="__codelineno-2-47" name="__codelineno-2-47" href="#__codelineno-2-47"></a>  created_at:
+<a id="__codelineno-2-48" name="__codelineno-2-48" href="#__codelineno-2-48"></a>    type: string
+<a id="__codelineno-2-49" name="__codelineno-2-49" href="#__codelineno-2-49"></a>    format: date-time
+<a id="__codelineno-2-50" name="__codelineno-2-50" href="#__codelineno-2-50"></a>    description: &quot;When the account was created (ISO 8601)&quot;
+<a id="__codelineno-2-51" name="__codelineno-2-51" href="#__codelineno-2-51"></a>  updated_at:
+<a id="__codelineno-2-52" name="__codelineno-2-52" href="#__codelineno-2-52"></a>    type: string
+<a id="__codelineno-2-53" name="__codelineno-2-53" href="#__codelineno-2-53"></a>    format: date-time
+<a id="__codelineno-2-54" name="__codelineno-2-54" href="#__codelineno-2-54"></a>    description: &quot;When the account was last modified (ISO 8601)&quot;
+<a id="__codelineno-2-55" name="__codelineno-2-55" href="#__codelineno-2-55"></a>required:
+<a id="__codelineno-2-56" name="__codelineno-2-56" href="#__codelineno-2-56"></a>  - id
+<a id="__codelineno-2-57" name="__codelineno-2-57" href="#__codelineno-2-57"></a>  - email
+<a id="__codelineno-2-58" name="__codelineno-2-58" href="#__codelineno-2-58"></a>  - role
+<a id="__codelineno-2-59" name="__codelineno-2-59" href="#__codelineno-2-59"></a>  - created_at
+</code></pre></div>
+<h1 id="constraints">Constraints</h1>
+<ul>
+<li><strong>[NFR-01]</strong>: Email must be unique across all users</li>
+<li><strong>[NFR-02]</strong>: ID must be immutable after creation</li>
+<li><strong>[NFR-03]</strong>: updated_at must be &gt;= created_at</li>
+</ul>
+<h1 id="examples">Examples</h1>
+<table>
+<thead>
+<tr>
+<th>Valid</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>{id: "550e8400-...", email: "jo@example.com", role: "user", created_at: "2024-01-01T00:00:00Z"}</code></td>
+<td>Minimal valid user</td>
+</tr>
+<tr>
+<td><code>{id: "...", email: "admin@example.com", name: "Admin", role: "admin", created_at: "...", updated_at: "..."}</code></td>
+<td>Full user</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>Invalid</th>
+<th>Why</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>{email: "a@b.com", role: "user"}</code></td>
+<td>Missing id, created_at</td>
+</tr>
+<tr>
+<td><code>{id: "...", email: "not-an-email", role: "user", created_at: "..."}</code></td>
+<td>Invalid email format</td>
+</tr>
+<tr>
+<td><code>{id: "...", email: "a@b.com", role: "superuser", created_at: "..."}</code></td>
+<td>Invalid role enum</td>
+</tr>
+</tbody>
+</table>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>---
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>
+<a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>## `module`
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>Aggregates exports from sub-specs into a single public API surface. A module spec lists
+<a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>what it re-exports and documents high-level behaviour — it doesn&#39;t re-specify what
+<a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>sub-specs already cover. Use it when you want a single import point for consumers of a
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>package.
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>**Key sections:** `# Overview`, `# Exports` (list of re-exported names), method/class
+<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>docs that add module-level context.
+<a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>
+<a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a>**Example** — `score/resolver.spec.md`, SpecSoloist&#39;s own dependency resolver (excerpt):
+<a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a>
+<a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a>```markdown
+<a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a>---
+<a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a>name: resolver
+<a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a>type: module
+<a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a>tags:
+<a id="__codelineno-3-20" name="__codelineno-3-20" href="#__codelineno-3-20"></a>  - core
+<a id="__codelineno-3-21" name="__codelineno-3-21" href="#__codelineno-3-21"></a>  - dependencies
+<a id="__codelineno-3-22" name="__codelineno-3-22" href="#__codelineno-3-22"></a>---
+<a id="__codelineno-3-23" name="__codelineno-3-23" href="#__codelineno-3-23"></a>
+<a id="__codelineno-3-24" name="__codelineno-3-24" href="#__codelineno-3-24"></a># Overview
+<a id="__codelineno-3-25" name="__codelineno-3-25" href="#__codelineno-3-25"></a>
+<a id="__codelineno-3-26" name="__codelineno-3-26" href="#__codelineno-3-26"></a>Dependency resolution for multi-spec builds. Given a set of specs that declare
+<a id="__codelineno-3-27" name="__codelineno-3-27" href="#__codelineno-3-27"></a>dependencies on each other, this module can:
+<a id="__codelineno-3-28" name="__codelineno-3-28" href="#__codelineno-3-28"></a>
+<a id="__codelineno-3-29" name="__codelineno-3-29" href="#__codelineno-3-29"></a>- Build a dependency graph
+<a id="__codelineno-3-30" name="__codelineno-3-30" href="#__codelineno-3-30"></a>- Compute a valid build order (dependencies before dependents)
+<a id="__codelineno-3-31" name="__codelineno-3-31" href="#__codelineno-3-31"></a>- Group specs into parallelizable levels
+<a id="__codelineno-3-32" name="__codelineno-3-32" href="#__codelineno-3-32"></a>- Determine which specs are affected when one changes
+<a id="__codelineno-3-33" name="__codelineno-3-33" href="#__codelineno-3-33"></a>- Detect and report circular dependencies and missing dependencies
+<a id="__codelineno-3-34" name="__codelineno-3-34" href="#__codelineno-3-34"></a>
+<a id="__codelineno-3-35" name="__codelineno-3-35" href="#__codelineno-3-35"></a># Exports
+<a id="__codelineno-3-36" name="__codelineno-3-36" href="#__codelineno-3-36"></a>
+<a id="__codelineno-3-37" name="__codelineno-3-37" href="#__codelineno-3-37"></a>- `CircularDependencyError`: Exception raised when specs form a dependency cycle.
+<a id="__codelineno-3-38" name="__codelineno-3-38" href="#__codelineno-3-38"></a>- `MissingDependencyError`: Exception raised when a spec depends on one that doesn&#39;t exist.
+<a id="__codelineno-3-39" name="__codelineno-3-39" href="#__codelineno-3-39"></a>- `DependencyGraph`: A dependency graph with methods to query relationships.
+<a id="__codelineno-3-40" name="__codelineno-3-40" href="#__codelineno-3-40"></a>- `DependencyResolver`: The main resolver that builds graphs and computes build orders.
+<a id="__codelineno-3-41" name="__codelineno-3-41" href="#__codelineno-3-41"></a>
+<a id="__codelineno-3-42" name="__codelineno-3-42" href="#__codelineno-3-42"></a># Error Types
+<a id="__codelineno-3-43" name="__codelineno-3-43" href="#__codelineno-3-43"></a>
+<a id="__codelineno-3-44" name="__codelineno-3-44" href="#__codelineno-3-44"></a>## CircularDependencyError
+<a id="__codelineno-3-45" name="__codelineno-3-45" href="#__codelineno-3-45"></a>
+<a id="__codelineno-3-46" name="__codelineno-3-46" href="#__codelineno-3-46"></a>An exception with a `cycle` attribute (list of spec names forming the cycle).
+<a id="__codelineno-3-47" name="__codelineno-3-47" href="#__codelineno-3-47"></a>
+<a id="__codelineno-3-48" name="__codelineno-3-48" href="#__codelineno-3-48"></a>## MissingDependencyError
+<a id="__codelineno-3-49" name="__codelineno-3-49" href="#__codelineno-3-49"></a>
+<a id="__codelineno-3-50" name="__codelineno-3-50" href="#__codelineno-3-50"></a>An exception with `spec` and `missing` attributes. `spec` is the name of the spec that
+<a id="__codelineno-3-51" name="__codelineno-3-51" href="#__codelineno-3-51"></a>declared the dependency; `missing` is the name of the dependency that doesn&#39;t exist.
+<a id="__codelineno-3-52" name="__codelineno-3-52" href="#__codelineno-3-52"></a>
+<a id="__codelineno-3-53" name="__codelineno-3-53" href="#__codelineno-3-53"></a># DependencyResolver
+<a id="__codelineno-3-54" name="__codelineno-3-54" href="#__codelineno-3-54"></a>
+<a id="__codelineno-3-55" name="__codelineno-3-55" href="#__codelineno-3-55"></a>## resolve_build_order(spec_names=None) -&gt; list of strings
+<a id="__codelineno-3-56" name="__codelineno-3-56" href="#__codelineno-3-56"></a>
+<a id="__codelineno-3-57" name="__codelineno-3-57" href="#__codelineno-3-57"></a>Compute a linear build order. Dependencies appear before dependents.
+<a id="__codelineno-3-58" name="__codelineno-3-58" href="#__codelineno-3-58"></a>Alphabetical when no ordering constraint exists.
+<a id="__codelineno-3-59" name="__codelineno-3-59" href="#__codelineno-3-59"></a>Raises `CircularDependencyError` if a cycle exists.
+<a id="__codelineno-3-60" name="__codelineno-3-60" href="#__codelineno-3-60"></a>
+<a id="__codelineno-3-61" name="__codelineno-3-61" href="#__codelineno-3-61"></a>## get_parallel_build_order(spec_names=None) -&gt; list of lists
+<a id="__codelineno-3-62" name="__codelineno-3-62" href="#__codelineno-3-62"></a>
+<a id="__codelineno-3-63" name="__codelineno-3-63" href="#__codelineno-3-63"></a>Group specs into parallelizable levels. Each level can be compiled concurrently —
+<a id="__codelineno-3-64" name="__codelineno-3-64" href="#__codelineno-3-64"></a>all dependencies of specs in level N are in levels 0..N-1.
+<a id="__codelineno-3-65" name="__codelineno-3-65" href="#__codelineno-3-65"></a>
+<a id="__codelineno-3-66" name="__codelineno-3-66" href="#__codelineno-3-66"></a># Examples
+<a id="__codelineno-3-67" name="__codelineno-3-67" href="#__codelineno-3-67"></a>
+<a id="__codelineno-3-68" name="__codelineno-3-68" href="#__codelineno-3-68"></a>| Method | Input | Expected |
+<a id="__codelineno-3-69" name="__codelineno-3-69" href="#__codelineno-3-69"></a>|--------|-------|----------|
+<a id="__codelineno-3-70" name="__codelineno-3-70" href="#__codelineno-3-70"></a>| resolve_build_order | A depends on B | `[&quot;b&quot;, &quot;a&quot;]` |
+<a id="__codelineno-3-71" name="__codelineno-3-71" href="#__codelineno-3-71"></a>| get_parallel_build_order | A,B independent; C depends on both | `[[&quot;a&quot;,&quot;b&quot;], [&quot;c&quot;]]` |
+</code></pre></div>
+<hr />
+<h2 id="workflow"><code>workflow</code></h2>
+<p>For multi-step execution where data flows from one step to the next. Workflows reference
+other specs by name and wire outputs to inputs. The compiler generates an executable
+runner (Python function, JS module, etc.) that calls each step in order.</p>
+<p>Workflows are for your <strong>target project</strong> — for example, an order processing pipeline
+that validates, then charges, then confirms. SpecSoloist's own orchestration (the
+conductor agent that runs <code>sp conduct</code>) is separate from this.</p>
+<p><strong>Key sections:</strong> <code># Overview</code>, <code># Interface</code> (yaml:schema), <code># Steps</code> (yaml:steps),
+<code># Error Handling</code></p>
+<p><strong>yaml:steps fields:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>name</code></td>
+<td>Step identifier, used to reference its outputs downstream</td>
+</tr>
+<tr>
+<td><code>spec</code></td>
+<td>The spec to invoke</td>
+</tr>
+<tr>
+<td><code>inputs</code></td>
+<td>Map of input names to values: <code>inputs.x</code> or <code>prev_step.outputs.y</code></td>
+</tr>
+<tr>
+<td><code>checkpoint</code></td>
+<td>If <code>true</code>, the workflow can resume from this step after a failure</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Example</strong> — <code>examples/math/math_workflow.spec.md</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>---
+<a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>name: math_workflow
+<a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>type: workflow
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>status: draft
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>dependencies:
+<a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="w">  </span><span class="k">-</span><span class="w"> </span>factorial
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="gu">  - is_prime</span>
+<a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="gu">---</span>
+<a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>
+<a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a><span class="gh"># 1. Overview</span>
+<a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>A demonstration workflow that computes the factorial of a number, then checks if the result is prime.
+<a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a>
+<a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a><span class="gh"># 2. Interface Specification</span>
+<a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a>
+<a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a>```yaml:schema
+<a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a>inputs:
+<a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a>  n:
+<a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a>    type: integer
+<a id="__codelineno-4-19" name="__codelineno-4-19" href="#__codelineno-4-19"></a>    minimum: 0
+<a id="__codelineno-4-20" name="__codelineno-4-20" href="#__codelineno-4-20"></a>    maximum: 20
+<a id="__codelineno-4-21" name="__codelineno-4-21" href="#__codelineno-4-21"></a>    description: &quot;Starting number for factorial&quot;
+<a id="__codelineno-4-22" name="__codelineno-4-22" href="#__codelineno-4-22"></a>outputs:
+<a id="__codelineno-4-23" name="__codelineno-4-23" href="#__codelineno-4-23"></a>  factorial_result:
+<a id="__codelineno-4-24" name="__codelineno-4-24" href="#__codelineno-4-24"></a>    type: integer
+<a id="__codelineno-4-25" name="__codelineno-4-25" href="#__codelineno-4-25"></a>  is_prime_result:
+<a id="__codelineno-4-26" name="__codelineno-4-26" href="#__codelineno-4-26"></a>    type: boolean
+</code></pre></div>
+<h1 id="3-steps">3. Steps</h1>
+<p>```yaml:steps
+- name: compute_factorial
+  spec: factorial
+  inputs:
+    n: inputs.n</p>
+<ul>
+<li>name: check_prime
+  spec: is_prime
+  checkpoint: true
+  inputs:
+    n: compute_factorial.outputs.result
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a># 4. Functional Requirements (Behavior)
+<a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>- **FR-01**: Execute the `compute_factorial` step using the provided input `n`.
+<a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>- **FR-02**: Pass the output of the factorial calculation to the `check_prime` step.
+<a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>- **FR-03**: Return both the factorial result and the primality check result.
+<a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>
+<a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a># 5. Error Handling
+<a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>- If `compute_factorial` fails: Terminate the workflow and return the error.
+<a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>- If `check_prime` fails: Log the error and return the partial result containing the factorial.
+</code></pre></div></li>
+</ul>
+<hr />
+<h2 id="reference"><code>reference</code></h2>
+<p>For documenting a third-party library. <strong>No implementation is generated.</strong> The spec body
+is injected into the prompts of dependent soloists as API documentation, grounding them
+in the real library API so they don't hallucinate method signatures or import paths.</p>
+<h3 id="when-to-use">When to use</h3>
+<p>Any time your project uses a library that is new enough (or niche enough) that LLMs may
+not have accurate knowledge of its API. FastHTML, Vercel AI SDK, and similar newer
+frameworks are good candidates.</p>
+<h3 id="required-sections">Required sections</h3>
+<table>
+<thead>
+<tr>
+<th>Section</th>
+<th>Required</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code># Overview</code></td>
+<td>Yes</td>
+<td>Library name, package, version range, correct import path</td>
+</tr>
+<tr>
+<td><code># API</code></td>
+<td>Yes</td>
+<td>Functions, classes, and attributes your project actually uses</td>
+</tr>
+<tr>
+<td><code># Verification</code></td>
+<td>Recommended</td>
+<td>3–10 lines compiled into <code>tests/test_{name}.py</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="conventions">Conventions</h3>
+<ul>
+<li><strong>Version range in <code># Overview</code></strong>: Be explicit about which version the spec documents
+  and note any breaking changes between versions. A missing version range triggers a
+  quality warning from <code>sp validate</code>.</li>
+<li><strong>Imports and gotchas first</strong>: Put the canonical import statement near the top. For
+  libraries with common footguns (wrong module path, deprecated entry points), call them
+  out explicitly.</li>
+<li><strong>Verification makes it living docs</strong>: The <code># Verification</code> section compiles to a test
+  file. CI fails if the library API drifts, turning the spec into verified documentation
+  rather than a comment that goes stale.</li>
+<li><strong>Only document what you use</strong>: Reference specs aren't comprehensive library docs —
+  they document the subset of the library that your project's soloists will call.</li>
+</ul>
+<h3 id="dependency-wiring">Dependency wiring</h3>
+<p>Specs that use the library declare the reference spec in their <code>dependencies:</code> frontmatter.
+The conductor injects the reference spec body into those soloists' prompts automatically:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="nn">---</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">routes</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">bundle</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="nt">dependencies</span><span class="p">:</span>
+<a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">fasthtml_interface</span><span class="w">  </span><span class="c1"># reference spec — injected as context, not imported</span>
+<a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">state</span>
+<a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a><span class="nn">---</span>
+</code></pre></div>
+<p><strong>Example</strong> — <code>examples/fasthtml_app/specs/fasthtml_interface.spec.md</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>---
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>name: fasthtml_interface
+<a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>type: reference
+<a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="gu">status: stable</span>
+<a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a><span class="gu">---</span>
+<a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>
+<a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="gh"># Overview</span>
+<a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>
+<a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a>The subset of [<span class="nt">FastHTML</span>](<span class="na">https://fastht.ml</span>) used in this project (<span class="sb">`python-fasthtml &gt;= 0.12`</span>).
+<a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a>This spec exists so soloists have accurate API documentation — FastHTML is new enough that LLMs
+<a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a>may hallucinate its API.
+<a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a>
+<a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a>Specs that depend on FastHTML components should list <span class="sb">`fasthtml_interface`</span> as a dependency.
+<a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a>No implementation is generated for this spec — it is API documentation only.
+<a id="__codelineno-7-15" name="__codelineno-7-15" href="#__codelineno-7-15"></a>
+<a id="__codelineno-7-16" name="__codelineno-7-16" href="#__codelineno-7-16"></a><span class="gs">**Critical import:**</span> Always import from <span class="sb">`fasthtml.common`</span>, never from <span class="sb">`fasthtml`</span> directly:
+<a id="__codelineno-7-17" name="__codelineno-7-17" href="#__codelineno-7-17"></a>```python
+<a id="__codelineno-7-18" name="__codelineno-7-18" href="#__codelineno-7-18"></a>from fasthtml.common import fast_app, serve, picolink, Main, Div, P, H1, Form, Input, Button, Title, Ul, Li
+</code></pre></div>
+<p><strong>Testing:</strong> Use <code>from starlette.testclient import TestClient</code>. Never call <code>serve()</code> in test files —
+guard with <code>if __name__ == "__main__": serve()</code>.</p>
+<h1 id="api">API</h1>
+<h2 id="fast_app">fast_app()</h2>
+<p>Creates the FastHTML ASGI app and route decorator. Pass <code>hdrs</code> to inject <code>&lt;head&gt;</code> elements
+such as CSS framework links.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="n">app</span><span class="p">,</span> <span class="n">rt</span> <span class="o">=</span> <span class="n">fast_app</span><span class="p">()</span>                          <span class="c1"># bare app</span>
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="n">app</span><span class="p">,</span> <span class="n">rt</span> <span class="o">=</span> <span class="n">fast_app</span><span class="p">(</span><span class="n">hdrs</span><span class="o">=</span><span class="p">(</span><span class="n">picolink</span><span class="p">,))</span>          <span class="c1"># with Pico CSS</span>
+</code></pre></div>
+<p>Returns a tuple <code>(app, rt)</code> where <code>app</code> is the ASGI application and <code>rt</code> is a route decorator factory.</p>
+<h2 id="picolink">picolink</h2>
+<p>A pre-built <code>&lt;link&gt;</code> header element that loads <a href="https://picocss.com">Pico CSS</a> from a CDN.
+Pico CSS applies clean, semantic styles to plain HTML elements with no class names required.
+Wrap page content in <code>Main(..., cls="container")</code> for centred, responsive layout.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fasthtml.common</span><span class="w"> </span><span class="kn">import</span> <span class="n">fast_app</span><span class="p">,</span> <span class="n">picolink</span><span class="p">,</span> <span class="n">Main</span>
+<a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="n">app</span><span class="p">,</span> <span class="n">rt</span> <span class="o">=</span> <span class="n">fast_app</span><span class="p">(</span><span class="n">hdrs</span><span class="o">=</span><span class="p">(</span><span class="n">picolink</span><span class="p">,))</span>
+<a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>
+<a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="nd">@rt</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)</span>
+<a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="k">def</span><span class="w"> </span><span class="nf">get</span><span class="p">():</span>
+<a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>    <span class="k">return</span> <span class="n">Title</span><span class="p">(</span><span class="s2">&quot;My App&quot;</span><span class="p">),</span> <span class="n">Main</span><span class="p">(</span><span class="n">H1</span><span class="p">(</span><span class="s2">&quot;Hello&quot;</span><span class="p">),</span> <span class="bp">cls</span><span class="o">=</span><span class="s2">&quot;container&quot;</span><span class="p">)</span>
+</code></pre></div>
+<h2 id="serve">serve()</h2>
+<p>Starts the development server on <code>localhost:5001</code>. <strong>Never call in test files.</strong></p>
+<h2 id="html-components">HTML components</h2>
+<p>All HTML components share this signature: <code>Tag(*children, **attrs)</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Component</th>
+<th>HTML element</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Div</code></td>
+<td><code>&lt;div&gt;</code></td>
+<td>General container</td>
+</tr>
+<tr>
+<td><code>P</code></td>
+<td><code>&lt;p&gt;</code></td>
+<td>Paragraph</td>
+</tr>
+<tr>
+<td><code>H1</code></td>
+<td><code>&lt;h1&gt;</code></td>
+<td>Heading</td>
+</tr>
+<tr>
+<td><code>Form</code></td>
+<td><code>&lt;form&gt;</code></td>
+<td>Use <code>hx_post</code>, <code>hx_swap</code>, <code>hx_target</code> for HTMX</td>
+</tr>
+<tr>
+<td><code>Input</code></td>
+<td><code>&lt;input&gt;</code></td>
+<td><code>name=</code> delivers form field to route handler</td>
+</tr>
+<tr>
+<td><code>Button</code></td>
+<td><code>&lt;button&gt;</code></td>
+<td>Submit button</td>
+</tr>
+<tr>
+<td><code>Title</code></td>
+<td><code>&lt;title&gt;</code></td>
+<td>Page title in head</td>
+</tr>
+<tr>
+<td><code>Main</code></td>
+<td><code>&lt;main&gt;</code></td>
+<td>Use <code>cls="container"</code> with Pico CSS for centred layout</td>
+</tr>
+<tr>
+<td><code>Ul</code></td>
+<td><code>&lt;ul&gt;</code></td>
+<td>Unordered list</td>
+</tr>
+<tr>
+<td><code>Li</code></td>
+<td><code>&lt;li&gt;</code></td>
+<td>List item</td>
+</tr>
+</tbody>
+</table>
+<h2 id="route-registration">Route registration</h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="n">app</span><span class="p">,</span> <span class="n">rt</span> <span class="o">=</span> <span class="n">fast_app</span><span class="p">()</span>
+<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>
+<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a><span class="nd">@rt</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)</span>
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="k">def</span><span class="w"> </span><span class="nf">get</span><span class="p">():</span>
+<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>    <span class="k">return</span> <span class="n">Div</span><span class="p">(</span><span class="n">H1</span><span class="p">(</span><span class="s2">&quot;Hello&quot;</span><span class="p">),</span> <span class="n">P</span><span class="p">(</span><span class="s2">&quot;World&quot;</span><span class="p">))</span>
+<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>
+<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="nd">@rt</span><span class="p">(</span><span class="s2">&quot;/todos&quot;</span><span class="p">)</span>
+<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a><span class="k">def</span><span class="w"> </span><span class="nf">post</span><span class="p">(</span><span class="n">item</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>   <span class="c1"># form field &#39;item&#39; injected as keyword arg</span>
+<a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a>    <span class="k">return</span> <span class="n">Li</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+</code></pre></div>
+<p>Route handlers return HTML components directly. FastHTML serialises them to HTML strings.
+To return multiple top-level elements, return a tuple: <code>return H1("Title"), P("Body")</code>.</p>
+<h2 id="htmx-attributes-on-form">HTMX attributes on Form</h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="n">Form</span><span class="p">(</span>
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>    <span class="n">Input</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;item&quot;</span><span class="p">,</span> <span class="n">placeholder</span><span class="o">=</span><span class="s2">&quot;Add todo&quot;</span><span class="p">),</span>
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>    <span class="n">Button</span><span class="p">(</span><span class="s2">&quot;Add&quot;</span><span class="p">),</span>
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>    <span class="n">hx_post</span><span class="o">=</span><span class="s2">&quot;/todos&quot;</span><span class="p">,</span>
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>    <span class="n">hx_swap</span><span class="o">=</span><span class="s2">&quot;beforeend&quot;</span><span class="p">,</span>
+<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>    <span class="n">hx_target</span><span class="o">=</span><span class="s2">&quot;#todo-list&quot;</span><span class="p">,</span>
+<a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a><span class="p">)</span>
+</code></pre></div>
+<h2 id="starlette-test-client">Starlette test client</h2>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">starlette.testclient</span><span class="w"> </span><span class="kn">import</span> <span class="n">TestClient</span>
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="n">client</span> <span class="o">=</span> <span class="n">TestClient</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="n">response</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">)</span>
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="k">assert</span> <span class="n">response</span><span class="o">.</span><span class="n">status_code</span> <span class="o">==</span> <span class="mi">200</span>
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="k">assert</span> <span class="s2">&quot;&lt;ul&quot;</span> <span class="ow">in</span> <span class="n">response</span><span class="o">.</span><span class="n">text</span>
+</code></pre></div>
+<h1 id="verification">Verification</h1>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fasthtml.common</span><span class="w"> </span><span class="kn">import</span> <span class="n">fast_app</span><span class="p">,</span> <span class="n">serve</span><span class="p">,</span> <span class="n">picolink</span><span class="p">,</span> <span class="n">Main</span><span class="p">,</span> <span class="n">Div</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">H1</span><span class="p">,</span> <span class="n">Form</span><span class="p">,</span> <span class="n">Input</span><span class="p">,</span> <span class="n">Button</span><span class="p">,</span> <span class="n">Title</span><span class="p">,</span> <span class="n">Ul</span><span class="p">,</span> <span class="n">Li</span>
+<a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="n">app</span><span class="p">,</span> <span class="n">rt</span> <span class="o">=</span> <span class="n">fast_app</span><span class="p">(</span><span class="n">hdrs</span><span class="o">=</span><span class="p">(</span><span class="n">picolink</span><span class="p">,))</span>
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="k">assert</span> <span class="nb">callable</span><span class="p">(</span><span class="n">rt</span><span class="p">)</span>
+<a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="n">div</span> <span class="o">=</span> <span class="n">Div</span><span class="p">(</span><span class="s2">&quot;hello&quot;</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="s2">&quot;x&quot;</span><span class="p">)</span>
+<a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="k">assert</span> <span class="s2">&quot;hello&quot;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">div</span><span class="p">)</span>
+<a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a><span class="n">form</span> <span class="o">=</span> <span class="n">Form</span><span class="p">(</span><span class="n">Input</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;item&quot;</span><span class="p">),</span> <span class="n">Button</span><span class="p">(</span><span class="s2">&quot;Add&quot;</span><span class="p">),</span> <span class="n">hx_post</span><span class="o">=</span><span class="s2">&quot;/add&quot;</span><span class="p">,</span> <span class="n">hx_swap</span><span class="o">=</span><span class="s2">&quot;beforeend&quot;</span><span class="p">)</span>
+<a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a><span class="k">assert</span> <span class="s2">&quot;hx-post&quot;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">form</span><span class="p">)</span>
+<a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a><span class="n">main</span> <span class="o">=</span> <span class="n">Main</span><span class="p">(</span><span class="n">H1</span><span class="p">(</span><span class="s2">&quot;Hello&quot;</span><span class="p">),</span> <span class="bp">cls</span><span class="o">=</span><span class="s2">&quot;container&quot;</span><span class="p">)</span>
+<a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a><span class="k">assert</span> <span class="s2">&quot;container&quot;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">main</span><span class="p">)</span>
+</code></pre></div>
+<p>```</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["navigation.tabs", "navigation.sections", "navigation.expand", "content.code.copy", "content.code.annotate"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>
