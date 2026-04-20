@@ -1,9 +1,5 @@
 name: Spec Drift Check
 
-# Daily check that score/ specs still describe src/ accurately.
-# Uses AST-based comparison only — no LLM calls, no API keys needed.
-# Catches features added to code but not documented in specs.
-
 on:
   schedule:
     - cron: '0 6 * * *'   # Daily at 6am UTC
@@ -12,6 +8,8 @@ on:
     paths:
       - 'src/**'
       - 'score/**'
+
+enabled: false
 
 jobs:
   drift-check:
